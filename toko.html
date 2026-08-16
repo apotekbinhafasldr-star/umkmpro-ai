@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toko Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --bg:#EEF2ED; --surface:#FFFFFF; --surface-2:#F6F8F4; --line:#DCE3D8;
+    --ink:#1C2620; --ink-soft:#5B6B60;
+    --brand:#1B4B43; --brand-deep:#10322C; --brand-tint:#E4EEE9;
+    --amber:#B8752E; --amber-tint:#FBEEDD;
+    --danger:#A8433A; --danger-tint:#F8E7E3;
+    --good:#3F7D58; --good-tint:#E7F1EA;
+    --radius:14px; --shadow:0 1px 2px rgba(16,50,44,0.06), 0 8px 24px rgba(16,50,44,0.05);
+  }
+  *{ box-sizing:border-box; } html,body{ margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans',sans-serif; -webkit-font-smoothing:antialiased; padding-bottom:90px; }
+  h1,h2,h3{ font-family:'Fraunces',serif; letter-spacing:-0.01em; margin:0; }
+  .num{ font-family:'IBM Plex Mono',monospace; font-weight:600; }
+  button{ font-family:inherit; cursor:pointer; }
+  input, select{ font-family:inherit; }
+
+  .store-header{
+    background: linear-gradient(100deg, #0E6B54 0%, #17A589 55%, #1FBF8F 100%);
+    color:#fff; padding: 22px 18px 26px; border-bottom:3px solid #F0B429;
+  }
+  .store-brand{ display:flex; align-items:center; gap:12px; }
+  .store-logo{ width:52px; height:52px; border-radius:14px; background:rgba(255,255,255,0.18); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:700; font-size:20px; flex-shrink:0; }
+  .store-name{ font-size:19px; font-weight:700; }
+  .store-sub{ font-size:12px; color:#D6F5EC; margin-top:2px; }
+
+  main{ max-width:520px; margin:0 auto; padding: 16px; }
+
+  .search-bar{ display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin-bottom:14px; box-shadow:var(--shadow); }
+  .search-bar input{ border:none; outline:none; flex:1; font-size:13.5px; background:transparent; color:var(--ink); }
+
+  .prod-grid{ display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+  .prod-card{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:13px; box-shadow:var(--shadow); position:relative; }
+  .prod-tag{ position:absolute; top:9px; right:9px; font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:20px; background:var(--brand-tint); color:var(--brand); }
+  .prod-tag.resep{ background:var(--danger-tint); color:var(--danger); }
+  .prod-name{ font-size:12.8px; font-weight:600; line-height:1.3; margin:4px 0 3px; min-height:33px; }
+  .prod-price{ font-size:13.5px; margin-bottom:9px; }
+  .prod-add-btn{ width:100%; background:var(--brand); color:#fff; border:none; border-radius:8px; padding:8px; font-size:12px; font-weight:700; }
+  .prod-add-btn:disabled{ background:#C9C2B4; }
+  .prod-unavailable{ font-size:11px; color:var(--danger); text-align:center; padding:8px; }
+
+  .loading-note{ font-size:12.5px; color:var(--ink-soft); padding:30px; text-align:center; }
+
+  .cart-fab{
+    position:fixed; bottom:16px; left:16px; right:16px; max-width:488px; margin:0 auto;
+    background:var(--brand-deep); color:#fff; border-radius:16px; padding:14px 18px;
+    display:flex; align-items:center; justify-content:space-between; box-shadow:0 10px 30px rgba(0,0,0,.25);
+    z-index:40;
+  }
+  .cart-fab.hide{ display:none; }
+  .cart-fab-left{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; }
+  .cart-fab-badge{ background:#F0B429; color:#3B2A10; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; }
+  .cart-fab-btn{ background:#fff; color:var(--brand-deep); border:none; border-radius:10px; padding:9px 16px; font-size:12.5px; font-weight:700; }
+
+  .modal-overlay{ position:fixed; inset:0; background:rgba(10,35,30,0.5); z-index:80; display:none; align-items:flex-end; justify-content:center; }
+  .modal-overlay.show{ display:flex; }
+  .modal-sheet{ background:var(--surface); border-radius:20px 20px 0 0; width:100%; max-width:520px; max-height:85vh; overflow-y:auto; padding:20px 18px 24px; }
+  .modal-title{ font-size:17px; font-weight:600; margin-bottom:14px; }
+  .cart-item-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--surface-2); }
+  .ci-name{ font-size:13px; font-weight:600; flex:1; }
+  .qty-btn{ width:26px; height:26px; border-radius:7px; border:1px solid var(--line); background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; }
+  .qty-val{ font-size:13px; font-weight:600; min-width:16px; text-align:center; }
+
+  .field{ margin-bottom:13px; }
+  .field label{ font-size:11.5px; font-weight:600; display:block; margin-bottom:5px; color:var(--ink-soft); }
+  .field input, .field select{ width:100%; border:1px solid var(--line); border-radius:9px; padding:10px 12px; font-size:13.5px; background:var(--surface-2); color:var(--ink); }
+
+  .resep-warning{ background:var(--amber-tint); border-radius:10px; padding:12px 14px; font-size:12px; color:#7A4B1C; margin-bottom:14px; line-height:1.5; }
+
+  .btn-primary-full{ width:100%; background:var(--brand); color:#fff; border:none; border-radius:11px; padding:14px; font-size:14px; font-weight:700; margin-top:6px; }
+  .btn-primary-full:disabled{ background:#C9C2B4; }
+
+  .toast{
+    position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-20px);
+    background:var(--brand); color:#fff; padding:13px 20px; border-radius:12px; font-size:13px; font-weight:600;
+    box-shadow:0 10px 30px rgba(0,0,0,.2); opacity:0; pointer-events:none; transition:all .25s; z-index:100; max-width:90%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.error{ background:var(--danger); }
+
+  .success-screen{ text-align:center; padding:50px 20px; }
+  .success-icon{ width:64px; height:64px; border-radius:50%; background:var(--good-tint); display:flex; align-items:center; justify-content:center; margin:0 auto 18px; }
+</style>
+</head>
+<body>
+
+<div id="store-header" class="store-header">
+  <div class="store-brand">
+    <div class="store-logo" id="store-logo">?</div>
+    <div>
+      <div class="store-name" id="store-name">Memuat…</div>
+      <div class="store-sub">Toko Online</div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="search-bar">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" id="search-input" placeholder="Cari produk…" oninput="renderCatalog()">
+  </div>
+  <div class="prod-grid" id="catalog-grid"><div class="loading-note">Memuat katalog…</div></div>
+  <div style="text-align:center; margin-top:24px; padding-bottom:10px;">
+    <a href="/" style="font-size:11px; color:var(--ink-soft); text-decoration:none;">Pemilik usaha? Kelola toko di sini →</a>
+  </div>
+</main>
+
+<div class="cart-fab hide" id="cart-fab" onclick="openCheckoutModal()">
+  <div class="cart-fab-left">
+    <div class="cart-fab-badge" id="cart-fab-count">0</div>
+    <span>Lihat Keranjang</span>
+  </div>
+  <div class="cart-fab-btn">Rp <span id="cart-fab-total">0</span></div>
+</div>
+
+<div class="modal-overlay" id="checkout-modal">
+  <div class="modal-sheet">
+    <div class="modal-title">Keranjang Pesanan</div>
+    <div id="checkout-cart-items"></div>
+
+    <div id="resep-warning-box" class="resep-warning" style="display:none;">
+      ⚠️ Keranjang berisi obat resep. Pesanan ini <b>tidak langsung diproses</b> — kamu perlu upload foto resep, dan apoteker kami akan meninjau dulu sebelum konfirmasi.
+    </div>
+
+    <div class="field">
+      <label>Nama Kamu</label>
+      <input type="text" id="ck-nama" placeholder="Nama lengkap">
+    </div>
+    <div class="field">
+      <label>No. WhatsApp</label>
+      <input type="text" id="ck-wa" placeholder="08xxxxxxxxxx">
+    </div>
+    <div class="field">
+      <label>Metode Pengambilan</label>
+      <select id="ck-metode">
+        <option value="ambil_sendiri">Ambil Sendiri di Toko</option>
+        <option value="antar">Minta Diantar</option>
+      </select>
+    </div>
+    <div class="field" id="ck-alamat-field" style="display:none;">
+      <label>Alamat Pengantaran</label>
+      <input type="text" id="ck-alamat" placeholder="Alamat lengkap">
+    </div>
+    <div class="field" id="ck-resep-field" style="display:none;">
+      <label>Upload Foto Resep</label>
+      <input type="file" id="ck-resep-file" accept="image/*">
+    </div>
+
+    <button class="btn-primary-full" id="ck-submit-btn" onclick="submitOrder()">Kirim Pesanan</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="success-modal">
+  <div class="modal-sheet">
+    <div class="success-screen">
+      <div class="success-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3F7D58" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <h2 style="font-size:19px; margin-bottom:8px;">Pesanan Terkirim!</h2>
+      <p style="font-size:13px; color:var(--ink-soft); margin-bottom:20px;">Toko akan menghubungi kamu lewat WhatsApp untuk konfirmasi. Terima kasih! 🙏</p>
+      <button class="btn-primary-full" onclick="location.reload()">Pesan Lagi</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = 'https://wjjyqovhmwenbcvbnkgx.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indqanlxb3ZobXdlbmJjdmJua2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3NjQyMTksImV4cCI6MjEwMjM0MDIxOX0.6puBkXdH8U-olk6tRfHUt_9xayEKyDuFVIf8_bW55zU';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const params = new URLSearchParams(window.location.search);
+  const TENANT_ID = params.get('t');
+
+  let allProducts = [];
+  let cart = [];
+  let tenantName = 'Toko';
+
+  const KATEGORI_LABEL = { obat_resep:'Resep', obat_bebas:'Bebas', herbal:'Herbal', skincare:'Skincare', alat_kesehatan:'Alkes' };
+
+  async function init(){
+    if (!TENANT_ID){
+      document.getElementById('catalog-grid').innerHTML = '<div class="loading-note">Link tidak valid — hubungi toko untuk link yang benar.</div>';
+      return;
+    }
+    const { data: tenant } = await sb.from('tenants').select('nama_usaha, logo_url, toko_online_aktif').eq('id', TENANT_ID).single();
+    if (tenant && !tenant.toko_online_aktif){
+      document.getElementById('store-header').style.display = 'none';
+      document.getElementById('catalog-grid').innerHTML = '<div class="loading-note">Toko online untuk usaha ini belum diaktifkan.</div>';
+      return;
+    }
+    if (tenant){
+      tenantName = tenant.nama_usaha;
+      document.getElementById('store-name').textContent = tenant.nama_usaha;
+      document.title = tenant.nama_usaha + ' — Toko Online';
+      if (tenant.logo_url){
+        document.getElementById('store-logo').style.backgroundImage = `url(${tenant.logo_url})`;
+        document.getElementById('store-logo').textContent = '';
+      } else {
+        document.getElementById('store-logo').textContent = tenant.nama_usaha.substring(0,2).toUpperCase();
+      }
+    }
+
+    const { data: products, error } = await sb.from('public_catalog').select('*').eq('tenant_id', TENANT_ID).order('nama');
+    allProducts = products || [];
+    renderCatalog();
+  }
+
+  function renderCatalog(){
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const filtered = allProducts.filter(p => p.nama.toLowerCase().includes(q));
+    const grid = document.getElementById('catalog-grid');
+    if (filtered.length === 0){ grid.innerHTML = '<div class="loading-note">Tidak ada produk ditemukan.</div>'; return; }
+
+    grid.innerHTML = filtered.map(p => `
+      <div class="prod-card">
+        <span class="prod-tag ${p.kategori === 'obat_resep' ? 'resep' : ''}">${p.is_racikan ? 'Racikan' : (KATEGORI_LABEL[p.kategori] || p.kategori)}</span>
+        <div class="prod-name">${p.nama}</div>
+        <div class="prod-price num">Rp ${parseFloat(p.harga).toLocaleString('id-ID')}</div>
+        ${p.tersedia
+          ? `<button class="prod-add-btn" onclick="addToCart('${p.id}')">+ Tambah</button>`
+          : `<div class="prod-unavailable">Stok habis</div>`}
+      </div>`).join('');
+  }
+
+  function addToCart(id){
+    const prod = allProducts.find(p => p.id === id);
+    if (!prod) return;
+    const existing = cart.find(c => c.id === id);
+    if (existing){ existing.qty += 1; }
+    else { cart.push({ id: prod.id, name: prod.nama, price: parseFloat(prod.harga), kategori: prod.kategori, qty: 1 }); }
+    updateCartFab();
+    showToast(`✓ "${prod.nama}" ditambahkan`);
+  }
+
+  function updateCartFab(){
+    const fab = document.getElementById('cart-fab');
+    const count = cart.reduce((s,c)=>s+c.qty,0);
+    const total = cart.reduce((s,c)=>s+c.price*c.qty,0);
+    fab.classList.toggle('hide', count === 0);
+    document.getElementById('cart-fab-count').textContent = count;
+    document.getElementById('cart-fab-total').textContent = total.toLocaleString('id-ID');
+  }
+
+  function openCheckoutModal(){
+    renderCheckoutCart();
+    document.getElementById('checkout-modal').classList.add('show');
+  }
+
+  function renderCheckoutCart(){
+    const wrap = document.getElementById('checkout-cart-items');
+    wrap.innerHTML = cart.map(c => `
+      <div class="cart-item-row">
+        <div class="ci-name">${c.name}<br><span class="num" style="font-size:11.5px; color:var(--ink-soft);">Rp ${c.price.toLocaleString('id-ID')}</span></div>
+        <div class="qty-btn" onclick="changeCartQty('${c.id}', -1)">−</div>
+        <div class="qty-val">${c.qty}</div>
+        <div class="qty-btn" onclick="changeCartQty('${c.id}', 1)">+</div>
+      </div>`).join('');
+
+    const hasResep = cart.some(c => c.kategori === 'obat_resep');
+    document.getElementById('resep-warning-box').style.display = hasResep ? 'block' : 'none';
+    document.getElementById('ck-resep-field').style.display = hasResep ? 'block' : 'none';
+  }
+
+  function changeCartQty(id, delta){
+    const item = cart.find(c => c.id === id);
+    if (!item) return;
+    item.qty += delta;
+    if (item.qty <= 0) cart = cart.filter(c => c.id !== id);
+    if (cart.length === 0) document.getElementById('checkout-modal').classList.remove('show');
+    updateCartFab();
+    renderCheckoutCart();
+  }
+
+  document.getElementById('ck-metode').addEventListener('change', (e) => {
+    document.getElementById('ck-alamat-field').style.display = e.target.value === 'antar' ? 'block' : 'none';
+  });
+
+  async function submitOrder(){
+    const nama = document.getElementById('ck-nama').value.trim();
+    const wa = document.getElementById('ck-wa').value.trim();
+    if (!nama || !wa){ showToast('Nama dan No. WhatsApp wajib diisi.', true); return; }
+    if (cart.length === 0){ showToast('Keranjang masih kosong.', true); return; }
+
+    const hasResep = cart.some(c => c.kategori === 'obat_resep');
+    const resepFile = document.getElementById('ck-resep-file').files[0];
+    if (hasResep && !resepFile){ showToast('Wajib upload foto resep untuk obat resep.', true); return; }
+
+    const btn = document.getElementById('ck-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+
+    let fotoResepUrl = null;
+    if (resepFile){
+      const path = `${TENANT_ID}/${Date.now()}-${resepFile.name}`;
+      const { error: uploadErr } = await sb.storage.from('resep-online').upload(path, resepFile);
+      if (uploadErr){ showToast('Gagal upload foto resep: ' + uploadErr.message, true); btn.disabled = false; btn.textContent = 'Kirim Pesanan'; return; }
+      const { data: urlData } = sb.storage.from('resep-online').getPublicUrl(path);
+      fotoResepUrl = urlData.publicUrl;
+    }
+
+    const total = cart.reduce((s,c)=>s+c.price*c.qty,0);
+    const itemsText = cart.map(c => `${c.name} (${c.qty}x)`).join(', ');
+
+    const { error } = await sb.from('online_orders').insert({
+      tenant_id: TENANT_ID, nama, whatsapp: wa, items: itemsText, total,
+      metode: document.getElementById('ck-metode').value,
+      alamat: document.getElementById('ck-alamat').value.trim() || null,
+      mengandung_resep: hasResep, foto_resep_url: fotoResepUrl,
+      status: 'baru'
+    });
+
+    btn.disabled = false; btn.textContent = 'Kirim Pesanan';
+    if (error){ showToast('Gagal mengirim pesanan: ' + error.message, true); return; }
+
+    document.getElementById('checkout-modal').classList.remove('show');
+    document.getElementById('success-modal').classList.add('show');
+  }
+
+  function showToast(msg, isError){
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.toggle('error', !!isError);
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2800);
+  }
+
+  init();
+</script>
+</body>
+</html>
