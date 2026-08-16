@@ -122,9 +122,12 @@
   <div class="cart-fab-btn">Rp <span id="cart-fab-total">0</span></div>
 </div>
 
-<div class="modal-overlay" id="checkout-modal">
+<div class="modal-overlay" id="checkout-modal" onclick="if(event.target===this) closeCheckoutModal()">
   <div class="modal-sheet">
-    <div class="modal-title">Keranjang Pesanan</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <div class="modal-title" style="margin-bottom:0;">Keranjang Pesanan</div>
+      <button onclick="closeCheckoutModal()" style="background:var(--surface-2); border:none; width:30px; height:30px; border-radius:8px; font-size:16px; color:var(--ink-soft); display:flex; align-items:center; justify-content:center;">✕</button>
+    </div>
     <div id="checkout-cart-items"></div>
 
     <div id="resep-warning-box" class="resep-warning" style="display:none;">
@@ -222,23 +225,47 @@
     const grid = document.getElementById('catalog-grid');
     if (filtered.length === 0){ grid.innerHTML = '<div class="loading-note">Tidak ada produk ditemukan.</div>'; return; }
 
-    grid.innerHTML = filtered.map(p => `
+    grid.innerHTML = filtered.map(p => {
+      const hasKemasan = p.satuan_kemasan && p.isi_per_kemasan > 1;
+      return `
       <div class="prod-card">
         <span class="prod-tag ${p.kategori === 'obat_resep' ? 'resep' : ''}">${p.is_racikan ? 'Racikan' : (KATEGORI_LABEL[p.kategori] || p.kategori)}</span>
+        ${p.gambar_url
+          ? `<div style="width:100%; aspect-ratio:1; border-radius:9px; background-image:url(${p.gambar_url}); background-size:cover; background-position:center; margin-bottom:8px;"></div>`
+          : `<div style="width:100%; aspect-ratio:1; border-radius:9px; background:var(--surface-2); margin-bottom:8px; display:flex; align-items:center; justify-content:center; color:var(--ink-soft);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="2" width="12" height="20" rx="2"/></svg></div>`}
         <div class="prod-name">${p.nama}</div>
-        <div class="prod-price num">Rp ${parseFloat(p.harga).toLocaleString('id-ID')}</div>
+        <div class="prod-price num">Rp ${parseFloat(p.harga).toLocaleString('id-ID')} <span style="font-weight:400; font-size:10.5px; color:var(--ink-soft);">/ ${p.satuan}</span></div>
+        ${hasKemasan ? `
+          <select id="unit-select-${p.id}" style="width:100%; font-size:11px; padding:6px 7px; border:1px solid var(--line); border-radius:7px; margin-bottom:7px; background:var(--surface-2);">
+            <option value="1">Per ${p.satuan} (Rp ${parseFloat(p.harga).toLocaleString('id-ID')})</option>
+            <option value="${p.isi_per_kemasan}">Per ${p.satuan_kemasan} = ${p.isi_per_kemasan} ${p.satuan} (Rp ${(p.harga*p.isi_per_kemasan).toLocaleString('id-ID')})</option>
+          </select>` : ''}
         ${p.tersedia
           ? `<button class="prod-add-btn" onclick="addToCart('${p.id}')">+ Tambah</button>`
           : `<div class="prod-unavailable">Stok habis</div>`}
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   function addToCart(id){
     const prod = allProducts.find(p => p.id === id);
     if (!prod) return;
-    const existing = cart.find(c => c.id === id);
+
+    const unitSelect = document.getElementById('unit-select-' + id);
+    const multiplier = unitSelect ? parseInt(unitSelect.value) : 1;
+    const isKemasan = multiplier > 1;
+    const unitLabel = isKemasan ? prod.satuan_kemasan : prod.satuan;
+    const cartKey = id + (isKemasan ? '-kemasan' : '-eceran');
+
+    const existing = cart.find(c => c.cartKey === cartKey);
     if (existing){ existing.qty += 1; }
-    else { cart.push({ id: prod.id, name: prod.nama, price: parseFloat(prod.harga), kategori: prod.kategori, qty: 1 }); }
+    else {
+      cart.push({
+        id: prod.id, cartKey, name: prod.nama + (isKemasan ? ` (${prod.satuan_kemasan})` : ''),
+        price: parseFloat(prod.harga) * multiplier, kategori: prod.kategori, qty: 1,
+        unitLabel, baseUnitQty: multiplier
+      });
+    }
     updateCartFab();
     showToast(`✓ "${prod.nama}" ditambahkan`);
   }
@@ -257,14 +284,18 @@
     document.getElementById('checkout-modal').classList.add('show');
   }
 
+  function closeCheckoutModal(){
+    document.getElementById('checkout-modal').classList.remove('show');
+  }
+
   function renderCheckoutCart(){
     const wrap = document.getElementById('checkout-cart-items');
     wrap.innerHTML = cart.map(c => `
       <div class="cart-item-row">
-        <div class="ci-name">${c.name}<br><span class="num" style="font-size:11.5px; color:var(--ink-soft);">Rp ${c.price.toLocaleString('id-ID')}</span></div>
-        <div class="qty-btn" onclick="changeCartQty('${c.id}', -1)">−</div>
+        <div class="ci-name">${c.name}<br><span class="num" style="font-size:11.5px; color:var(--ink-soft);">Rp ${c.price.toLocaleString('id-ID')} / ${c.unitLabel || ''}</span></div>
+        <div class="qty-btn" onclick="changeCartQty('${c.cartKey}', -1)">−</div>
         <div class="qty-val">${c.qty}</div>
-        <div class="qty-btn" onclick="changeCartQty('${c.id}', 1)">+</div>
+        <div class="qty-btn" onclick="changeCartQty('${c.cartKey}', 1)">+</div>
       </div>`).join('');
 
     const hasResep = cart.some(c => c.kategori === 'obat_resep');
@@ -272,11 +303,11 @@
     document.getElementById('ck-resep-field').style.display = hasResep ? 'block' : 'none';
   }
 
-  function changeCartQty(id, delta){
-    const item = cart.find(c => c.id === id);
+  function changeCartQty(cartKey, delta){
+    const item = cart.find(c => c.cartKey === cartKey);
     if (!item) return;
     item.qty += delta;
-    if (item.qty <= 0) cart = cart.filter(c => c.id !== id);
+    if (item.qty <= 0) cart = cart.filter(c => c.cartKey !== cartKey);
     if (cart.length === 0) document.getElementById('checkout-modal').classList.remove('show');
     updateCartFab();
     renderCheckoutCart();
@@ -299,31 +330,35 @@
     const btn = document.getElementById('ck-submit-btn');
     btn.disabled = true; btn.textContent = 'Mengirim…';
 
-    let fotoResepUrl = null;
-    if (resepFile){
-      const path = `${TENANT_ID}/${Date.now()}-${resepFile.name}`;
-      const { error: uploadErr } = await sb.storage.from('resep-online').upload(path, resepFile);
-      if (uploadErr){ showToast('Gagal upload foto resep: ' + uploadErr.message, true); btn.disabled = false; btn.textContent = 'Kirim Pesanan'; return; }
-      const { data: urlData } = sb.storage.from('resep-online').getPublicUrl(path);
-      fotoResepUrl = urlData.publicUrl;
+    try {
+      let fotoResepUrl = null;
+      if (resepFile){
+        const path = `${TENANT_ID}/${Date.now()}-${resepFile.name}`;
+        const { error: uploadErr } = await sb.storage.from('resep-online').upload(path, resepFile);
+        if (uploadErr) throw uploadErr;
+        const { data: urlData } = sb.storage.from('resep-online').getPublicUrl(path);
+        fotoResepUrl = urlData.publicUrl;
+      }
+
+      const total = cart.reduce((s,c)=>s+c.price*c.qty,0);
+      const itemsText = cart.map(c => `${c.name} (${c.qty}x)`).join(', ');
+
+      const { error } = await sb.from('online_orders').insert({
+        tenant_id: TENANT_ID, nama, whatsapp: wa, items: itemsText, total,
+        metode: document.getElementById('ck-metode').value,
+        alamat: document.getElementById('ck-alamat').value.trim() || null,
+        mengandung_resep: hasResep, foto_resep_url: fotoResepUrl,
+        status: 'baru'
+      });
+      if (error) throw error;
+
+      document.getElementById('checkout-modal').classList.remove('show');
+      document.getElementById('success-modal').classList.add('show');
+    } catch(err){
+      showToast('Gagal mengirim pesanan: ' + (err.message || 'terjadi kesalahan tak terduga'), true);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Kirim Pesanan';
     }
-
-    const total = cart.reduce((s,c)=>s+c.price*c.qty,0);
-    const itemsText = cart.map(c => `${c.name} (${c.qty}x)`).join(', ');
-
-    const { error } = await sb.from('online_orders').insert({
-      tenant_id: TENANT_ID, nama, whatsapp: wa, items: itemsText, total,
-      metode: document.getElementById('ck-metode').value,
-      alamat: document.getElementById('ck-alamat').value.trim() || null,
-      mengandung_resep: hasResep, foto_resep_url: fotoResepUrl,
-      status: 'baru'
-    });
-
-    btn.disabled = false; btn.textContent = 'Kirim Pesanan';
-    if (error){ showToast('Gagal mengirim pesanan: ' + error.message, true); return; }
-
-    document.getElementById('checkout-modal').classList.remove('show');
-    document.getElementById('success-modal').classList.add('show');
   }
 
   function showToast(msg, isError){
