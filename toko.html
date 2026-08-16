@@ -64,19 +64,19 @@
   .modal-overlay{ position:fixed; inset:0; background:rgba(10,35,30,0.5); z-index:80; display:none; align-items:flex-end; justify-content:center; }
   .modal-overlay.show{ display:flex; }
   .modal-sheet{ background:var(--surface); border-radius:20px 20px 0 0; width:100%; max-width:520px; max-height:85vh; overflow-y:auto; padding:20px 18px 24px; }
-  .modal-title{ font-size:17px; font-weight:600; margin-bottom:14px; }
-  .cart-item-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--surface-2); }
-  .ci-name{ font-size:13px; font-weight:600; flex:1; }
-  .qty-btn{ width:26px; height:26px; border-radius:7px; border:1px solid var(--line); background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; }
-  .qty-val{ font-size:13px; font-weight:600; min-width:16px; text-align:center; }
+  .modal-title{ font-size:19px; font-weight:700; margin-bottom:16px; }
+  .cart-item-row{ display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--surface-2); }
+  .ci-name{ font-size:14.5px; font-weight:600; flex:1; line-height:1.4; }
+  .qty-btn{ width:32px; height:32px; border-radius:9px; border:1.5px solid var(--line); background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:700; color:var(--brand); }
+  .qty-val{ font-size:15px; font-weight:700; min-width:20px; text-align:center; }
 
   .field{ margin-bottom:13px; }
-  .field label{ font-size:11.5px; font-weight:600; display:block; margin-bottom:5px; color:var(--ink-soft); }
-  .field input, .field select{ width:100%; border:1px solid var(--line); border-radius:9px; padding:10px 12px; font-size:13.5px; background:var(--surface-2); color:var(--ink); }
+  .field label{ font-size:12.5px; font-weight:700; display:block; margin-bottom:6px; color:var(--ink); }
+  .field input, .field select{ width:100%; border:1.5px solid var(--line); border-radius:10px; padding:12px 14px; font-size:15px; background:var(--surface-2); color:var(--ink); }
 
   .resep-warning{ background:var(--amber-tint); border-radius:10px; padding:12px 14px; font-size:12px; color:#7A4B1C; margin-bottom:14px; line-height:1.5; }
 
-  .btn-primary-full{ width:100%; background:var(--brand); color:#fff; border:none; border-radius:11px; padding:14px; font-size:14px; font-weight:700; margin-top:6px; }
+  .btn-primary-full{ width:100%; background:var(--brand); color:#fff; border:none; border-radius:12px; padding:16px; font-size:16px; font-weight:700; margin-top:10px; box-shadow:0 4px 14px rgba(27,75,67,0.25); }
   .btn-primary-full:disabled{ background:#C9C2B4; }
 
   .toast{
@@ -343,17 +343,22 @@
       const total = cart.reduce((s,c)=>s+c.price*c.qty,0);
       const itemsText = cart.map(c => `${c.name} (${c.qty}x)`).join(', ');
 
-      const { error } = await sb.from('online_orders').insert({
-        tenant_id: TENANT_ID, nama, whatsapp: wa, items: itemsText, total,
-        metode: document.getElementById('ck-metode').value,
-        alamat: document.getElementById('ck-alamat').value.trim() || null,
-        mengandung_resep: hasResep, foto_resep_url: fotoResepUrl,
-        status: 'baru'
+      const { error } = await sb.rpc('submit_online_order', {
+        p_tenant_id: TENANT_ID, p_nama: nama, p_whatsapp: wa, p_items: itemsText, p_total: total,
+        p_metode: document.getElementById('ck-metode').value,
+        p_alamat: document.getElementById('ck-alamat').value.trim() || null,
+        p_mengandung_resep: hasResep, p_foto_resep_url: fotoResepUrl
       });
       if (error) throw error;
 
       document.getElementById('checkout-modal').classList.remove('show');
       document.getElementById('success-modal').classList.add('show');
+      cart = [];
+      document.getElementById('ck-nama').value = '';
+      document.getElementById('ck-wa').value = '';
+      document.getElementById('ck-alamat').value = '';
+      document.getElementById('ck-resep-file').value = '';
+      updateCartFab();
     } catch(err){
       showToast('Gagal mengirim pesanan: ' + (err.message || 'terjadi kesalahan tak terduga'), true);
     } finally {
