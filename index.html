@@ -2515,7 +2515,8 @@
     const box = document.getElementById('toko-online-link-box');
     box.style.display = aktif ? 'block' : 'none';
     if (aktif){
-      const link = window.location.origin + '/toko.html?t=' + currentProfile.tenant_id;
+      const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+      const link = window.location.origin + basePath + 'toko.html?t=' + currentProfile.tenant_id;
       const a = document.getElementById('toko-online-link');
       a.href = link; a.textContent = link;
     }
