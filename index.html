@@ -204,6 +204,10 @@
   .tabs{ display:flex; gap:6px; margin-bottom:16px; }
   .tab{ font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:20px; background:var(--surface); border:1px solid var(--line); color:var(--ink-soft); cursor:pointer; }
   .tab.active{ background:var(--brand); border-color:var(--brand); color:#fff; }
+  .calc-row{ display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:11.5px; }
+  .calc-label{ color:var(--ink-soft); }
+  .calc-label.main{ color:var(--ink); font-weight:600; }
+  .calc-row.total{ border-top:1px solid var(--line); margin-top:6px; padding-top:8px; font-size:13px; }
   .racikan-row{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
   .racikan-row select{ flex:2; border:1px solid var(--line); border-radius:8px; padding:8px; font-size:12.5px; }
   .racikan-row input{ flex:1; border:1px solid var(--line); border-radius:8px; padding:8px; font-size:12.5px; }
@@ -348,6 +352,10 @@
           <button class="nav-item" data-page="hr" onclick="goPage('hr', this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             Karyawan &amp; Shift
+          </button>
+          <button class="nav-item" data-page="profilsaya" onclick="goPage('profilsaya', this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profil Saya
           </button>
           <button class="nav-item" data-page="pelanggan" onclick="goPage('pelanggan', this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -650,6 +658,18 @@
         <div class="kpi-card"><div class="kpi-label">Cuti menunggu persetujuan</div><div class="kpi-value num" id="hr-cuti-pending">0</div></div>
       </div>
 
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Analitik HR — Bulan Ini</div></div>
+        <div class="panel-body">
+          <div class="kpi-row" style="margin-bottom:0;">
+            <div class="kpi-card"><div class="kpi-label">Rata-rata Kehadiran</div><div class="kpi-value num" id="hr-avg-kehadiran" style="font-size:20px;">0%</div></div>
+            <div class="kpi-card"><div class="kpi-label">Total Gaji Dibayar</div><div class="kpi-value num" id="hr-total-gaji" style="font-size:20px;">Rp 0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Total Lembur</div><div class="kpi-value num" id="hr-total-lembur" style="font-size:20px;">0 jam</div></div>
+            <div class="kpi-card"><div class="kpi-label">Cuti Disetujui</div><div class="kpi-value num" id="hr-cuti-disetujui" style="font-size:20px;">0</div></div>
+          </div>
+        </div>
+      </div>
+
       <div class="grid-2">
         <div>
           <div class="panel">
@@ -686,6 +706,38 @@
             <div class="panel-head"><div class="panel-title">Catatan Evaluasi</div></div>
             <div class="panel-body" id="hr-evaluation-list"><div class="loading-note">Memuat data…</div></div>
           </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- PROFIL SAYA (Self-Service Karyawan) -->
+  <div class="page" id="page-profilsaya">
+    <main>
+      <div class="topbar">
+        <div>
+          <div class="greeting-eyebrow">Profil Saya</div>
+          <h1 class="greeting" id="ps-nama-title">Data Saya</h1>
+        </div>
+      </div>
+      <div id="ps-not-linked" style="display:none;" class="panel">
+        <div class="panel-body" style="padding-top:16px;">
+          <div class="loading-note">Akun kamu belum terhubung ke data karyawan. Minta owner memasukkan email kamu yang sama saat menambah data karyawan di menu Karyawan &amp; Shift.</div>
+        </div>
+      </div>
+      <div id="ps-content" style="display:none;">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-label">Jabatan</div><div class="kpi-value" id="ps-jabatan" style="font-size:16px;">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">Kehadiran Bulan Ini</div><div class="kpi-value num" id="ps-kehadiran">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">Cuti Tersisa Diajukan</div><div class="kpi-value num" id="ps-cuti">0</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Riwayat Gaji &amp; Slip</div></div>
+          <div class="panel-body" id="ps-payroll-list"><div class="loading-note">Memuat data…</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Riwayat Absensi</div></div>
+          <div class="panel-body" id="ps-attendance-list"><div class="loading-note">Memuat data…</div></div>
         </div>
       </div>
     </main>
@@ -841,6 +893,18 @@
 <div class="modal-overlay" id="product-modal">
   <div class="modal-card">
     <div class="modal-title" id="pf-modal-title">Tambah Produk Baru</div>
+
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+      <div id="pf-foto-preview" onclick="document.getElementById('pf-foto-input').click()" style="width:64px; height:64px; border-radius:12px; background:var(--surface-2); border:1.5px dashed var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; background-size:cover; background-position:center; flex-shrink:0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:12px; font-weight:600; margin-bottom:3px;">Foto Produk</div>
+        <div style="font-size:11px; color:var(--ink-soft);">Otomatis dirapikan &amp; dikompres — klik kotak untuk pilih foto</div>
+        <input type="file" id="pf-foto-input" accept="image/*" style="display:none;" onchange="handleProductPhotoUpload(event)">
+      </div>
+    </div>
+
     <div class="field-row">
       <div class="field">
         <label>Nama Produk</label>
@@ -984,6 +1048,20 @@
       </select>
     </div>
     <div class="field"><label>No. HP</label><input type="text" id="ef-hp" placeholder="08xxxxxxxxxx"></div>
+    <div class="field"><label>Email (untuk sambungkan akun login jika diundang)</label><input type="email" id="ef-email" placeholder="Opsional"></div>
+    <div class="field">
+      <label>Status PTKP (untuk hitung PPh 21)</label>
+      <select id="ef-ptkp">
+        <option value="TK/0">TK/0 — Belum menikah, tanpa tanggungan</option>
+        <option value="TK/1">TK/1 — Belum menikah, 1 tanggungan</option>
+        <option value="TK/2">TK/2 — Belum menikah, 2 tanggungan</option>
+        <option value="TK/3">TK/3 — Belum menikah, 3 tanggungan</option>
+        <option value="K/0">K/0 — Menikah, tanpa tanggungan</option>
+        <option value="K/1">K/1 — Menikah, 1 tanggungan</option>
+        <option value="K/2">K/2 — Menikah, 2 tanggungan</option>
+        <option value="K/3">K/3 — Menikah, 3 tanggungan</option>
+      </select>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('employee-modal')">Batal</button>
       <button class="btn-primary" id="ef-submit-btn" onclick="submitNewEmployee()">Simpan Karyawan</button>
@@ -1160,19 +1238,29 @@
 
 <!-- MODAL GAJI/KASBON -->
 <div class="modal-overlay" id="payroll-modal">
-  <div class="modal-card">
+  <div class="modal-card" style="max-width:460px;">
     <div class="modal-title">Catat Gaji/Kasbon</div>
-    <div class="field"><label>Karyawan</label><select id="pr-employee"></select></div>
+    <div class="field"><label>Karyawan</label><select id="pr-employee" onchange="updatePayrollCalc()"></select></div>
     <div class="field">
       <label>Jenis</label>
-      <select id="pr-jenis">
-        <option value="gaji_pokok">Gaji Pokok</option>
+      <select id="pr-jenis" onchange="togglePayrollFields()">
+        <option value="gaji_pokok">Gaji Pokok (Bulanan)</option>
         <option value="bonus">Bonus</option>
-        <option value="potongan">Potongan</option>
+        <option value="potongan">Potongan Lain</option>
         <option value="kasbon">Kasbon</option>
       </select>
     </div>
-    <div class="field"><label>Jumlah (Rp)</label><input type="number" id="pr-jumlah" placeholder="0"></div>
+    <div class="field"><label>Jumlah / Gaji Bruto (Rp)</label><input type="number" id="pr-jumlah" placeholder="0" oninput="updatePayrollCalc()"></div>
+
+    <div id="pr-calc-box" style="display:none; background:var(--surface-2); border-radius:10px; padding:12px 14px; margin-bottom:13px;">
+      <div style="font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px;">Estimasi Potongan Otomatis</div>
+      <div class="calc-row"><span class="calc-label">BPJS Ketenagakerjaan (JHT+JP, 3%)</span><span class="num" id="pr-calc-bpjstk">Rp 0</span></div>
+      <div class="calc-row"><span class="calc-label">BPJS Kesehatan (1%)</span><span class="num" id="pr-calc-bpjskes">Rp 0</span></div>
+      <div class="calc-row"><span class="calc-label">PPh 21 (estimasi TER)</span><span class="num" id="pr-calc-pph21">Rp 0</span></div>
+      <div class="calc-row total"><span class="calc-label main">Gaji Bersih (Take Home)</span><span class="num" id="pr-calc-bersih" style="color:var(--good);">Rp 0</span></div>
+      <div style="font-size:10px; color:var(--ink-soft); margin-top:6px;">⚠️ Ini estimasi berdasarkan status PTKP karyawan — untuk pelaporan resmi, verifikasi ke konsultan pajak.</div>
+    </div>
+
     <div class="field"><label>Catatan</label><input type="text" id="pr-catatan" placeholder="Opsional"></div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('payroll-modal')">Batal</button>
@@ -1539,7 +1627,7 @@
     grid.innerHTML = filtered.map(p => `
       <div class="prod-card" onclick="addToCart('${p.id}')">
         <span class="prod-tag ${p.kategori}">${p.is_racikan ? 'Racikan' : (KATEGORI_LABEL[p.kategori] || p.kategori)}</span>
-        <div class="prod-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/></svg></div>
+        <div class="prod-icon" style="${p.gambar_url ? `background-image:url(${p.gambar_url}); background-size:cover; background-position:center;` : ''}">${p.gambar_url ? '' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/></svg>'}</div>
         <div class="prod-name">${p.nama}</div>
         <div class="prod-meta">${p.produsen || p.satuan} · Stok ${p.stok < p.stok_minimum ? '<span style="color:var(--danger)">rendah</span>' : 'cukup'}</div>
         <div class="prod-foot">
@@ -1951,6 +2039,8 @@
     document.getElementById('ef-nama').value = '';
     document.getElementById('ef-jabatan').value = 'kasir';
     document.getElementById('ef-hp').value = '';
+    document.getElementById('ef-email').value = '';
+    document.getElementById('ef-ptkp').value = 'TK/0';
     document.getElementById('employee-modal').classList.add('show');
   }
   async function submitNewEmployee(){
@@ -1962,6 +2052,8 @@
       tenant_id: currentProfile.tenant_id, nama,
       jabatan: document.getElementById('ef-jabatan').value,
       no_hp: document.getElementById('ef-hp').value.trim() || null,
+      email: document.getElementById('ef-email').value.trim() || null,
+      status_ptkp: document.getElementById('ef-ptkp').value,
       status: 'aktif'
     });
     btn.disabled = false; btn.textContent = 'Simpan Karyawan';
@@ -2410,6 +2502,28 @@
   async function loadHrExtras(){
     const tenantId = currentProfile.tenant_id;
 
+    // ---- Analitik HR bulan ini ----
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+    const { data: empAktif } = await sb.from('employees').select('id').eq('tenant_id', tenantId).eq('status','aktif');
+    const jumlahKaryawan = (empAktif || []).length;
+
+    const { data: attBulanIni } = await sb.from('attendance').select('id').eq('tenant_id', tenantId).gte('tanggal', monthStart.toISOString().split('T')[0]);
+    const hariBerjalan = new Date().getDate();
+    const targetKehadiran = jumlahKaryawan * hariBerjalan;
+    const persenKehadiran = targetKehadiran > 0 ? Math.round(((attBulanIni?.length || 0) / targetKehadiran) * 100) : 0;
+    document.getElementById('hr-avg-kehadiran').textContent = Math.min(persenKehadiran, 100) + '%';
+
+    const { data: gajiBulanIni } = await sb.from('payroll_notes').select('jenis, jumlah').eq('tenant_id', tenantId).gte('created_at', monthStart.toISOString());
+    const totalGaji = (gajiBulanIni || []).filter(g => ['gaji_pokok','bonus'].includes(g.jenis)).reduce((s,g) => s + parseFloat(g.jumlah), 0);
+    document.getElementById('hr-total-gaji').textContent = 'Rp ' + totalGaji.toLocaleString('id-ID');
+
+    const { data: lemburBulanIni } = await sb.from('overtime_records').select('jam').eq('tenant_id', tenantId).gte('tanggal', monthStart.toISOString().split('T')[0]);
+    const totalJamLembur = (lemburBulanIni || []).reduce((s,o) => s + parseFloat(o.jam), 0);
+    document.getElementById('hr-total-lembur').textContent = totalJamLembur + ' jam';
+
+    const { data: cutiDisetujui } = await sb.from('leave_requests').select('id').eq('tenant_id', tenantId).eq('status','disetujui').gte('created_at', monthStart.toISOString());
+    document.getElementById('hr-cuti-disetujui').textContent = (cutiDisetujui || []).length;
+
     const { data: overtime } = await sb.from('overtime_records').select('*, employees(nama)').eq('tenant_id', tenantId).order('created_at', {ascending:false}).limit(10);
     document.getElementById('hr-overtime-list').innerHTML = (overtime && overtime.length) ? overtime.map(o => `
       <div class="row-item">
@@ -2418,13 +2532,16 @@
         <div class="row-right"><div class="num" style="font-size:13px;">${o.jam} jam</div></div>
       </div>`).join('') : '<div class="loading-note">Belum ada catatan lembur.</div>';
 
-    const { data: payroll } = await sb.from('payroll_notes').select('*, employees(nama)').eq('tenant_id', tenantId).order('created_at', {ascending:false}).limit(10);
+    const { data: payroll } = await sb.from('payroll_notes').select('*, employees(nama, jabatan)').eq('tenant_id', tenantId).order('created_at', {ascending:false}).limit(10);
     const JENIS_GAJI = { gaji_pokok:'Gaji Pokok', bonus:'Bonus', potongan:'Potongan', kasbon:'Kasbon' };
     document.getElementById('hr-payroll-list').innerHTML = (payroll && payroll.length) ? payroll.map(p => `
       <div class="row-item">
         <div class="emp-dot">${(p.employees?.nama || '?').substring(0,2).toUpperCase()}</div>
-        <div><div class="row-name">${p.employees?.nama || '—'}</div><div class="row-meta">${JENIS_GAJI[p.jenis] || p.jenis}</div></div>
-        <div class="row-right"><div class="num" style="font-size:13px;">Rp ${parseFloat(p.jumlah).toLocaleString('id-ID')}</div></div>
+        <div><div class="row-name">${p.employees?.nama || '—'}</div><div class="row-meta">${JENIS_GAJI[p.jenis] || p.jenis}${p.periode ? ' · ' + p.periode : ''}</div></div>
+        <div class="row-right">
+          <div class="num" style="font-size:13px;">Rp ${parseFloat(p.jenis === 'gaji_pokok' && p.gaji_bersih ? p.gaji_bersih : p.jumlah).toLocaleString('id-ID')}</div>
+          ${p.jenis === 'gaji_pokok' ? `<button class="btn-secondary" style="margin-top:5px; font-size:10.5px; padding:4px 8px;" onclick='printSlipGaji({namaKaryawan:"${(p.employees?.nama||"").replace(/"/g,"")}", jabatan:"${JABATAN_LABEL[p.employees?.jabatan]||""}", periode:"${p.periode||""}", gajiBruto:${p.jumlah}, potonganPph21:${p.potongan_pph21||0}, potonganBpjs:${p.potongan_bpjs||0}, gajiBersih:${p.gaji_bersih||p.jumlah}})'>Cetak Slip</button>` : ''}
+        </div>
       </div>`).join('') : '<div class="loading-note">Belum ada catatan gaji.</div>';
 
     const { data: evals } = await sb.from('performance_notes').select('*, employees(nama)').eq('tenant_id', tenantId).order('created_at', {ascending:false}).limit(10);
@@ -2458,26 +2575,155 @@
     await loadHrExtras();
   }
 
+  // ================= KALKULATOR PPH21 (TER) & BPJS =================
+  const PTKP_TAHUNAN = {
+    'TK/0': 54000000, 'TK/1': 58500000, 'TK/2': 63000000, 'TK/3': 67500000,
+    'K/0': 58500000, 'K/1': 63000000, 'K/2': 67500000, 'K/3': 72000000
+  };
+  // Kategori TER sesuai PTKP (PP 58/2023)
+  function getTerCategory(statusPtkp){
+    if (['TK/0','TK/1','K/0'].includes(statusPtkp)) return 'A';
+    if (['TK/2','TK/3','K/1','K/2'].includes(statusPtkp)) return 'B';
+    return 'C'; // K/3
+  }
+  // Tabel TER bulanan disederhanakan (persentase langsung dari penghasilan bruto bulanan)
+  // Sumber: PP 58/2023 — disederhanakan per rentang, untuk estimasi
+  const TER_TABLE = {
+    A: [[5400000,0],[5650000,0.0025],[5950000,0.005],[6300000,0.0075],[6750000,0.01],[7500000,0.0125],[8550000,0.015],[9650000,0.0175],[10050000,0.02],[10350000,0.0225],[10700000,0.025],[11050000,0.03],[11600000,0.035],[12500000,0.04],[13750000,0.05],[15100000,0.06],[16950000,0.07],[19750000,0.08],[24150000,0.09],[26450000,0.1],[28000000,0.11],[30050000,0.12],[32400000,0.13],[35400000,0.14],[39100000,0.15],[43850000,0.16],[47800000,0.17],[51400000,0.18],[56300000,0.19],[62200000,0.2],[68600000,0.21],[77500000,0.22],[89000000,0.23],[103000000,0.24],[125000000,0.25],[157000000,0.26],[206000000,0.27],[337000000,0.28],[454000000,0.29],[550000000,0.3],[695000000,0.31],[910000000,0.32],[1400000000,0.33],[Infinity,0.34]],
+    B: [[6200000,0],[6500000,0.005],[6850000,0.0075],[7300000,0.01],[9200000,0.0125],[10750000,0.015],[11250000,0.0175],[11600000,0.02],[12600000,0.025],[13600000,0.03],[14950000,0.04],[16400000,0.05],[18450000,0.06],[21850000,0.07],[26000000,0.08],[27700000,0.09],[29350000,0.1],[31450000,0.11],[33950000,0.12],[37100000,0.13],[41100000,0.14],[45800000,0.15],[49500000,0.16],[53800000,0.17],[58500000,0.18],[64000000,0.19],[71000000,0.2],[80000000,0.21],[93000000,0.22],[109000000,0.23],[129000000,0.24],[163000000,0.25],[211000000,0.26],[374000000,0.27],[459000000,0.28],[555000000,0.29],[704000000,0.3],[957000000,0.31],[1405000000,0.32],[1550000000,0.33],[Infinity,0.34]],
+    C: [[6600000,0],[6950000,0.005],[7350000,0.0075],[7800000,0.01],[8850000,0.0125],[9800000,0.015],[10950000,0.0175],[11200000,0.02],[12050000,0.0225],[12950000,0.025],[14150000,0.03],[15550000,0.035],[17050000,0.04],[19500000,0.05],[22700000,0.06],[26600000,0.07],[28100000,0.08],[30100000,0.09],[32600000,0.1],[35400000,0.11],[38900000,0.12],[43000000,0.13],[47400000,0.14],[51200000,0.15],[55800000,0.16],[60400000,0.17],[64200000,0.18],[68600000,0.19],[74500000,0.2],[83200000,0.21],[95600000,0.22],[110000000,0.23],[134000000,0.24],[169000000,0.25],[221000000,0.26],[390000000,0.27],[463000000,0.28],[561000000,0.29],[709000000,0.3],[965000000,0.31],[1419000000,0.32],[1571000000,0.33],[Infinity,0.34]]
+  };
+  function hitungPPh21Bulanan(gajiBruto, statusPtkp){
+    const kategori = getTerCategory(statusPtkp || 'TK/0');
+    const tabel = TER_TABLE[kategori];
+    for (const [batas, tarif] of tabel){
+      if (gajiBruto <= batas) return Math.round(gajiBruto * tarif);
+    }
+    return Math.round(gajiBruto * tabel[tabel.length-1][1]);
+  }
+  function hitungBPJS(gajiBruto){
+    const dasarTK = Math.min(gajiBruto, 10547400); // batas atas JHT+JP 2026 (perkiraan)
+    const dasarKes = Math.min(gajiBruto, 12000000); // batas atas BPJS Kesehatan
+    const bpjsTK = Math.round(dasarTK * 0.03); // JHT 2% + JP 1% (porsi karyawan)
+    const bpjsKes = Math.round(dasarKes * 0.01);
+    return { bpjsTK, bpjsKes };
+  }
+
+  async function updatePayrollCalc(){
+    const jenis = document.getElementById('pr-jenis').value;
+    const box = document.getElementById('pr-calc-box');
+    if (jenis !== 'gaji_pokok'){ box.style.display = 'none'; return; }
+
+    const empId = document.getElementById('pr-employee').value;
+    const gajiBruto = parseFloat(document.getElementById('pr-jumlah').value) || 0;
+    if (!empId || gajiBruto <= 0){ box.style.display = 'none'; return; }
+
+    const { data: emp } = await sb.from('employees').select('status_ptkp').eq('id', empId).single();
+    const statusPtkp = emp?.status_ptkp || 'TK/0';
+
+    const { bpjsTK, bpjsKes } = hitungBPJS(gajiBruto);
+    const pph21 = hitungPPh21Bulanan(gajiBruto - bpjsTK - bpjsKes, statusPtkp);
+    const bersih = gajiBruto - bpjsTK - bpjsKes - pph21;
+
+    document.getElementById('pr-calc-bpjstk').textContent = 'Rp ' + bpjsTK.toLocaleString('id-ID');
+    document.getElementById('pr-calc-bpjskes').textContent = 'Rp ' + bpjsKes.toLocaleString('id-ID');
+    document.getElementById('pr-calc-pph21').textContent = 'Rp ' + pph21.toLocaleString('id-ID');
+    document.getElementById('pr-calc-bersih').textContent = 'Rp ' + bersih.toLocaleString('id-ID');
+    box.style.display = 'block';
+  }
+
+  function togglePayrollFields(){ updatePayrollCalc(); }
+
   async function openPayrollModal(){
     const emps = await getActiveEmployeesForSelect();
     document.getElementById('pr-employee').innerHTML = emps.map(e => `<option value="${e.id}">${e.nama}</option>`).join('');
+    document.getElementById('pr-jenis').value = 'gaji_pokok';
     document.getElementById('pr-jumlah').value = '';
     document.getElementById('pr-catatan').value = '';
+    document.getElementById('pr-calc-box').style.display = 'none';
     document.getElementById('payroll-modal').classList.add('show');
   }
+
   async function submitPayroll(){
     const btn = document.getElementById('pr-submit-btn');
     btn.disabled = true; btn.textContent = 'Menyimpan…';
-    const { error } = await sb.from('payroll_notes').insert({
-      tenant_id: currentProfile.tenant_id, employee_id: document.getElementById('pr-employee').value,
-      jenis: document.getElementById('pr-jenis').value, jumlah: parseFloat(document.getElementById('pr-jumlah').value) || 0,
+
+    const jenis = document.getElementById('pr-jenis').value;
+    const jumlah = parseFloat(document.getElementById('pr-jumlah').value) || 0;
+    const empId = document.getElementById('pr-employee').value;
+
+    let potonganPph21 = 0, potonganBpjs = 0, gajiBersih = jumlah;
+    if (jenis === 'gaji_pokok'){
+      const { data: emp } = await sb.from('employees').select('status_ptkp, nama').eq('id', empId).single();
+      const { bpjsTK, bpjsKes } = hitungBPJS(jumlah);
+      const pph21 = hitungPPh21Bulanan(jumlah - bpjsTK - bpjsKes, emp?.status_ptkp || 'TK/0');
+      potonganBpjs = bpjsTK + bpjsKes;
+      potonganPph21 = pph21;
+      gajiBersih = jumlah - potonganBpjs - potonganPph21;
+    }
+
+    const periode = new Date().toLocaleDateString('id-ID', { month:'long', year:'numeric' });
+
+    const { data: saved, error } = await sb.from('payroll_notes').insert({
+      tenant_id: currentProfile.tenant_id, employee_id: empId,
+      jenis, jumlah,
+      potongan_pph21: potonganPph21, potongan_bpjs: potonganBpjs, gaji_bersih: gajiBersih, periode,
       catatan: document.getElementById('pr-catatan').value.trim() || null
+
     });
     btn.disabled = false; btn.textContent = 'Simpan';
     if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
     showToast('✓ Catatan gaji tersimpan');
     closeModal('payroll-modal');
+    if (jenis === 'gaji_pokok'){
+      const { data: empData } = await sb.from('employees').select('nama, jabatan').eq('id', empId).single();
+      printSlipGaji({
+        namaKaryawan: empData?.nama || '-', jabatan: JABATAN_LABEL[empData?.jabatan] || empData?.jabatan || '-',
+        periode, gajiBruto: jumlah, potonganPph21, potonganBpjs, gajiBersih
+      });
+    }
     await loadHrExtras();
+  }
+
+  function printSlipGaji(d){
+    const tenantName = document.getElementById('sidebar-tenant').textContent || 'Usaha';
+    const win = window.open('', '_blank', 'width=380,height=650');
+    if (!win){ showToast('Popup diblokir browser — izinkan popup untuk cetak slip.', true); return; }
+    win.document.write(`
+      <html><head><title>Slip Gaji - ${d.namaKaryawan}</title>
+      <style>
+        body{ font-family:'Courier New', monospace; font-size:12px; width:300px; margin:12px auto; color:#000; }
+        h2{ text-align:center; margin:0 0 2px; font-size:15px; }
+        .center{ text-align:center; }
+        table{ width:100%; border-collapse:collapse; margin-top:10px; }
+        td{ padding:3px 0; font-size:11.5px; }
+        hr{ border:none; border-top:1px dashed #000; margin:9px 0; }
+        .total-row td{ font-weight:bold; font-size:13px; }
+        .neg{ color:#A8433A; }
+        @media print{ .no-print{ display:none; } }
+      </style></head>
+      <body>
+        <h2>${tenantName}</h2>
+        <div class="center">SLIP GAJI KARYAWAN</div>
+        <div class="center">Periode: ${d.periode}</div>
+        <hr>
+        <table>
+          <tr><td>Nama</td><td style="text-align:right;">${d.namaKaryawan}</td></tr>
+          <tr><td>Jabatan</td><td style="text-align:right;">${d.jabatan}</td></tr>
+        </table>
+        <hr>
+        <table>
+          <tr><td>Gaji Bruto</td><td style="text-align:right;">Rp ${d.gajiBruto.toLocaleString('id-ID')}</td></tr>
+          <tr><td class="neg">Potongan BPJS</td><td style="text-align:right;" class="neg">− Rp ${d.potonganBpjs.toLocaleString('id-ID')}</td></tr>
+          <tr><td class="neg">Potongan PPh 21 (estimasi)</td><td style="text-align:right;" class="neg">− Rp ${d.potonganPph21.toLocaleString('id-ID')}</td></tr>
+          <tr class="total-row"><td>GAJI BERSIH</td><td style="text-align:right;">Rp ${d.gajiBersih.toLocaleString('id-ID')}</td></tr>
+        </table>
+        <hr>
+        <div style="font-size:9.5px; color:#555;">Estimasi PPh 21 berdasarkan metode TER — bukan pengganti perhitungan resmi pajak.</div>
+        <div class="no-print center" style="margin-top:14px;"><button onclick="window.print()" style="padding:8px 16px; font-size:12px;">Cetak</button></div>
+        <script>window.onload = () => setTimeout(() => window.print(), 300);</` + `script>
+      </body></html>`);
+    win.document.close();
   }
 
   async function openEvaluationModal(){
@@ -2700,6 +2946,62 @@
     }
   }
 
+  let pendingProductPhotoUrl = null;
+
+  function compressProductImage(file){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      reader.onerror = reject;
+      img.onload = () => {
+        const SIZE = 600;
+        const canvas = document.createElement('canvas');
+        canvas.width = SIZE; canvas.height = SIZE;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, SIZE, SIZE);
+        const srcSize = Math.min(img.width, img.height);
+        const srcX = (img.width - srcSize) / 2;
+        const srcY = (img.height - srcSize) / 2;
+        ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, SIZE, SIZE);
+        canvas.toBlob((blob) => {
+          if (!blob){ reject(new Error('Gagal memproses gambar.')); return; }
+          resolve(blob);
+        }, 'image/jpeg', 0.82);
+      };
+      img.onerror = () => reject(new Error('File bukan gambar yang valid.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleProductPhotoUpload(event){
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')){ showToast('File harus berupa gambar.', true); return; }
+
+    showToast('Memproses foto…');
+    let compressedBlob;
+    try{
+      compressedBlob = await compressProductImage(file);
+    } catch(err){
+      showToast('Gagal memproses gambar: ' + err.message, true);
+      return;
+    }
+
+    const path = `${currentProfile.tenant_id}/${Date.now()}.jpg`;
+    const { error: uploadErr } = await sb.storage.from('produk-foto').upload(path, compressedBlob, { contentType: 'image/jpeg' });
+    if (uploadErr){ showToast('Gagal unggah foto: ' + uploadErr.message, true); return; }
+
+    const { data: publicUrlData } = sb.storage.from('produk-foto').getPublicUrl(path);
+    pendingProductPhotoUrl = publicUrlData.publicUrl;
+    document.getElementById('pf-foto-preview').style.backgroundImage = `url(${pendingProductPhotoUrl})`;
+    document.getElementById('pf-foto-preview').innerHTML = '';
+
+    const ukuranKB = Math.round(compressedBlob.size / 1024);
+    showToast(`✓ Foto siap (${ukuranKB} KB, otomatis dikompres)`);
+  }
+
   function compressLogoImage(file){
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -2799,12 +3101,12 @@
 
   // ================= HAK AKSES PER PERAN (tampilan) =================
   const ROLE_MENU_ACCESS = {
-    owner: ['dashboard','pos','stok','keuangan','hr','pelanggan','pajak'],
-    apoteker: ['dashboard','pos','stok'],
-    kasir: ['dashboard','pos'],
-    admin_gudang: ['dashboard','stok'],
-    hr: ['dashboard','hr'],
-    marketing: ['dashboard','pelanggan']
+    owner: ['dashboard','pos','stok','keuangan','hr','pelanggan','pajak','profilsaya'],
+    apoteker: ['dashboard','pos','stok','profilsaya'],
+    kasir: ['dashboard','pos','profilsaya'],
+    admin_gudang: ['dashboard','stok','profilsaya'],
+    hr: ['dashboard','hr','profilsaya'],
+    marketing: ['dashboard','pelanggan','profilsaya']
   };
   function applyRoleAccess(role){
     const allowed = ROLE_MENU_ACCESS[role] || ['dashboard'];
@@ -2947,6 +3249,46 @@
     }).join('');
   }
 
+  // ================= PROFIL SAYA (SELF-SERVICE) =================
+  async function loadProfilSaya(){
+    document.getElementById('ps-nama-title').textContent = `Halo, ${currentProfile.nama.split(' ')[0]}`;
+
+    const { data: emp } = await sb.from('employees').select('*').eq('profile_id', currentProfile.id).maybeSingle();
+
+    if (!emp){
+      document.getElementById('ps-not-linked').style.display = 'block';
+      document.getElementById('ps-content').style.display = 'none';
+      return;
+    }
+    document.getElementById('ps-not-linked').style.display = 'none';
+    document.getElementById('ps-content').style.display = 'block';
+    document.getElementById('ps-jabatan').textContent = JABATAN_LABEL[emp.jabatan] || emp.jabatan;
+
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+
+    const { data: attendance } = await sb.from('attendance').select('*').eq('employee_id', emp.id).gte('tanggal', monthStart.toISOString().split('T')[0]).order('tanggal', {ascending:false});
+    document.getElementById('ps-kehadiran').textContent = (attendance || []).length + ' hari';
+    document.getElementById('ps-attendance-list').innerHTML = (attendance && attendance.length) ? attendance.map(a => `
+      <div class="row-item">
+        <div><div class="row-name">${new Date(a.tanggal).toLocaleDateString('id-ID',{weekday:'long', day:'numeric', month:'short'})}</div><div class="row-meta">${new Date(a.waktu_absen).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})} · ${a.metode}</div></div>
+        <div class="row-right"><span class="pill ${a.status==='tepat_waktu'?'ok':'warn'}">${a.status==='tepat_waktu'?'Tepat waktu':'Telat'}</span></div>
+      </div>`).join('') : '<div class="loading-note">Belum ada absensi bulan ini.</div>';
+
+    const { data: leaves } = await sb.from('leave_requests').select('*').eq('employee_id', emp.id).eq('status','menunggu');
+    document.getElementById('ps-cuti').textContent = (leaves || []).length;
+
+    const { data: payroll } = await sb.from('payroll_notes').select('*').eq('employee_id', emp.id).order('created_at', {ascending:false}).limit(10);
+    const JENIS_GAJI_PS = { gaji_pokok:'Gaji Pokok', bonus:'Bonus', potongan:'Potongan', kasbon:'Kasbon' };
+    document.getElementById('ps-payroll-list').innerHTML = (payroll && payroll.length) ? payroll.map(p => `
+      <div class="row-item">
+        <div><div class="row-name">${JENIS_GAJI_PS[p.jenis] || p.jenis}</div><div class="row-meta">${p.periode || new Date(p.created_at).toLocaleDateString('id-ID')}</div></div>
+        <div class="row-right">
+          <div class="num" style="font-size:13px;">Rp ${parseFloat(p.jenis==='gaji_pokok' && p.gaji_bersih ? p.gaji_bersih : p.jumlah).toLocaleString('id-ID')}</div>
+          ${p.jenis === 'gaji_pokok' ? `<button class="btn-secondary" style="margin-top:5px; font-size:10.5px; padding:4px 8px;" onclick='printSlipGaji({namaKaryawan:"${emp.nama.replace(/"/g,"")}", jabatan:"${JABATAN_LABEL[emp.jabatan]||""}", periode:"${p.periode||""}", gajiBruto:${p.jumlah}, potonganPph21:${p.potongan_pph21||0}, potonganBpjs:${p.potongan_bpjs||0}, gajiBersih:${p.gaji_bersih||p.jumlah}})'>Lihat Slip</button>` : ''}
+        </div>
+      </div>`).join('') : '<div class="loading-note">Belum ada riwayat gaji.</div>';
+  }
+
   function toggleNavMenu(){
 
 
@@ -2968,6 +3310,9 @@
     document.getElementById('pf-margin-preview').value = '';
     document.getElementById('pf-is-racikan').checked = false;
     toggleRacikanHint();
+    pendingProductPhotoUrl = null;
+    document.getElementById('pf-foto-preview').style.backgroundImage = '';
+    document.getElementById('pf-foto-preview').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>';
     updateStokSatuanHelper(); document.getElementById('pf-stok-kemasan').value = ''; document.getElementById('product-modal').classList.add('show');
   }
 
@@ -3008,6 +3353,14 @@
     document.getElementById('pf-produsen').value = p.produsen || '';
     document.getElementById('pf-is-racikan').checked = !!p.is_racikan;
     toggleRacikanHint();
+    pendingProductPhotoUrl = p.gambar_url || null;
+    if (p.gambar_url){
+      document.getElementById('pf-foto-preview').style.backgroundImage = `url(${p.gambar_url})`;
+      document.getElementById('pf-foto-preview').innerHTML = '';
+    } else {
+      document.getElementById('pf-foto-preview').style.backgroundImage = '';
+      document.getElementById('pf-foto-preview').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>';
+    }
     document.getElementById('pf-harga-grosir').value = p.harga_grosir || '';
     document.getElementById('pf-min-grosir').value = p.min_qty_grosir || '';
     document.getElementById('pf-harga-modal').value = p.harga_modal || 0;
@@ -3051,6 +3404,7 @@
       produsen: document.getElementById('pf-produsen').value.trim() || null,
       is_racikan: document.getElementById('pf-is-racikan').checked,
       harga_grosir: parseFloat(document.getElementById('pf-harga-grosir').value) || null,
+      gambar_url: pendingProductPhotoUrl,
       min_qty_grosir: parseInt(document.getElementById('pf-min-grosir').value) || null,
       harga_modal: parseFloat(document.getElementById('pf-harga-modal').value) || 0,
       harga: parseFloat(document.getElementById('pf-harga').value) || 0,
@@ -3126,6 +3480,7 @@
     if (name === 'keuangan') loadKeuanganPage();
     if (name === 'hr') loadHrPage();
     if (name === 'pelanggan') loadPelangganPage();
+    if (name === 'profilsaya') loadProfilSaya();
     if (name === 'pajak') loadPajakPage();
     if (name === 'keuangan') loadOwnerTx();
     if (name === 'pos') loadProducts();
