@@ -429,6 +429,11 @@
       </div>
 
       <div class="panel">
+        <div class="panel-head"><div class="panel-title">Bon/Utang Segera Jatuh Tempo</div></div>
+        <div class="panel-body" id="jatuh-tempo-list"><div class="loading-note">Memuat data…</div></div>
+      </div>
+
+      <div class="panel">
         <div class="panel-head"><div class="panel-title">Transaksi Terbaru</div></div>
         <div class="panel-body" id="recent-tx-list"><div class="loading-note">Memuat data…</div></div>
       </div>
@@ -573,6 +578,8 @@
         <div class="tab" data-sub="bundling" onclick="setStokTab('bundling', this)">Kombinasi Produk</div>
         <div class="tab" data-sub="supplier" onclick="setStokTab('supplier', this)">Utang Supplier</div>
         <div class="tab" data-sub="opname" onclick="setStokTab('opname', this)">Stock Opname</div>
+        <div class="tab" data-sub="rekomendasi" onclick="setStokTab('rekomendasi', this)">Rekomendasi Pesanan</div>
+        <div class="tab" data-sub="pareto" onclick="setStokTab('pareto', this)">Analisis Pareto</div>
       </div>
       <div class="sub-page active" id="substok-produk">
       <div class="panel">
@@ -631,6 +638,32 @@
             <button class="btn-primary" onclick="finishOpnameSession()">Selesaikan Opname</button>
           </div>
           <div class="panel-body" id="opname-items-list"><div class="loading-note">Memuat produk…</div></div>
+        </div>
+      </div>
+
+      <!-- REKOMENDASI PESANAN -->
+      <div class="sub-page" id="substok-rekomendasi">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Rekomendasi Pemesanan</div>
+              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Dihitung dari rata-rata penjualan 30 hari terakhir — supaya tidak kehabisan tapi juga tidak overstock</div>
+            </div>
+          </div>
+          <div class="panel-body" id="rekomendasi-list"><div class="loading-note">Menganalisis data penjualan…</div></div>
+        </div>
+      </div>
+
+      <!-- ANALISIS PARETO -->
+      <div class="sub-page" id="substok-pareto">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Analisis Pareto (80/20)</div>
+              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Produk mana yang paling menyumbang omzet — fokuskan stok & promosi di sini</div>
+            </div>
+          </div>
+          <div class="panel-body" id="pareto-list"><div class="loading-note">Menganalisis data penjualan…</div></div>
         </div>
       </div>
     </main>
@@ -1525,6 +1558,9 @@
   <div class="modal-card" style="max-width:560px;">
     <div class="modal-title">Scan Bon Pembelian (AI)</div>
     <div class="auth-note">💡 Foto bon/faktur dari supplier, sistem baca teksnya otomatis. <b>Hasil OCR tidak selalu 100% akurat</b> — pastikan cek & lengkapi tiap baris sebelum konfirmasi ke stok.</div>
+    <div style="font-size:11px; color:var(--ink-soft); margin:8px 0 14px; padding:10px 12px; background:var(--surface-2); border-radius:8px;">
+      📸 <b>Tips foto yang bagus:</b> foto tegak lurus (jangan miring/serong), pencahayaan terang tanpa bayangan, isi penuh area foto dengan nota (jangan terlalu jauh). Nota dengan tabel banyak kolom sempit lebih sulit dibaca — kalau hasilnya berantakan, gunakan "+ Tambah Baris Manual" saja.
+    </div>
 
     <div id="bon-upload-view">
       <div class="field"><label>Upload Foto Bon</label><input type="file" id="bon-file-input" accept="image/*" onchange="processBonScan(event)"></div>
@@ -1585,6 +1621,27 @@
   </div>
 </div>
 
+<!-- MODAL HARGA SUPPLIER -->
+<div class="modal-overlay" id="supplier-price-modal">
+  <div class="modal-card" style="max-width:480px;">
+    <div class="modal-title">Harga Supplier — <span id="sp-nama-produk"></span></div>
+    <div class="auth-note">💡 Catat harga dari beberapa supplier untuk produk yang sama — sistem tandai otomatis mana yang paling murah.</div>
+    <div id="sp-list-wrap" style="margin:14px 0;"></div>
+    <div style="border-top:1px solid var(--line); padding-top:14px;">
+      <div style="font-size:12px; font-weight:700; margin-bottom:10px;">+ Tambah Harga Supplier</div>
+      <div class="field"><label>Nama Supplier</label><input type="text" id="sp-new-nama" placeholder="Contoh: PT Distributor Sehat"></div>
+      <div class="field-row">
+        <div class="field"><label>Harga Beli (Rp)</label><input type="number" id="sp-new-harga" placeholder="0"></div>
+        <div class="field"><label>Kontak</label><input type="text" id="sp-new-kontak" placeholder="Opsional"></div>
+      </div>
+      <button class="btn-primary" style="width:100%; justify-content:center;" onclick="addSupplierPrice()">+ Tambah</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('supplier-price-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL KELOLA BATCH/LOT -->
 <div class="modal-overlay" id="batch-modal">
   <div class="modal-card" style="max-width:500px;">
@@ -1593,6 +1650,15 @@
     <div id="batch-list-wrap" style="margin:14px 0;"></div>
     <div style="border-top:1px solid var(--line); padding-top:14px;">
       <div style="font-size:12px; font-weight:700; margin-bottom:10px;">+ Tambah Batch Baru (barang baru masuk)</div>
+      <div id="batch-supplier-suggestion" style="display:none; background:var(--good-tint); border-radius:8px; padding:9px 11px; margin-bottom:10px; font-size:11.5px; color:var(--good); font-weight:600;"></div>
+      <div class="field">
+        <label>Beli dari Supplier</label>
+        <select id="batch-new-supplier"></select>
+      </div>
+      <div class="field" id="batch-po-link-field" style="display:none;">
+        <label>Terima untuk Pesanan (PO) mana?</label>
+        <select id="batch-new-po-link"></select>
+      </div>
       <div class="field-row">
         <div class="field"><label>No. Batch</label><input type="text" id="batch-new-nobatch" placeholder="Opsional"></div>
         <div class="field"><label>Tanggal Kedaluwarsa</label><input type="date" id="batch-new-ed"></div>
@@ -1864,6 +1930,28 @@
     const { data: allProducts } = await sb.from('products').select('stok, stok_minimum').eq('tenant_id', tenantId);
     const lowStockCount = (allProducts || []).filter(p => p.stok < p.stok_minimum).length;
     document.getElementById('kpi-lowstock').textContent = lowStockCount + ' item';
+
+    // Bon/Utang segera jatuh tempo (dalam 14 hari)
+    const in14days = new Date(); in14days.setDate(in14days.getDate() + 14);
+    const { data: dueDebts } = await sb.from('supplier_debts')
+      .select('supplier, sisa, jatuh_tempo').eq('tenant_id', tenantId).neq('status','lunas')
+      .lte('jatuh_tempo', in14days.toISOString().split('T')[0])
+      .order('jatuh_tempo', { ascending: true });
+    const jtList = document.getElementById('jatuh-tempo-list');
+    if (!dueDebts || dueDebts.length === 0){
+      jtList.innerHTML = '<div class="empty-note">Tidak ada utang supplier yang segera jatuh tempo.</div>';
+    } else {
+      jtList.innerHTML = dueDebts.map(d => {
+        const days = Math.ceil((new Date(d.jatuh_tempo) - new Date()) / 86400000);
+        const urgent = days <= 3;
+        return `
+          <div class="expiry-item">
+            <div class="expiry-dot" style="background:${urgent ? 'var(--danger)' : 'var(--amber)'}"></div>
+            <div><div class="expiry-name">${d.supplier}</div><div class="expiry-meta">Rp ${parseFloat(d.sisa).toLocaleString('id-ID')}</div></div>
+            <div class="expiry-days" style="background:${urgent ? 'var(--danger-tint)' : 'var(--amber-tint)'};color:${urgent ? 'var(--danger)' : 'var(--amber)'}">${days <= 0 ? 'Lewat!' : days + ' hari'}</div>
+          </div>`;
+      }).join('');
+    }
 
     const { data: recentTx } = await sb.from('transactions')
       .select('nomor_transaksi, total, created_at, transaction_items(nama_produk)')
@@ -3072,6 +3160,8 @@
     if (sub === 'bundling') loadBundles();
     if (sub === 'supplier') loadSupplierDebts();
     if (sub === 'opname') loadOpnamePage();
+    if (sub === 'rekomendasi') loadRekomendasiPesanan();
+    if (sub === 'pareto') loadAnalisisPareto();
   }
 
   async function getProductsForSelect(){
@@ -4118,6 +4208,298 @@
   // ================= STOCK OPNAME =================
   let currentOpnameSessionId = null;
 
+  // ================= REKOMENDASI PEMESANAN (anti-overstock) =================
+  // ================= PURCHASE ORDER (PO) =================
+  async function buatSemuaPOSekaligus(){
+    const supplierList = Object.keys(window.__rekomendasiGrup || {});
+    if (supplierList.length === 0) return;
+    if (!confirm(`Buat ${supplierList.length} PO sekaligus untuk semua supplier di daftar ini?`)) return;
+
+    for (const supplier of supplierList){
+      const items = window.__rekomendasiGrup[supplier];
+      const nomorPO = 'PO-' + Date.now() + '-' + Math.floor(Math.random()*1000);
+      const totalEstimasi = items.reduce((s,p) => s + (p.perluDipesan * (p.hargaSatuan||0)), 0);
+      const { data: po } = await sb.from('purchase_orders').insert({
+        tenant_id: currentProfile.tenant_id, nomor_po: nomorPO, nama_supplier: supplier,
+        dibuat_oleh: currentProfile.id, total_estimasi: totalEstimasi
+      }).select().single();
+      if (po){
+        const poItems = items.map(p => ({
+          tenant_id: currentProfile.tenant_id, po_id: po.id, product_id: p.id,
+          nama_produk: p.nama, jumlah_dipesan: p.perluDipesan, harga_satuan: p.hargaSatuan || 0
+        }));
+        await sb.from('purchase_order_items').insert(poItems);
+      }
+    }
+    showToast(`✓ ${supplierList.length} PO berhasil dibuat sekaligus!`);
+    await loadPOHistory();
+  }
+
+  async function buatPOUntukSupplier(namaSupplier){
+    const items = window.__rekomendasiGrup[namaSupplier];
+    if (!items || items.length === 0) return;
+
+    const nomorPO = 'PO-' + Date.now();
+    const totalEstimasi = items.reduce((s,p) => s + (p.perluDipesan * (p.hargaSatuan||0)), 0);
+
+    const { data: po, error } = await sb.from('purchase_orders').insert({
+      tenant_id: currentProfile.tenant_id, nomor_po: nomorPO, nama_supplier: namaSupplier,
+      dibuat_oleh: currentProfile.id, total_estimasi: totalEstimasi
+    }).select().single();
+    if (error){ showToast('Gagal membuat PO: ' + error.message, true); return; }
+
+    const poItems = items.map(p => ({
+      tenant_id: currentProfile.tenant_id, po_id: po.id, product_id: p.id,
+      nama_produk: p.nama, jumlah_dipesan: p.perluDipesan, harga_satuan: p.hargaSatuan || 0
+    }));
+    await sb.from('purchase_order_items').insert(poItems);
+
+    showToast(`✓ PO ${nomorPO} dibuat untuk ${namaSupplier}`);
+    tampilkanDokumenPO(po, items, totalEstimasi);
+    await loadPOHistory();
+  }
+
+  function tampilkanDokumenPO(po, items, totalEstimasi){
+    const tenantName = document.getElementById('sidebar-tenant').textContent || 'Usaha';
+    const win = window.open('', '_blank', 'width=380,height=650');
+    if (!win){ showToast('Popup diblokir browser — izinkan popup untuk lihat PO.', true); return; }
+
+    const itemsHtml = items.map(p => `
+      <tr><td>${p.nama}</td><td style="text-align:center;">${p.perluDipesan} ${p.satuan}</td></tr>`).join('');
+
+    const teksWA = `*PESANAN BARANG (PO)*\n${po.nomor_po}\nDari: ${tenantName}\nKe: ${po.nama_supplier}\n\n` +
+      items.map(p => `- ${p.nama}: ${p.perluDipesan} ${p.satuan}`).join('\n') +
+      `\n\nMohon konfirmasi ketersediaannya ya. Terima kasih 🙏`;
+
+    win.document.write(`
+      <html><head><title>PO - ${po.nomor_po}</title>
+      <style>
+        body{ font-family:'Courier New', monospace; font-size:12px; width:300px; margin:12px auto; color:#000; }
+        h2{ text-align:center; margin:0 0 2px; font-size:15px; }
+        .center{ text-align:center; }
+        table{ width:100%; border-collapse:collapse; margin-top:10px; }
+        td{ padding:5px 0; font-size:11.5px; border-bottom:1px dashed #ccc; }
+        hr{ border:none; border-top:1px dashed #000; margin:9px 0; }
+        @media print{ .no-print{ display:none; } }
+        .wa-btn{ display:block; background:#25D366; color:#fff; text-align:center; padding:10px; border-radius:8px; text-decoration:none; font-weight:bold; margin-top:10px; }
+      </style></head>
+      <body>
+        <h2>${tenantName}</h2>
+        <div class="center">PESANAN BARANG (PO)</div>
+        <div class="center">${po.nomor_po}</div>
+        <div class="center">Ke: ${po.nama_supplier}</div>
+        <div class="center">${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
+        <hr>
+        <table><tr><td><b>Barang</b></td><td style="text-align:center;"><b>Jumlah</b></td></tr>${itemsHtml}</table>
+        <hr>
+        <div>Estimasi Total: Rp ${totalEstimasi.toLocaleString('id-ID')}</div>
+        <div style="font-size:9.5px; color:#555; margin-top:6px;">*Estimasi harga, bisa beda dengan harga aktual saat barang datang.</div>
+        <a class="no-print wa-btn" href="https://wa.me/?text=${encodeURIComponent(teksWA)}" target="_blank">📱 Kirim via WhatsApp</a>
+        <div class="no-print center" style="margin-top:10px;"><button onclick="window.print()" style="padding:8px 16px; font-size:12px;">Cetak / Simpan PDF</button></div>
+      </body></html>`);
+    win.document.close();
+  }
+
+  async function terimaBarangUntukPO(poItemId, jumlahDiterima){
+    const { data: item } = await sb.from('purchase_order_items').select('*').eq('id', poItemId).single();
+    if (!item) return;
+
+    const totalDiterimaBaru = item.jumlah_diterima + jumlahDiterima;
+    await sb.from('purchase_order_items').update({ jumlah_diterima: totalDiterimaBaru }).eq('id', poItemId);
+
+    // Cek semua item di PO ini, tentukan status PO secara keseluruhan
+    const { data: semuaItem } = await sb.from('purchase_order_items').select('*').eq('po_id', item.po_id);
+    const semuaLengkap = (semuaItem || []).every(i => i.jumlah_diterima >= i.jumlah_dipesan);
+    const adaYangDiterima = (semuaItem || []).some(i => i.jumlah_diterima > 0);
+
+    const statusBaru = semuaLengkap ? 'diterima_lengkap' : (adaYangDiterima ? 'diterima_sebagian' : 'dipesan');
+    await sb.from('purchase_orders').update({ status: statusBaru }).eq('id', item.po_id);
+
+    if (statusBaru === 'diterima_lengkap') showToast('✓ PO ini sekarang lengkap diterima!');
+  }
+
+  async function loadPOHistory(){
+    const el = document.getElementById('po-history-list');
+    if (!el) return;
+    const { data } = await sb.from('purchase_orders').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(10);
+    const STATUS_LABEL = { dipesan:'Dipesan', diterima_sebagian:'Diterima Sebagian', diterima_lengkap:'Selesai', dibatalkan:'Dibatalkan' };
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada riwayat PO.</div>'; return; }
+    el.innerHTML = data.map(po => `
+      <div class="row-item">
+        <div><div class="row-name">${po.nomor_po} — ${po.nama_supplier}</div><div class="row-meta">${new Date(po.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div></div>
+        <div class="row-right">
+          <div class="num" style="font-size:12.5px;">Rp ${parseFloat(po.total_estimasi).toLocaleString('id-ID')}</div>
+          <span class="pill ${po.status === 'diterima_lengkap' ? 'ok' : po.status === 'dibatalkan' ? 'crit' : 'warn'}">${STATUS_LABEL[po.status]}</span>
+          ${['dipesan','diterima_sebagian'].includes(po.status) ? `<button class="btn-secondary" style="font-size:10px; padding:3px 7px; margin-top:4px;" onclick="tutupPO('${po.id}')">Tutup PO Ini</button>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  async function tutupPO(poId){
+    const { data: items } = await sb.from('purchase_order_items').select('*').eq('po_id', poId);
+    const { data: po } = await sb.from('purchase_orders').select('*').eq('id', poId).single();
+    const kurang = (items || []).filter(i => i.jumlah_diterima < i.jumlah_dipesan);
+
+    if (kurang.length > 0){
+      const daftarKurang = kurang.map(i => `- ${i.nama_produk}: dipesan ${i.jumlah_dipesan}, cuma diterima ${i.jumlah_diterima}`).join('\n');
+      const tandaiKosong = confirm(`Ada ${kurang.length} barang yang tidak dikirim lengkap oleh ${po.nama_supplier}:\n\n${daftarKurang}\n\nTandai supplier ini "kosong" untuk barang-barang itu? (Supaya sistem otomatis sarankan supplier lain berikutnya)`);
+      if (tandaiKosong){
+        for (const item of kurang){
+          if (!item.product_id) continue;
+          await sb.from('product_suppliers').update({ tersedia: false })
+            .eq('product_id', item.product_id).eq('nama_supplier', po.nama_supplier).eq('tenant_id', currentProfile.tenant_id);
+        }
+        showToast(`✓ ${kurang.length} barang ditandai kosong untuk ${po.nama_supplier}`);
+      }
+    }
+
+    await sb.from('purchase_orders').update({ status: 'diterima_lengkap' }).eq('id', poId);
+    showToast('✓ PO ditutup');
+    await loadPOHistory();
+  }
+
+  async function loadRekomendasiPesanan(){
+    const el = document.getElementById('rekomendasi-list');
+    el.innerHTML = '<div class="loading-note">Menganalisis data penjualan…</div>';
+
+    const tenantId = currentProfile.tenant_id;
+    const day30ago = new Date(); day30ago.setDate(day30ago.getDate() - 30);
+
+    const { data: produk } = await sb.from('products').select('id, nama, satuan, stok, stok_minimum, supplier').eq('tenant_id', tenantId).eq('is_racikan', false);
+    const { data: penjualan30hr } = await sb.from('transaction_items')
+      .select('product_id, qty, transactions!inner(tenant_id, created_at, status_transaksi)')
+      .eq('transactions.tenant_id', tenantId)
+      .gte('transactions.created_at', day30ago.toISOString())
+      .neq('transactions.status_transaksi', 'dibatalkan');
+    const { data: allSupplierPrices } = await sb.from('product_suppliers').select('*').eq('tenant_id', tenantId);
+
+    const totalTerjual = {};
+    (penjualan30hr || []).forEach(item => {
+      if (!item.product_id) return;
+      totalTerjual[item.product_id] = (totalTerjual[item.product_id] || 0) + item.qty;
+    });
+
+    const rekomendasi = (produk || []).map(p => {
+      const terjual30hr = totalTerjual[p.id] || 0;
+      const rataPerHari = terjual30hr / 30;
+      const hariBertahan = rataPerHari > 0 ? Math.floor(p.stok / rataPerHari) : (p.stok > 0 ? Infinity : 0);
+      const targetStok30Hari = Math.ceil(rataPerHari * 30);
+      const perluDipesan = Math.max(0, targetStok30Hari - p.stok);
+
+      // Tentukan supplier tersaran: termurah yang masih tersedia dari data Harga Supplier, kalau tidak ada pakai field supplier lama
+      const hargaSupplierProduk = (allSupplierPrices || []).filter(s => s.product_id === p.id && s.tersedia !== false).sort((a,b) => a.harga_beli - b.harga_beli);
+      const supplierTersaran = hargaSupplierProduk[0]?.nama_supplier || p.supplier || 'Belum Ada Supplier';
+      const hargaSatuan = hargaSupplierProduk[0]?.harga_beli || 0;
+
+      return { ...p, terjual30hr, rataPerHari, hariBertahan, perluDipesan, supplierTersaran, hargaSatuan };
+    }).filter(p => p.terjual30hr > 0)
+      .sort((a,b) => a.hariBertahan - b.hariBertahan);
+
+    const perluSegera = rekomendasi.filter(p => p.hariBertahan <= 14 && p.perluDipesan > 0);
+    const stokAman = rekomendasi.filter(p => p.hariBertahan > 60);
+
+    if (rekomendasi.length === 0){
+      el.innerHTML = '<div class="loading-note">Belum cukup data penjualan 30 hari terakhir untuk dianalisis.</div>';
+      return;
+    }
+
+    // Kelompokkan yang perlu segera dipesan berdasarkan supplier tersaran
+    const grupSupplier = {};
+    perluSegera.forEach(p => {
+      if (!grupSupplier[p.supplierTersaran]) grupSupplier[p.supplierTersaran] = [];
+      grupSupplier[p.supplierTersaran].push(p);
+    });
+    window.__rekomendasiGrup = grupSupplier; // simpan buat dipakai saat generate PO
+
+    el.innerHTML = `
+      ${Object.keys(grupSupplier).length > 0 ? `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="font-size:11.5px; font-weight:700; color:var(--danger); text-transform:uppercase;">⚠️ Segera Pesan — Dikelompokkan per Supplier</div>
+          ${Object.keys(grupSupplier).length > 1 ? `<button class="btn-primary" style="font-size:10.5px; padding:6px 10px;" onclick="buatSemuaPOSekaligus()">⚡ Buat Semua PO (${Object.keys(grupSupplier).length})</button>` : ''}
+        </div>
+        ${Object.entries(grupSupplier).map(([supplier, items]) => `
+          <div style="border:1.5px solid var(--line); border-radius:12px; padding:14px; margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <div style="font-weight:700; font-size:13.5px;">📦 ${supplier}</div>
+              <button class="btn-primary" style="font-size:11px; padding:6px 12px;" onclick='buatPOUntukSupplier("${supplier.replace(/"/g,"&quot;")}")'>+ Buat Pesanan (PO)</button>
+            </div>
+            ${items.map(p => `
+              <div class="row-item" style="padding:8px 0;">
+                <div><div class="row-name" style="font-size:12.5px;">${p.nama}</div><div class="row-meta">Stok habis ~${p.hariBertahan} hari lagi</div></div>
+                <div class="row-right"><div class="num" style="font-size:12.5px; color:var(--danger); font-weight:700;">Pesan ${p.perluDipesan} ${p.satuan}</div></div>
+              </div>`).join('')}
+          </div>`).join('')}
+      ` : '<div class="empty-note" style="margin-bottom:14px;">✓ Tidak ada produk yang mendesak untuk dipesan sekarang.</div>'}
+
+      ${stokAman.length > 0 ? `
+        <div style="font-size:11.5px; font-weight:700; color:var(--good); text-transform:uppercase; margin:18px 0 10px;">✓ Stok Lebih dari Cukup (hati-hati overstock)</div>
+        ${stokAman.map(p => `
+          <div class="row-item">
+            <div class="emp-dot" style="background:var(--good-tint); color:var(--good);">${p.nama.substring(0,2).toUpperCase()}</div>
+            <div><div class="row-name">${p.nama}</div><div class="row-meta">Cukup untuk ~${p.hariBertahan === Infinity ? '90+' : p.hariBertahan} hari · Jangan tambah stok dulu</div></div>
+            <div class="row-right"><span class="pill ok">Stok Aman</span></div>
+          </div>`).join('')}
+      ` : ''}
+
+      <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--line);">
+        <div style="font-size:11.5px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; margin-bottom:10px;">Riwayat Pesanan (PO)</div>
+        <div id="po-history-list"><div class="loading-note">Memuat riwayat…</div></div>
+      </div>`;
+
+    await loadPOHistory();
+  }
+
+  // ================= ANALISIS PARETO (80/20) =================
+  async function loadAnalisisPareto(){
+    const el = document.getElementById('pareto-list');
+    el.innerHTML = '<div class="loading-note">Menganalisis data penjualan…</div>';
+
+    const tenantId = currentProfile.tenant_id;
+    const day90ago = new Date(); day90ago.setDate(day90ago.getDate() - 90);
+
+    const { data: items } = await sb.from('transaction_items')
+      .select('nama_produk, subtotal, transactions!inner(tenant_id, created_at, status_transaksi)')
+      .eq('transactions.tenant_id', tenantId)
+      .gte('transactions.created_at', day90ago.toISOString())
+      .neq('transactions.status_transaksi', 'dibatalkan');
+
+    if (!items || items.length === 0){
+      el.innerHTML = '<div class="loading-note">Belum cukup data penjualan 90 hari terakhir untuk dianalisis.</div>';
+      return;
+    }
+
+    const omzetPerProduk = {};
+    items.forEach(i => {
+      omzetPerProduk[i.nama_produk] = (omzetPerProduk[i.nama_produk] || 0) + parseFloat(i.subtotal);
+    });
+
+    const totalOmzet = Object.values(omzetPerProduk).reduce((s,v) => s+v, 0);
+    const sorted = Object.entries(omzetPerProduk).sort((a,b) => b[1] - a[1]);
+
+    let kumulatif = 0;
+    let jumlahProdukVital = 0;
+    const rows = sorted.map(([nama, omzet], idx) => {
+      kumulatif += omzet;
+      const persenKumulatif = (kumulatif / totalOmzet) * 100;
+      if (persenKumulatif <= 80) jumlahProdukVital = idx + 1;
+      return { nama, omzet, persen: (omzet/totalOmzet)*100, persenKumulatif };
+    });
+
+    const persenJumlahProduk = Math.round((jumlahProdukVital / sorted.length) * 100);
+
+    el.innerHTML = `
+      <div style="background:var(--brand-tint); border-radius:10px; padding:14px 16px; margin-bottom:16px;">
+        <div style="font-size:13px; font-weight:700; color:var(--brand);">📊 ${jumlahProdukVital} produk (${persenJumlahProduk}% dari total produk aktif) menyumbang 80% omzet kamu 90 hari terakhir</div>
+        <div style="font-size:11.5px; color:var(--ink-soft); margin-top:4px;">Fokuskan stok, promosi, dan negosiasi harga supplier di produk-produk ini.</div>
+      </div>
+      ${rows.map((r, idx) => `
+        <div class="row-item">
+          <div class="emp-dot" style="${idx < jumlahProdukVital ? 'background:var(--brand-tint); color:var(--brand);' : ''}">${idx+1}</div>
+          <div><div class="row-name">${r.nama}${idx < jumlahProdukVital ? ' ⭐' : ''}</div><div class="row-meta">${r.persen.toFixed(1)}% dari omzet · Kumulatif ${r.persenKumulatif.toFixed(0)}%</div></div>
+          <div class="row-right"><div class="num" style="font-size:13px;">Rp ${Math.round(r.omzet).toLocaleString('id-ID')}</div></div>
+        </div>`).join('')}`;
+  }
+
   async function loadOpnamePage(){
     const { data: session } = await sb.from('stock_opname_sessions').select('*').eq('tenant_id', currentProfile.tenant_id).eq('status','berjalan').maybeSingle();
     if (session){
@@ -4448,14 +4830,44 @@
     document.getElementById('bon-scan-modal').classList.add('show');
   }
 
+  function preprocessImageForOCR(file){
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      img.onload = () => {
+        // Perbesar resolusi 2x + ubah ke hitam-putih kontras tinggi -> signifikan bantu akurasi OCR teks tabel
+        const scale = 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4){
+          const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+          const kontras = gray < 150 ? 0 : 255; // threshold hitam-putih tegas
+          d[i] = d[i+1] = d[i+2] = kontras;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        canvas.toBlob((blob) => resolve(blob), 'image/png');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function processBonScan(event){
     const file = event.target.files[0];
     if (!file) return;
 
     document.getElementById('bon-progress').style.display = 'block';
+    document.getElementById('bon-progress-percent').textContent = 'Memproses foto…';
 
     try{
-      const result = await Tesseract.recognize(file, 'ind+eng', {
+      const processedBlob = await preprocessImageForOCR(file);
+      const result = await Tesseract.recognize(processedBlob, 'ind+eng', {
         logger: (m) => {
           if (m.status === 'recognizing text'){
             document.getElementById('bon-progress-percent').textContent = Math.round(m.progress * 100) + '%';
@@ -4636,6 +5048,17 @@
     document.getElementById('tb-jumlah').focus();
   }
 
+  async function syncProductFromBatches(productId){
+    const { data: allBatches } = await sb.from('product_batches').select('*').eq('product_id', productId).order('tanggal_kedaluwarsa', { ascending: true, nullsFirst: false });
+    const totalStok = (allBatches || []).reduce((s,b) => s + b.stok, 0);
+    const batchAktif = (allBatches || []).find(b => b.stok > 0);
+    await sb.from('products').update({
+      stok: totalStok,
+      tanggal_kedaluwarsa: batchAktif ? batchAktif.tanggal_kedaluwarsa : null,
+      batch_number: batchAktif ? batchAktif.no_batch : null
+    }).eq('id', productId);
+  }
+
   async function konfirmasiTerimaBarang(){
     if (!tbMatchedProduct) return;
     const noBatch = document.getElementById('tb-nobatch').value.trim() || null;
@@ -4657,9 +5080,7 @@
       });
     }
 
-    const { data: allBatches } = await sb.from('product_batches').select('stok').eq('product_id', tbMatchedProduct.id);
-    const totalStok = (allBatches || []).reduce((s,b) => s + b.stok, 0);
-    await sb.from('products').update({ stok: totalStok }).eq('id', tbMatchedProduct.id);
+    await syncProductFromBatches(tbMatchedProduct.id);
 
     await sb.from('inventory_movements').insert({
       tenant_id: currentProfile.tenant_id, product_id: tbMatchedProduct.id, jenis_mutasi: 'restock',
@@ -4675,6 +5096,97 @@
   // ================= KELOLA BATCH/LOT (FEFO) =================
   let currentBatchProductId = null;
 
+  // ================= PERBANDINGAN HARGA SUPPLIER =================
+  let currentSupplierPriceProductId = null;
+
+  async function openSupplierPriceModal(p){
+    currentSupplierPriceProductId = p.id;
+    document.getElementById('sp-nama-produk').textContent = p.nama;
+    document.getElementById('sp-new-nama').value = '';
+    document.getElementById('sp-new-harga').value = '';
+    document.getElementById('sp-new-kontak').value = '';
+    await renderSupplierPriceList();
+    document.getElementById('supplier-price-modal').classList.add('show');
+  }
+
+  async function hitungSkorKeandalan(namaSupplier){
+    const { data: items } = await sb.from('purchase_order_items')
+      .select('jumlah_dipesan, jumlah_diterima, purchase_orders!inner(nama_supplier, tenant_id, status)')
+      .eq('purchase_orders.nama_supplier', namaSupplier)
+      .eq('purchase_orders.tenant_id', currentProfile.tenant_id)
+      .in('purchase_orders.status', ['diterima_sebagian','diterima_lengkap']);
+
+    if (!items || items.length === 0) return null;
+    const totalDipesan = items.reduce((s,i) => s + i.jumlah_dipesan, 0);
+    const totalDiterima = items.reduce((s,i) => s + Math.min(i.jumlah_diterima, i.jumlah_dipesan), 0);
+    return { persen: Math.round((totalDiterima/totalDipesan)*100), jumlahPO: new Set(items.map(i=>i.purchase_orders)).size, totalItem: items.length };
+  }
+
+  async function renderSupplierPriceList(){
+    const { data } = await sb.from('product_suppliers').select('*').eq('product_id', currentSupplierPriceProductId).order('harga_beli', { ascending: true });
+    const wrap = document.getElementById('sp-list-wrap');
+    if (!data || data.length === 0){
+      wrap.innerHTML = '<div class="loading-note">Belum ada data harga supplier. Tambahkan di bawah.</div>';
+      return;
+    }
+    // Termurah dihitung cuma dari yang masih tersedia (bukan yang ditandai kosong)
+    const yangTersedia = data.filter(s => s.tersedia !== false);
+    const termurah = yangTersedia[0]?.harga_beli;
+
+    wrap.innerHTML = '<div class="loading-note">Memuat skor keandalan…</div>';
+    const skorList = await Promise.all(data.map(s => hitungSkorKeandalan(s.nama_supplier)));
+
+    wrap.innerHTML = data.map((s, idx) => {
+      const kosong = s.tersedia === false;
+      const isTermurah = !kosong && parseFloat(s.harga_beli) === parseFloat(termurah);
+      const skor = skorList[idx];
+      return `
+      <div class="row-item" style="${kosong ? 'opacity:0.55;' : ''}">
+        <div class="emp-dot" style="${isTermurah ? 'background:var(--good-tint); color:var(--good);' : ''}">${s.nama_supplier.substring(0,2).toUpperCase()}</div>
+        <div>
+          <div class="row-name">${s.nama_supplier}${isTermurah ? ' <span style="color:var(--good); font-weight:700;">✓ Termurah Tersedia</span>' : ''}${kosong ? ' <span style="color:var(--danger); font-weight:700;">· Sedang Kosong</span>' : ''}</div>
+          <div class="row-meta">${s.kontak || 'Tanpa kontak'}${skor ? ` · Keandalan: <b style="color:${skor.persen >= 80 ? 'var(--good)' : skor.persen >= 50 ? 'var(--amber)' : 'var(--danger)'}">${skor.persen}%</b> terpenuhi` : ' · Belum ada riwayat PO'}</div>
+        </div>
+        <div class="row-right">
+          <div class="num" style="font-size:13px;">Rp ${parseFloat(s.harga_beli).toLocaleString('id-ID')}</div>
+          <div style="display:flex; gap:4px; margin-top:4px;">
+            <button class="btn-secondary" style="font-size:10px; padding:3px 7px;" onclick="toggleSupplierTersedia('${s.id}', ${!kosong})">${kosong ? 'Tandai Ada' : 'Tandai Kosong'}</button>
+            <button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="deleteSupplierPrice('${s.id}')">Hapus</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function addSupplierPrice(){
+    const nama = document.getElementById('sp-new-nama').value.trim();
+    const harga = parseFloat(document.getElementById('sp-new-harga').value) || 0;
+    if (!nama || harga <= 0){ showToast('Nama supplier dan harga wajib diisi.', true); return; }
+
+    await sb.from('product_suppliers').insert({
+      tenant_id: currentProfile.tenant_id, product_id: currentSupplierPriceProductId,
+      nama_supplier: nama, harga_beli: harga, kontak: document.getElementById('sp-new-kontak').value.trim() || null
+    });
+
+    showToast('✓ Harga supplier ditambahkan');
+    document.getElementById('sp-new-nama').value = '';
+    document.getElementById('sp-new-harga').value = '';
+    document.getElementById('sp-new-kontak').value = '';
+    await renderSupplierPriceList();
+  }
+
+  async function toggleSupplierTersedia(id, tersediaBaru){
+    await sb.from('product_suppliers').update({ tersedia: tersediaBaru }).eq('id', id);
+    showToast(tersediaBaru ? '✓ Ditandai tersedia lagi' : '✓ Ditandai sedang kosong — sistem akan sarankan supplier lain');
+    await renderSupplierPriceList();
+  }
+
+  async function deleteSupplierPrice(id){
+    await sb.from('product_suppliers').delete().eq('id', id);
+    showToast('✓ Dihapus');
+    await renderSupplierPriceList();
+  }
+
   async function openBatchModal(p){
     currentBatchProductId = p.id;
     document.getElementById('batch-nama-produk').textContent = p.nama;
@@ -4682,8 +5194,57 @@
     document.getElementById('batch-new-nobatch').value = '';
     document.getElementById('batch-new-ed').value = '';
     document.getElementById('batch-new-stok').value = '';
+    await loadSupplierOptionsForBatch();
+    await loadOpenPOForProduct(p.id);
     await renderBatchList();
     document.getElementById('batch-modal').classList.add('show');
+  }
+
+  async function loadOpenPOForProduct(productId){
+    const { data: openItems } = await sb.from('purchase_order_items')
+      .select('*, purchase_orders!inner(nomor_po, nama_supplier, status, tenant_id)')
+      .eq('product_id', productId)
+      .eq('purchase_orders.tenant_id', currentProfile.tenant_id)
+      .in('purchase_orders.status', ['dipesan','diterima_sebagian']);
+
+    const field = document.getElementById('batch-po-link-field');
+    const select = document.getElementById('batch-new-po-link');
+    if (!openItems || openItems.length === 0){
+      field.style.display = 'none';
+      select.innerHTML = '<option value="">— Bukan dari PO —</option>';
+      return;
+    }
+    field.style.display = 'block';
+    select.innerHTML = '<option value="">— Bukan dari PO / restock biasa —</option>' +
+      openItems.map(i => `<option value="${i.id}">${i.purchase_orders.nomor_po} — ${i.purchase_orders.nama_supplier} (dipesan ${i.jumlah_dipesan}, diterima ${i.jumlah_diterima})</option>`).join('');
+  }
+
+  async function loadSupplierOptionsForBatch(){
+    const { data: suppliers } = await sb.from('product_suppliers').select('*').eq('product_id', currentBatchProductId).order('harga_beli', { ascending: true });
+    const select = document.getElementById('batch-new-supplier');
+    const saranBox = document.getElementById('batch-supplier-suggestion');
+
+    if (!suppliers || suppliers.length === 0){
+      select.innerHTML = '<option value="">— Belum ada data supplier untuk produk ini —</option>';
+      saranBox.style.display = 'none';
+      return;
+    }
+
+    select.innerHTML = suppliers.map(s => `<option value="${s.id}" ${s.tersedia === false ? 'disabled' : ''}>${s.nama_supplier} — Rp ${parseFloat(s.harga_beli).toLocaleString('id-ID')}${s.tersedia === false ? ' (KOSONG)' : ''}</option>`).join('');
+
+    const tersedia = suppliers.filter(s => s.tersedia !== false);
+    if (tersedia.length > 0){
+      select.value = tersedia[0].id;
+      const adaYangKosong = suppliers.some(s => s.tersedia === false);
+      saranBox.style.display = 'block';
+      saranBox.textContent = adaYangKosong
+        ? `💡 Ada supplier yang sedang kosong — otomatis disarankan "${tersedia[0].nama_supplier}" (termurah yang masih tersedia)`
+        : `💡 Disarankan: "${tersedia[0].nama_supplier}" — harga termurah untuk produk ini`;
+    } else {
+      saranBox.style.display = 'block';
+      saranBox.style.background = 'var(--danger-tint)'; saranBox.style.color = 'var(--danger)';
+      saranBox.textContent = '⚠️ Semua supplier tercatat sedang kosong untuk produk ini!';
+    }
   }
 
   async function renderBatchList(){
@@ -4718,6 +5279,7 @@
     const noBatch = document.getElementById('batch-new-nobatch').value.trim() || null;
     const ed = document.getElementById('batch-new-ed').value || null;
     const stok = parseInt(document.getElementById('batch-new-stok').value) || 0;
+    const supplierId = document.getElementById('batch-new-supplier').value || null;
     if (stok <= 0){ showToast('Jumlah stok wajib diisi.', true); return; }
 
     // Kalau ada batch dengan No. Batch + ED yang persis sama, tambahkan ke situ saja (bukan bikin baris baru)
@@ -4728,23 +5290,27 @@
     }
 
     if (existing){
-      await sb.from('product_batches').update({ stok: existing.stok + stok }).eq('id', existing.id);
+      await sb.from('product_batches').update({ stok: existing.stok + stok, supplier_id: supplierId }).eq('id', existing.id);
     } else {
       await sb.from('product_batches').insert({
         tenant_id: currentProfile.tenant_id, product_id: currentBatchProductId,
-        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok
+        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok, supplier_id: supplierId
       });
     }
 
-    // Update total stok di produk = jumlah semua batch
-    const { data: allBatches } = await sb.from('product_batches').select('stok').eq('product_id', currentBatchProductId);
-    const totalStok = (allBatches || []).reduce((s,b) => s + b.stok, 0);
-    await sb.from('products').update({ stok: totalStok }).eq('id', currentBatchProductId);
+    // Update total stok & ED utama produk = sinkron dari semua batch
+    await syncProductFromBatches(currentBatchProductId);
 
     await sb.from('inventory_movements').insert({
       tenant_id: currentProfile.tenant_id, product_id: currentBatchProductId, jenis_mutasi: 'restock',
       jumlah: stok, keterangan: `Batch baru masuk (No: ${noBatch || '-'}, ED: ${ed || '-'}) oleh ${currentProfile.nama}`
     });
+
+    // Kalau ini terima barang untuk PO tertentu, update progresnya
+    const poItemId = document.getElementById('batch-new-po-link')?.value;
+    if (poItemId){
+      await terimaBarangUntukPO(poItemId, stok);
+    }
 
     showToast(`✓ Batch ditambahkan, +${stok} stok`);
     document.getElementById('batch-new-nobatch').value = '';
@@ -4757,9 +5323,7 @@
   async function deleteBatch(batchId){
     if (!confirm('Hapus batch ini? Stok di batch ini akan hilang dari total produk.')) return;
     await sb.from('product_batches').delete().eq('id', batchId);
-    const { data: allBatches } = await sb.from('product_batches').select('stok').eq('product_id', currentBatchProductId);
-    const totalStok = (allBatches || []).reduce((s,b) => s + b.stok, 0);
-    await sb.from('products').update({ stok: totalStok }).eq('id', currentBatchProductId);
+    await syncProductFromBatches(currentBatchProductId);
     showToast('✓ Batch dihapus');
     await renderBatchList();
     await loadStokPage();
@@ -4813,7 +5377,8 @@
                 <td style="white-space:nowrap;">
                   ${p.is_racikan
                     ? `<button class="btn-secondary apoteker-access" onclick='openRacikanModal(${JSON.stringify({id:p.id,nama:p.nama}).replace(/'/g,"&#39;")})'>Kelola Bahan</button>`
-                    : `<button class="btn-secondary" onclick='openBatchModal(${JSON.stringify({id:p.id,nama:p.nama,satuan:p.satuan}).replace(/'/g,"&#39;")})'>Kelola Batch</button>`}
+                    : `<button class="btn-secondary" onclick='openBatchModal(${JSON.stringify({id:p.id,nama:p.nama,satuan:p.satuan}).replace(/'/g,"&#39;")})'>Kelola Batch</button>
+                       <button class="btn-secondary" onclick='openSupplierPriceModal(${JSON.stringify({id:p.id,nama:p.nama}).replace(/'/g,"&#39;")})'>Harga Supplier</button>`}
                   <button class="btn-secondary" onclick="openEditProductModal(window.__stokData[${idx}])">Edit</button>
                   <button class="btn-secondary" style="color:var(--danger);" onclick="deleteProduct('${p.id}', '${p.nama.replace(/'/g,"")}')">Hapus</button>
                 </td>
