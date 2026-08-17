@@ -697,6 +697,10 @@
           <div class="kpi-label">Rata-rata per Transaksi</div>
           <div class="kpi-value num" id="kw-rata-rata">Rp 0</div>
         </div>
+        <div class="kpi-card" style="background:var(--brand-tint);">
+          <div class="kpi-label" style="color:var(--brand);">Laba Kotor (Omzet − HPP)</div>
+          <div class="kpi-value num" id="kw-laba-kotor" style="color:var(--brand);">Rp 0</div>
+        </div>
       </div>
       <div class="panel">
         <div class="panel-head"><div class="panel-title" id="kw-list-title">Semua Transaksi Bulan Ini</div></div>
@@ -1603,7 +1607,10 @@
       <div id="tb-produk-info" style="background:var(--good-tint); border-radius:10px; padding:12px 14px; margin-bottom:14px;"></div>
       <div class="field"><label>No. Batch</label><input type="text" id="tb-nobatch" placeholder="Opsional"></div>
       <div class="field"><label>Tanggal Kedaluwarsa</label><input type="date" id="tb-ed"></div>
-      <div class="field"><label>Jumlah Diterima</label><input type="number" id="tb-jumlah" placeholder="0" autofocus></div>
+      <div class="field-row">
+        <div class="field"><label>Jumlah Diterima</label><input type="number" id="tb-jumlah" placeholder="0" autofocus></div>
+        <div class="field"><label>Harga Modal/Unit (Rp)</label><input type="number" id="tb-harga-modal" placeholder="0"></div>
+      </div>
       <button class="btn-primary" style="width:100%; justify-content:center;" onclick="konfirmasiTerimaBarang()">✓ Konfirmasi & Tambah Stok</button>
       <button class="btn-secondary" style="width:100%; justify-content:center; margin-top:8px;" onclick="resetTerimaBarangScan()">Scan Barang Lain</button>
     </div>
@@ -1663,7 +1670,10 @@
         <div class="field"><label>No. Batch</label><input type="text" id="batch-new-nobatch" placeholder="Opsional"></div>
         <div class="field"><label>Tanggal Kedaluwarsa</label><input type="date" id="batch-new-ed"></div>
       </div>
-      <div class="field"><label>Jumlah Stok (<span id="batch-new-satuan"></span>)</label><input type="number" id="batch-new-stok" placeholder="0"></div>
+      <div class="field-row">
+        <div class="field"><label>Jumlah Stok (<span id="batch-new-satuan"></span>)</label><input type="number" id="batch-new-stok" placeholder="0"></div>
+        <div class="field"><label>Harga Modal per Unit (Rp)</label><input type="number" id="batch-new-harga-modal" placeholder="0"></div>
+      </div>
       <button class="btn-primary" style="width:100%; justify-content:center;" onclick="addNewBatch()">+ Tambah Batch Ini</button>
     </div>
     <div class="modal-actions">
@@ -5064,6 +5074,7 @@
     const noBatch = document.getElementById('tb-nobatch').value.trim() || null;
     const ed = document.getElementById('tb-ed').value || null;
     const jumlah = parseInt(document.getElementById('tb-jumlah').value) || 0;
+    const hargaModal = parseFloat(document.getElementById('tb-harga-modal').value) || 0;
     if (jumlah <= 0){ showToast('Jumlah wajib diisi.', true); return; }
 
     let existing = null;
@@ -5072,11 +5083,16 @@
       existing = data;
     }
     if (existing){
-      await sb.from('product_batches').update({ stok: existing.stok + jumlah }).eq('id', existing.id);
+      // Kalau batch sudah ada dan harga modal baru diisi beda, hitung rata-rata tertimbang biar akurat
+      const totalLama = existing.stok * (existing.harga_modal || 0);
+      const totalBaru = jumlah * hargaModal;
+      const stokGabungan = existing.stok + jumlah;
+      const hmGabungan = stokGabungan > 0 ? (totalLama + totalBaru) / stokGabungan : hargaModal;
+      await sb.from('product_batches').update({ stok: stokGabungan, harga_modal: hargaModal > 0 ? hmGabungan : existing.harga_modal }).eq('id', existing.id);
     } else {
       await sb.from('product_batches').insert({
         tenant_id: currentProfile.tenant_id, product_id: tbMatchedProduct.id,
-        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok: jumlah
+        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok: jumlah, harga_modal: hargaModal
       });
     }
 
@@ -5194,6 +5210,7 @@
     document.getElementById('batch-new-nobatch').value = '';
     document.getElementById('batch-new-ed').value = '';
     document.getElementById('batch-new-stok').value = '';
+    document.getElementById('batch-new-harga-modal').value = '';
     await loadSupplierOptionsForBatch();
     await loadOpenPOForProduct(p.id);
     await renderBatchList();
@@ -5279,6 +5296,7 @@
     const noBatch = document.getElementById('batch-new-nobatch').value.trim() || null;
     const ed = document.getElementById('batch-new-ed').value || null;
     const stok = parseInt(document.getElementById('batch-new-stok').value) || 0;
+    const hargaModal = parseFloat(document.getElementById('batch-new-harga-modal').value) || 0;
     const supplierId = document.getElementById('batch-new-supplier').value || null;
     if (stok <= 0){ showToast('Jumlah stok wajib diisi.', true); return; }
 
@@ -5290,11 +5308,15 @@
     }
 
     if (existing){
-      await sb.from('product_batches').update({ stok: existing.stok + stok, supplier_id: supplierId }).eq('id', existing.id);
+      const totalLama = existing.stok * (existing.harga_modal || 0);
+      const totalBaru = stok * hargaModal;
+      const stokGabungan = existing.stok + stok;
+      const hmGabungan = stokGabungan > 0 ? (totalLama + totalBaru) / stokGabungan : hargaModal;
+      await sb.from('product_batches').update({ stok: stokGabungan, supplier_id: supplierId, harga_modal: hargaModal > 0 ? hmGabungan : existing.harga_modal }).eq('id', existing.id);
     } else {
       await sb.from('product_batches').insert({
         tenant_id: currentProfile.tenant_id, product_id: currentBatchProductId,
-        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok, supplier_id: supplierId
+        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok, supplier_id: supplierId, harga_modal: hargaModal
       });
     }
 
@@ -5316,6 +5338,7 @@
     document.getElementById('batch-new-nobatch').value = '';
     document.getElementById('batch-new-ed').value = '';
     document.getElementById('batch-new-stok').value = '';
+    document.getElementById('batch-new-harga-modal').value = '';
     await renderBatchList();
     await loadStokPage();
   }
@@ -5418,7 +5441,7 @@
     const periodStart = getPeriodStart(keuanganPeriod);
 
     const { data, error } = await sb.from('transactions')
-      .select('id, nomor_transaksi, total, metode_bayar, created_at, status_transaksi, alasan_batal, transaction_items(nama_produk, qty)')
+      .select('id, nomor_transaksi, total, metode_bayar, created_at, status_transaksi, alasan_batal, transaction_items(nama_produk, qty, total_hpp)')
       .eq('tenant_id', currentProfile.tenant_id)
       .gte('created_at', periodStart.toISOString())
       .order('created_at', { ascending:false });
@@ -5427,10 +5450,13 @@
 
     const dataAktif = (data || []).filter(t => t.status_transaksi !== 'dibatalkan');
     const total = dataAktif.reduce((s,t) => s + parseFloat(t.total), 0);
+    const totalHPP = dataAktif.reduce((s,t) => s + t.transaction_items.reduce((si,i) => si + parseFloat(i.total_hpp || 0), 0), 0);
+    const labaKotor = total - totalHPP;
     const count = dataAktif.length;
     document.getElementById('kw-omzet-bulan').textContent = 'Rp ' + total.toLocaleString('id-ID');
     document.getElementById('kw-jumlah-trx').textContent = count;
     document.getElementById('kw-rata-rata').textContent = 'Rp ' + (count ? Math.round(total/count) : 0).toLocaleString('id-ID');
+    document.getElementById('kw-laba-kotor').textContent = 'Rp ' + Math.round(labaKotor).toLocaleString('id-ID');
 
     if (!data || data.length === 0){
       listEl.innerHTML = `<div class="loading-note">Belum ada transaksi ${label.toLowerCase()}.</div>`;
