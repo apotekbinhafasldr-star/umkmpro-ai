@@ -458,6 +458,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input type="text" id="pos-search" placeholder="Cari nama obat…" oninput="renderProducts()">
           <button class="btn-secondary" style="white-space:nowrap;" onclick="openScanModal()">📷 Scan</button>
+          <button class="btn-secondary" style="white-space:nowrap; background:var(--amber-tint); color:var(--amber); border-color:var(--amber);" onclick="openWaitingListModal()">📋 Barang Kosong?</button>
           <button class="btn-secondary apoteker-access" style="white-space:nowrap;" onclick="openDynamicRacikanModal()">🧪 Racikan Dinamis</button>
         </div>
         <div class="prod-grid" id="prod-grid"><div class="loading-note">Memuat produk dari database…</div></div>
@@ -507,6 +508,10 @@
           <div class="field" style="margin-bottom:10px;">
             <label>Diskon (Rp)</label>
             <input type="number" id="cart-diskon" placeholder="0" value="0" oninput="updateDiskon(this.value)">
+            <div style="font-size:10.5px; color:var(--ink-soft); margin-top:5px;">
+              Atau langsung isi harga yang disepakati:
+              <input type="number" id="cart-harga-nego" placeholder="Contoh: 15000" oninput="updateHargaNego(this.value)" style="width:100%; margin-top:4px; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:12.5px;">
+            </div>
           </div>
           <div id="poin-tebus-box" style="display:none; background:var(--good-tint); border-radius:9px; padding:9px 11px; margin-bottom:10px; font-size:11.5px;">
             <label style="display:flex; align-items:center; gap:7px; cursor:pointer; margin-bottom:0;">
@@ -575,10 +580,17 @@
       </div>
       <div class="panel owner-only" style="margin-bottom:16px;">
         <div class="panel-body" style="padding:14px 18px;">
-          <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:0;">
+          <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:14px;">
             <input type="checkbox" id="approval-stok-toggle" style="width:20px; height:20px;" onchange="toggleApprovalStok(this.checked)">
             <span style="font-size:13px; font-weight:600;">🔒 Wajib persetujuan owner untuk barang masuk yang diinput staf (anti-kecurangan gudang)</span>
           </label>
+          <div style="border-top:1px solid var(--surface-2); padding-top:14px;">
+            <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">🔒 Batas Maksimal Diskon Tanpa Alasan Wajib (Kasir/Staf)</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <input type="number" id="batas-diskon-input" placeholder="20" style="width:80px; border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:13px;" onchange="updateBatasDiskon(this.value)">
+              <span style="font-size:12.5px; color:var(--ink-soft);">% dari subtotal — di atas ini, kasir wajib isi alasan sebelum bisa checkout</span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="tabs">
@@ -895,6 +907,7 @@
         <div class="tab" data-sub="poin" onclick="setPelangganTab('poin', this)">Poin Pelanggan</div>
         <div class="tab" data-sub="online" onclick="setPelangganTab('online', this)">Pesanan Online</div>
         <div class="tab" data-sub="promosi" onclick="setPelangganTab('promosi', this)">Buat Promosi</div>
+        <div class="tab" data-sub="tunggu" onclick="setPelangganTab('tunggu', this)">Daftar Tunggu Barang</div>
       </div>
 
       <!-- PIUTANG -->
@@ -1006,6 +1019,26 @@
               Buat Konten Promosi
             </button>
             <div id="promo-result-wrap" style="margin-top:16px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAFTAR TUNGGU BARANG -->
+      <div class="sub-page" id="sub-tunggu">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Daftar Tunggu — Permintaan Barang</div>
+              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Semua permintaan pelanggan, termasuk barang yang belum pernah ada di toko — bahan pertimbangan barang baru apa yang perlu distok</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div style="display:flex; gap:6px; margin-bottom:14px;">
+              <div class="tab active" data-status="menunggu" onclick="setWaitingListFilter('menunggu', this)">Menunggu</div>
+              <div class="tab" data-status="sudah_dihubungi" onclick="setWaitingListFilter('sudah_dihubungi', this)">Sudah Dihubungi</div>
+              <div class="tab" data-status="semua" onclick="setWaitingListFilter('semua', this)">Semua</div>
+            </div>
+            <div id="waiting-list-full"><div class="loading-note">Memuat data…</div></div>
           </div>
         </div>
       </div>
@@ -1528,6 +1561,34 @@
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('tutup-kasir-modal')">Batal</button>
       <button class="btn-primary" id="tk-submit-btn" onclick="submitTutupKasir()">Tutup Kasir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DAFTAR TUNGGU (BARANG KOSONG) -->
+<div class="modal-overlay" id="waiting-list-modal">
+  <div class="modal-card">
+    <div class="modal-title">Catat Permintaan Barang Kosong</div>
+    <div class="auth-note">💡 Biar pelanggan tidak kabur ke toko lain — catat nama & WA-nya, kita hubungi duluan begitu barangnya restock.</div>
+    <div class="field">
+      <label>Nama Produk yang Dicari</label>
+      <input type="text" id="wl-nama-produk" placeholder="Contoh: Panadol Extra">
+    </div>
+    <div class="field">
+      <label>Nama Pelanggan (opsional)</label>
+      <input type="text" id="wl-nama-pelanggan" placeholder="Nama pelanggan">
+    </div>
+    <div class="field">
+      <label>No. WhatsApp Pelanggan</label>
+      <input type="text" id="wl-wa-pelanggan" placeholder="08xxxxxxxxxx">
+    </div>
+    <div class="field">
+      <label>Catatan (opsional)</label>
+      <input type="text" id="wl-catatan" placeholder="Contoh: butuh urgent, minta diantar">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('waiting-list-modal')">Batal</button>
+      <button class="btn-primary" id="wl-submit-btn" onclick="submitWaitingList()">Simpan</button>
     </div>
   </div>
 </div>
@@ -2273,6 +2334,120 @@
     await loadShiftStatus();
   }
 
+  // ================= DAFTAR TUNGGU (BARANG KOSONG) =================
+  let waitingListFilterStatus = 'menunggu';
+
+  function setWaitingListFilter(status, el){
+    waitingListFilterStatus = status;
+    document.querySelectorAll('#sub-tunggu .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    loadWaitingListFull();
+  }
+
+  async function loadWaitingListFull(){
+    const el = document.getElementById('waiting-list-full');
+    el.innerHTML = '<div class="loading-note">Memuat data…</div>';
+
+    let query = sb.from('waiting_list').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false });
+    if (waitingListFilterStatus !== 'semua') query = query.eq('status', waitingListFilterStatus);
+    const { data } = await query;
+
+    if (!data || data.length === 0){
+      el.innerHTML = '<div class="loading-note">Belum ada permintaan tercatat.</div>';
+      return;
+    }
+
+    const STATUS_LABEL = { menunggu:'Menunggu', sudah_dihubungi:'Sudah Dihubungi', selesai:'Selesai' };
+    el.innerHTML = data.map(w => {
+      const sudahAdaProduk = !!w.product_id;
+      const teksWA = encodeURIComponent(`Halo${w.nama_pelanggan ? ' ' + w.nama_pelanggan : ''}! Terkait ${w.nama_produk_dicari} yang kamu cari kemarin, ada kabar nih dari kami.`);
+      return `
+        <div class="row-item">
+          <div><div class="row-name">${w.nama_produk_dicari}${!sudahAdaProduk ? ' <span class="pill warn">Belum ada di toko</span>' : ''}</div><div class="row-meta">${w.nama_pelanggan || 'Pelanggan'} · ${w.whatsapp_pelanggan}${w.catatan ? ' · ' + w.catatan : ''}</div></div>
+          <div class="row-right">
+            <span class="pill ${w.status === 'menunggu' ? 'warn' : 'ok'}">${STATUS_LABEL[w.status]}</span>
+            <div style="display:flex; gap:4px; margin-top:5px;">
+              <a href="https://wa.me/${formatNomorWA(w.whatsapp_pelanggan)}?text=${teksWA}" target="_blank" class="btn-secondary" style="font-size:10px; padding:3px 7px; background:#25D366; color:#fff; text-decoration:none;">WA</a>
+              ${w.status !== 'selesai' ? `<button class="btn-secondary" style="font-size:10px; padding:3px 7px;" onclick="selesaikanWaitingList('${w.id}')">Selesai</button>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function selesaikanWaitingList(id){
+    await sb.from('waiting_list').update({ status: 'selesai' }).eq('id', id);
+    showToast('✓ Ditandai selesai');
+    await loadWaitingListFull();
+  }
+
+
+  function openWaitingListModal(){
+    document.getElementById('wl-nama-produk').value = document.getElementById('pos-search')?.value || '';
+    document.getElementById('wl-nama-pelanggan').value = '';
+    document.getElementById('wl-wa-pelanggan').value = '';
+    document.getElementById('wl-catatan').value = '';
+    document.getElementById('waiting-list-modal').classList.add('show');
+  }
+
+  async function submitWaitingList(){
+    const namaProduk = document.getElementById('wl-nama-produk').value.trim();
+    const wa = document.getElementById('wl-wa-pelanggan').value.trim();
+    if (!namaProduk || !wa){ showToast('Nama produk dan No. WA wajib diisi.', true); return; }
+
+    // Coba cocokkan ke produk yang sudah ada di sistem, kalau ketemu
+    const matchedProduct = products.find(p => p.nama.toLowerCase().includes(namaProduk.toLowerCase()) || namaProduk.toLowerCase().includes(p.nama.toLowerCase()));
+
+    const btn = document.getElementById('wl-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    const { error } = await sb.from('waiting_list').insert({
+      tenant_id: currentProfile.tenant_id, product_id: matchedProduct?.id || null,
+      nama_produk_dicari: namaProduk, nama_pelanggan: document.getElementById('wl-nama-pelanggan').value.trim() || null,
+      whatsapp_pelanggan: wa, catatan: document.getElementById('wl-catatan').value.trim() || null,
+      dicatat_oleh: currentProfile.id
+    });
+    btn.disabled = false; btn.textContent = 'Simpan';
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Tercatat — pelanggan akan dihubungi begitu barang restock');
+    closeModal('waiting-list-modal');
+  }
+
+  // Dipanggil setiap kali ada batch baru ditambahkan — cek siapa saja yang nunggu produk ini
+  async function cekDaftarTungguUntukProduk(productId, namaProduk){
+    const { data: waiting } = await sb.from('waiting_list')
+      .select('*').eq('tenant_id', currentProfile.tenant_id).eq('status', 'menunggu')
+      .or(`product_id.eq.${productId},nama_produk_dicari.ilike.%${namaProduk}%`);
+
+    if (!waiting || waiting.length === 0) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay show';
+    overlay.id = 'waiting-notif-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">🎉 ${waiting.length} Pelanggan Menunggu "${namaProduk}"!</div>
+        <div class="auth-note">Barang ini baru restock — hubungi mereka sekarang sebelum ke toko lain.</div>
+        <div style="margin:14px 0;">
+          ${waiting.map(w => {
+            const teksWA = encodeURIComponent(`Halo${w.nama_pelanggan ? ' ' + w.nama_pelanggan : ''}! Kabar baik, ${namaProduk} yang kamu cari sudah ready lagi di toko kami. Mau kami siapkan?`);
+            return `
+            <div class="row-item">
+              <div><div class="row-name">${w.nama_pelanggan || 'Pelanggan'}</div><div class="row-meta">${w.whatsapp_pelanggan}${w.catatan ? ' · ' + w.catatan : ''}</div></div>
+              <div class="row-right">
+                <a href="https://wa.me/${formatNomorWA(w.whatsapp_pelanggan)}?text=${teksWA}" target="_blank" class="btn-secondary" style="font-size:11px; padding:5px 10px; background:#25D366; color:#fff; text-decoration:none;" onclick="tandaiWaitingListDihubungi('${w.id}')">📱 Hubungi</a>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="modal-actions"><button class="btn-secondary" onclick="document.getElementById('waiting-notif-overlay').remove()">Tutup</button></div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+
+  async function tandaiWaitingListDihubungi(id){
+    await sb.from('waiting_list').update({ status: 'sudah_dihubungi' }).eq('id', id);
+  }
+
   // ================= SCAN BARCODE =================
   let scanStream = null;
   let scanDetectorInterval = null;
@@ -2439,6 +2614,21 @@
     updateKembalian();
   }
 
+  function updateHargaNego(value){
+    const hargaNego = parseFloat(value);
+    const cart = getActiveCart().items;
+    const subtotalBersih = hitungSubtotalBersih(cart);
+    const nilaiPoin = getNilaiPoinDitebus();
+
+    if (isNaN(hargaNego) || value === ''){
+      return; // biarkan kosong, tidak ganggu diskon yang mungkin sudah diisi manual
+    }
+    // Hitung mundur: harga nego yang diminta + poin yang ditebus = harus sama dengan (subtotal - diskon)
+    const diskonSetara = Math.max(0, subtotalBersih - nilaiPoin - hargaNego);
+    document.getElementById('cart-diskon').value = Math.round(diskonSetara);
+    updateDiskon(diskonSetara);
+  }
+
   function getNilaiPoinDitebus(){
     const checkbox = document.getElementById('cart-tebus-poin');
     if (!checkbox || !checkbox.checked) return 0;
@@ -2540,6 +2730,7 @@
     }
     const subtotal = cart.reduce((s,c)=> s + c.price*c.qty, 0);
     document.getElementById('cart-diskon').value = activeCart.diskon || 0;
+    document.getElementById('cart-harga-nego').value = '';
     const diskon = Math.min(parseFloat(document.getElementById('cart-diskon')?.value) || 0, subtotal);
     const total = subtotal - diskon;
     document.getElementById('cart-count').textContent = cart.reduce((s,c)=>s+c.qty,0);
@@ -2732,7 +2923,8 @@
       shift_id: meta.shiftId || null,
       uang_diterima: meta.uangDiterima || null, kembalian: meta.kembalian || 0,
       detail_pembayaran: meta.detailPembayaran || null,
-      poin_ditebus: meta.poinDitebus || 0, nilai_poin_ditebus: meta.nilaiPoin || 0
+      poin_ditebus: meta.poinDitebus || 0, nilai_poin_ditebus: meta.nilaiPoin || 0,
+      alasan_diskon_besar: meta.alasanDiskonBesar || null
     }).select().single();
     if (txErr) throw txErr;
 
@@ -2798,6 +2990,21 @@
     const total = Math.max(0, subtotalBersihItem - diskonKeseluruhan - nilaiPoin);
     const diskon = (subtotalKotor - subtotalBersihItem) + diskonKeseluruhan; // total semua diskon (item + keseluruhan) buat dicatat
 
+    // Cek batas diskon untuk staf non-owner
+    let alasanDiskonBesar = null;
+    if (currentProfile.role !== 'owner' && subtotalKotor > 0){
+      const { data: tenantData } = await sb.from('tenants').select('batas_diskon_persen_staf').eq('id', currentProfile.tenant_id).single();
+      const batasPersen = tenantData?.batas_diskon_persen_staf ?? 20;
+      const persenDiskonSaatIni = (diskon / subtotalKotor) * 100;
+      if (persenDiskonSaatIni > batasPersen){
+        alasanDiskonBesar = prompt(`⚠️ Diskon ${persenDiskonSaatIni.toFixed(0)}% melebihi batas ${batasPersen}% untuk staf.\n\nWajib isi alasan (akan dicatat & dilaporkan ke owner):`);
+        if (!alasanDiskonBesar || !alasanDiskonBesar.trim()){
+          showToast('Transaksi dibatalkan — alasan diskon besar wajib diisi.', true);
+          return;
+        }
+      }
+    }
+
     const isSplit = document.getElementById('cart-split-payment').checked;
     let uangDiterima = null, kembalian = 0, detailPembayaran = null, metodeFinal = selectedPaymentMethod;
 
@@ -2823,7 +3030,7 @@
     const meta = {
       nomorTransaksi, namaPelanggan, waPelanggan, subtotal: subtotalKotor, diskon, total,
       metode: metodeFinal, shiftId: currentShift ? currentShift.id : null, waktuAsli: new Date().toISOString(),
-      uangDiterima, kembalian, detailPembayaran, poinDitebus, nilaiPoin
+      uangDiterima, kembalian, detailPembayaran, poinDitebus, nilaiPoin, alasanDiskonBesar
     };
 
     const bersihkanKeranjang = () => {
@@ -3092,6 +3299,7 @@
     if (sub === 'poin') loadPoints();
     if (sub === 'online'){ loadOnlineOrders(); loadTokoOnlineToggle(); }
     if (sub === 'promosi') loadPromoProductSelect();
+    if (sub === 'tunggu') loadWaitingListFull();
   }
 
   async function loadPelangganPage(){
@@ -3246,14 +3454,23 @@
   async function loadApprovalToggleStatus(){
     const toggle = document.getElementById('approval-stok-toggle');
     if (!toggle) return;
-    const { data } = await sb.from('tenants').select('wajib_approval_stok').eq('id', currentProfile.tenant_id).single();
+    const { data } = await sb.from('tenants').select('wajib_approval_stok, batas_diskon_persen_staf').eq('id', currentProfile.tenant_id).single();
     toggle.checked = !!data?.wajib_approval_stok;
+    const batasInput = document.getElementById('batas-diskon-input');
+    if (batasInput) batasInput.value = data?.batas_diskon_persen_staf ?? 20;
   }
 
   async function toggleApprovalStok(checked){
     const { error } = await sb.from('tenants').update({ wajib_approval_stok: checked }).eq('id', currentProfile.tenant_id);
     if (error){ showToast('Gagal mengubah pengaturan: ' + error.message, true); return; }
     showToast(checked ? '✓ Wajib persetujuan diaktifkan — barang masuk dari staf perlu kamu setujui dulu' : '✓ Wajib persetujuan dimatikan');
+  }
+
+  async function updateBatasDiskon(value){
+    const persen = parseFloat(value) || 0;
+    const { error } = await sb.from('tenants').update({ batas_diskon_persen_staf: persen }).eq('id', currentProfile.tenant_id);
+    if (error){ showToast('Gagal mengubah pengaturan: ' + error.message, true); return; }
+    showToast(`✓ Batas diskon staf diatur ke ${persen}%`);
   }
 
   let logAktivitasFilter = 'semua';
@@ -5314,6 +5531,7 @@
 
     if (perluApproval) showToast('⏳ Barang disimpan, menunggu persetujuan owner');
     await syncProductFromBatches(tbMatchedProduct.id);
+    if (!perluApproval) await cekDaftarTungguUntukProduk(tbMatchedProduct.id, tbMatchedProduct.nama);
 
     await sb.from('inventory_movements').insert({
       tenant_id: currentProfile.tenant_id, product_id: tbMatchedProduct.id, jenis_mutasi: 'restock',
@@ -5523,6 +5741,7 @@
     await sb.from('product_batches').update({ status_approval: 'approved', disetujui_oleh: currentProfile.id }).eq('id', batchId);
     await syncProductFromBatches(currentBatchProductId);
     showToast('✓ Batch disetujui, stok sudah aktif');
+    await cekDaftarTungguUntukProduk(currentBatchProductId, document.getElementById('batch-nama-produk').textContent);
     await renderBatchList();
     await loadStokPage();
   }
@@ -5590,6 +5809,8 @@
 
     if (perluApproval){
       showToast('⏳ Batch disimpan, menunggu persetujuan owner sebelum masuk stok aktif');
+    } else {
+      await cekDaftarTungguUntukProduk(currentBatchProductId, document.getElementById('batch-nama-produk').textContent);
     }
 
     // Kalau ini terima barang untuk PO tertentu, update progresnya
@@ -5706,7 +5927,7 @@
     const periodStart = getPeriodStart(keuanganPeriod);
 
     const { data, error } = await sb.from('transactions')
-      .select('id, nomor_transaksi, total, metode_bayar, created_at, status_transaksi, alasan_batal, transaction_items(nama_produk, qty, total_hpp)')
+      .select('id, nomor_transaksi, total, metode_bayar, created_at, status_transaksi, alasan_batal, alasan_diskon_besar, transaction_items(nama_produk, qty, total_hpp)')
       .eq('tenant_id', currentProfile.tenant_id)
       .gte('created_at', periodStart.toISOString())
       .order('created_at', { ascending:false });
@@ -5733,7 +5954,7 @@
         <tbody>
           ${data.map(t => `
             <tr style="${t.status_transaksi === 'dibatalkan' ? 'opacity:0.5;' : ''}">
-              <td>${t.nomor_transaksi}${t.status_transaksi === 'dibatalkan' ? ' <span class="pill crit">Dibatalkan</span>' : ''}</td>
+              <td>${t.nomor_transaksi}${t.status_transaksi === 'dibatalkan' ? ' <span class="pill crit">Dibatalkan</span>' : ''}${t.alasan_diskon_besar ? ` <span class="pill warn" title="${t.alasan_diskon_besar.replace(/"/g,'&quot;')}">⚠️ Diskon Besar</span>` : ''}</td>
               <td>${t.transaction_items.map(i => `${i.nama_produk} (${i.qty})`).join(', ')}</td>
               <td style="text-transform:capitalize">${t.metode_bayar.replace('_',' ')}</td>
               <td>${new Date(t.created_at).toLocaleString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</td>
