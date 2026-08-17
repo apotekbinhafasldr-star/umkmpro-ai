@@ -573,6 +573,14 @@
           </button>
         </div>
       </div>
+      <div class="panel owner-only" style="margin-bottom:16px;">
+        <div class="panel-body" style="padding:14px 18px;">
+          <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:0;">
+            <input type="checkbox" id="approval-stok-toggle" style="width:20px; height:20px;" onchange="toggleApprovalStok(this.checked)">
+            <span style="font-size:13px; font-weight:600;">🔒 Wajib persetujuan owner untuk barang masuk yang diinput staf (anti-kecurangan gudang)</span>
+          </label>
+        </div>
+      </div>
       <div class="tabs">
         <div class="tab active" data-sub="produk" onclick="setStokTab('produk', this)">Semua Produk</div>
         <div class="tab" data-sub="bundling" onclick="setStokTab('bundling', this)">Kombinasi Produk</div>
@@ -580,6 +588,7 @@
         <div class="tab" data-sub="opname" onclick="setStokTab('opname', this)">Stock Opname</div>
         <div class="tab" data-sub="rekomendasi" onclick="setStokTab('rekomendasi', this)">Rekomendasi Pesanan</div>
         <div class="tab" data-sub="pareto" onclick="setStokTab('pareto', this)">Analisis Pareto</div>
+        <div class="tab owner-only" data-sub="aktivitas" onclick="setStokTab('aktivitas', this)">Log Aktivitas</div>
       </div>
       <div class="sub-page active" id="substok-produk">
       <div class="panel">
@@ -637,7 +646,22 @@
             </div>
             <button class="btn-primary" onclick="finishOpnameSession()">Selesaikan Opname</button>
           </div>
-          <div class="panel-body" id="opname-items-list"><div class="loading-note">Memuat produk…</div></div>
+          <div class="panel-body" style="padding-bottom:0;">
+            <div style="display:flex; gap:6px; margin-bottom:12px;">
+              <input type="text" id="opname-search" placeholder="Cari nama produk…" oninput="renderOpnameItems()" style="flex:1; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px;">
+              <button class="btn-secondary" onclick="openOpnameScan()">📷 Scan</button>
+            </div>
+            <div style="display:flex; gap:6px; overflow-x:auto; margin-bottom:12px; padding-bottom:4px;" id="opname-kategori-filter">
+              <div class="tab active" data-kat="semua" onclick="setOpnameKategoriFilter('semua', this)" style="white-space:nowrap;">Semua</div>
+              <div class="tab" data-kat="obat_resep" onclick="setOpnameKategoriFilter('obat_resep', this)" style="white-space:nowrap;">Obat Resep</div>
+              <div class="tab" data-kat="obat_bebas" onclick="setOpnameKategoriFilter('obat_bebas', this)" style="white-space:nowrap;">Obat Bebas</div>
+              <div class="tab" data-kat="herbal" onclick="setOpnameKategoriFilter('herbal', this)" style="white-space:nowrap;">Herbal</div>
+              <div class="tab" data-kat="skincare" onclick="setOpnameKategoriFilter('skincare', this)" style="white-space:nowrap;">Skincare</div>
+              <div class="tab" data-kat="alat_kesehatan" onclick="setOpnameKategoriFilter('alat_kesehatan', this)" style="white-space:nowrap;">Alkes</div>
+              <div class="tab" data-kat="belum" onclick="setOpnameKategoriFilter('belum', this)" style="white-space:nowrap;">⏳ Belum Dihitung</div>
+            </div>
+          </div>
+          <div class="panel-body" id="opname-items-list" style="padding-top:0;"><div class="loading-note">Memuat produk…</div></div>
         </div>
       </div>
 
@@ -664,6 +688,28 @@
             </div>
           </div>
           <div class="panel-body" id="pareto-list"><div class="loading-note">Menganalisis data penjualan…</div></div>
+        </div>
+      </div>
+
+      <!-- LOG AKTIVITAS -->
+      <div class="sub-page" id="substok-aktivitas">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Log Aktivitas — Jejak Audit</div>
+              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Riwayat semua perubahan stok, transaksi dibatalkan, dan hasil stock opname — buat telusuri kalau ada kejanggalan</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
+              <div class="tab active" data-jenis="semua" onclick="setLogFilter('semua', this)">Semua</div>
+              <div class="tab" data-jenis="restock" onclick="setLogFilter('restock', this)">Barang Masuk</div>
+              <div class="tab" data-jenis="penjualan" onclick="setLogFilter('penjualan', this)">Penjualan</div>
+              <div class="tab" data-jenis="opname" onclick="setLogFilter('opname', this)">Stock Opname</div>
+              <div class="tab" data-jenis="pembatalan" onclick="setLogFilter('pembatalan', this)">Pembatalan</div>
+            </div>
+            <div id="log-aktivitas-list"><div class="loading-note">Memuat log…</div></div>
+          </div>
         </div>
       </div>
     </main>
@@ -1674,6 +1720,7 @@
         <div class="field"><label>Jumlah Stok (<span id="batch-new-satuan"></span>)</label><input type="number" id="batch-new-stok" placeholder="0"></div>
         <div class="field"><label>Harga Modal per Unit (Rp)</label><input type="number" id="batch-new-harga-modal" placeholder="0"></div>
       </div>
+      <div class="field"><label>Foto Bukti Fisik (opsional, untuk transparansi)</label><input type="file" id="batch-new-foto" accept="image/*"></div>
       <button class="btn-primary" style="width:100%; justify-content:center;" onclick="addNewBatch()">+ Tambah Batch Ini</button>
     </div>
     <div class="modal-actions">
@@ -2519,10 +2566,17 @@
     if (!tx){ showToast('Transaksi tidak ditemukan.', true); return; }
     const items = tx.transaction_items.map(i => ({ name: i.nama_produk, qty: i.qty, price: parseFloat(i.harga_satuan) }));
     printReceipt({
-      nomorTransaksi: tx.nomor_transaksi + ' (ULANG)', namaPelanggan: tx.nama_pelanggan || 'Umum',
+      nomorTransaksi: tx.nomor_transaksi + ' (ULANG)', namaPelanggan: tx.nama_pelanggan || 'Umum', waPelanggan: tx.whatsapp_pelanggan,
       tanggal: new Date(tx.created_at), items, subtotal: parseFloat(tx.subtotal), diskon: parseFloat(tx.diskon),
       total: parseFloat(tx.total), metode: tx.metode_bayar, kembalian: parseFloat(tx.kembalian || 0), uangDiterima: tx.uang_diterima ? parseFloat(tx.uang_diterima) : null
     });
+  }
+
+  function formatNomorWA(nomor){
+    let n = nomor.replace(/[^\d]/g, '');
+    if (n.startsWith('0')) n = '62' + n.slice(1);
+    else if (!n.startsWith('62')) n = '62' + n;
+    return n;
   }
 
   function printReceipt(data){
@@ -2537,6 +2591,17 @@
         <td>${i.qty} x ${i.price.toLocaleString('id-ID')}</td>
         <td style="text-align:right;">${(i.qty*i.price).toLocaleString('id-ID')}</td>
       </tr>`).join('');
+
+    const teksWA = `*STRUK BELANJA*\n${tenantName}\n${data.nomorTransaksi}\n${data.tanggal.toLocaleString('id-ID')}\n\n` +
+      data.items.map(i => `${i.name}\n${i.qty} x Rp${i.price.toLocaleString('id-ID')} = Rp${(i.qty*i.price).toLocaleString('id-ID')}`).join('\n\n') +
+      `\n\nSubtotal: Rp${data.subtotal.toLocaleString('id-ID')}\nDiskon: -Rp${data.diskon.toLocaleString('id-ID')}\n*TOTAL: Rp${data.total.toLocaleString('id-ID')}*\nBayar: ${data.metode.replace('_',' ').toUpperCase()}` +
+      (data.kembalian ? `\nKembalian: Rp${data.kembalian.toLocaleString('id-ID')}` : '') +
+      `\n\nTerima kasih sudah berbelanja 🙏`;
+
+    const tombolWA = data.waPelanggan
+      ? `<a class="no-print" href="https://wa.me/${formatNomorWA(data.waPelanggan)}?text=${encodeURIComponent(teksWA)}" target="_blank" style="display:block; background:#25D366; color:#fff; text-align:center; padding:10px; border-radius:8px; text-decoration:none; font-weight:bold; margin-top:10px; font-size:12px;">📱 Kirim Struk ke WA Pelanggan</a>`
+      : '';
+
     win.document.write(`
       <html><head><title>Nota - ${data.nomorTransaksi}</title>
       <style>
@@ -2567,6 +2632,7 @@
         </table>
         <hr>
         <div class="center">Terima kasih 🙏</div>
+        ${tombolWA}
         <div class="no-print center" style="margin-top:14px;">
           <button onclick="window.print()" style="padding:8px 16px; font-size:12px;">Cetak Sekarang</button>
         </div>
@@ -2782,7 +2848,7 @@
     if (!navigator.onLine){
       queueOfflineTransaction(cart, meta);
       showToast('📡 Offline — transaksi disimpan di HP, akan otomatis terkirim saat online lagi');
-      printReceipt({ nomorTransaksi, namaPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
+      printReceipt({ nomorTransaksi, namaPelanggan, waPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
       bersihkanKeranjang();
       btn.textContent = 'Selesaikan Transaksi';
       updateCheckoutState();
@@ -2799,7 +2865,7 @@
       }
 
       showToast('✓ Transaksi berhasil disimpan ke database');
-      printReceipt({ nomorTransaksi, namaPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
+      printReceipt({ nomorTransaksi, namaPelanggan, waPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
       bersihkanKeranjang();
       await loadProducts();
       await loadDashboard();
@@ -2807,7 +2873,7 @@
       // Gagal karena kemungkinan besar koneksi putus di tengah jalan -> simpan offline juga sebagai jaring pengaman
       queueOfflineTransaction(cart, meta);
       showToast('📡 Gagal konek ke server — transaksi diamankan offline, akan otomatis dicoba lagi', true);
-      printReceipt({ nomorTransaksi, namaPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
+      printReceipt({ nomorTransaksi, namaPelanggan, waPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
       bersihkanKeranjang();
     } finally {
       btn.textContent = 'Selesaikan Transaksi';
@@ -3163,7 +3229,7 @@
 
   // ================= STOK: TABS (Produk / Bundling / Supplier) =================
   function setStokTab(sub, tabEl){
-    document.querySelectorAll('#page-stok .tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#page-stok .tab[data-sub]').forEach(t => t.classList.remove('active'));
     tabEl.classList.add('active');
     document.querySelectorAll('#page-stok .sub-page').forEach(p => p.classList.remove('active'));
     document.getElementById('substok-' + sub).classList.add('active');
@@ -3172,6 +3238,57 @@
     if (sub === 'opname') loadOpnamePage();
     if (sub === 'rekomendasi') loadRekomendasiPesanan();
     if (sub === 'pareto') loadAnalisisPareto();
+    if (sub === 'aktivitas') loadLogAktivitas();
+    if (sub === 'produk') loadApprovalToggleStatus();
+  }
+
+  // ================= TOGGLE APPROVAL STOK & LOG AKTIVITAS =================
+  async function loadApprovalToggleStatus(){
+    const toggle = document.getElementById('approval-stok-toggle');
+    if (!toggle) return;
+    const { data } = await sb.from('tenants').select('wajib_approval_stok').eq('id', currentProfile.tenant_id).single();
+    toggle.checked = !!data?.wajib_approval_stok;
+  }
+
+  async function toggleApprovalStok(checked){
+    const { error } = await sb.from('tenants').update({ wajib_approval_stok: checked }).eq('id', currentProfile.tenant_id);
+    if (error){ showToast('Gagal mengubah pengaturan: ' + error.message, true); return; }
+    showToast(checked ? '✓ Wajib persetujuan diaktifkan — barang masuk dari staf perlu kamu setujui dulu' : '✓ Wajib persetujuan dimatikan');
+  }
+
+  let logAktivitasFilter = 'semua';
+  function setLogFilter(jenis, el){
+    logAktivitasFilter = jenis;
+    document.querySelectorAll('#substok-aktivitas .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    loadLogAktivitas();
+  }
+
+  async function loadLogAktivitas(){
+    const el = document.getElementById('log-aktivitas-list');
+    el.innerHTML = '<div class="loading-note">Memuat log…</div>';
+
+    let query = sb.from('inventory_movements').select('*, products(nama)').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(100);
+    if (logAktivitasFilter !== 'semua') query = query.eq('jenis_mutasi', logAktivitasFilter);
+    const { data } = await query;
+
+    if (!data || data.length === 0){
+      el.innerHTML = '<div class="loading-note">Belum ada aktivitas tercatat.</div>';
+      return;
+    }
+
+    const JENIS_ICON = { restock:'📥', penjualan:'🛒', opname:'📋', pembatalan:'↩️' };
+    const JENIS_WARNA = { restock:'var(--brand)', penjualan:'var(--ink-soft)', opname:'var(--amber)', pembatalan:'var(--danger)' };
+
+    el.innerHTML = data.map(m => `
+      <div class="row-item">
+        <div class="emp-dot">${JENIS_ICON[m.jenis_mutasi] || '📦'}</div>
+        <div><div class="row-name">${m.products?.nama || 'Produk tidak diketahui'}</div><div class="row-meta">${m.keterangan || ''}</div></div>
+        <div class="row-right">
+          <div class="num" style="font-size:12.5px; color:${JENIS_WARNA[m.jenis_mutasi] || 'var(--ink)'}; font-weight:700;">${m.jumlah > 0 ? '+' : ''}${m.jumlah}</div>
+          <div style="font-size:10px; color:var(--ink-soft);">${new Date(m.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`).join('');
   }
 
   async function getProductsForSelect(){
@@ -4544,22 +4661,116 @@
     await loadOpnamePage();
   }
 
+  let opnameKategoriFilter = 'semua';
+  let opnameAllItemsCache = [];
+
+  function setOpnameKategoriFilter(kat, el){
+    opnameKategoriFilter = kat;
+    document.querySelectorAll('#opname-kategori-filter .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderOpnameItems();
+  }
+
   async function renderOpnameItems(){
     const { data: items } = await sb.from('stock_opname_items')
-      .select('*, products(nama, satuan)')
+      .select('*, products(nama, satuan, kategori), user_profiles(nama)')
       .eq('session_id', currentOpnameSessionId)
       .order('id');
-    const list = items || [];
+    opnameAllItemsCache = items || [];
+    const list = opnameAllItemsCache;
     const dihitung = list.filter(i => i.stok_fisik !== null).length;
     document.getElementById('opname-progress-text').textContent = `${dihitung} dari ${list.length} produk dihitung`;
 
-    document.getElementById('opname-items-list').innerHTML = list.map(i => `
-      <div class="row-item">
-        <div><div class="row-name">${i.products?.nama || '—'}</div><div class="row-meta">Sistem: ${i.stok_sistem} ${i.products?.satuan || ''}${i.stok_fisik !== null ? ` · Selisih: ${i.selisih > 0 ? '+' : ''}${i.selisih}` : ''}</div></div>
+    const q = (document.getElementById('opname-search')?.value || '').toLowerCase();
+    let filtered = list.filter(i => (i.products?.nama || '').toLowerCase().includes(q));
+    if (opnameKategoriFilter === 'belum') filtered = filtered.filter(i => i.stok_fisik === null);
+    else if (opnameKategoriFilter !== 'semua') filtered = filtered.filter(i => i.products?.kategori === opnameKategoriFilter);
+
+    if (filtered.length === 0){
+      document.getElementById('opname-items-list').innerHTML = '<div class="loading-note">Tidak ada produk yang cocok di filter ini.</div>';
+      return;
+    }
+
+    document.getElementById('opname-items-list').innerHTML = filtered.map(i => `
+      <div class="row-item" id="opname-row-${i.product_id}">
+        <div><div class="row-name">${i.products?.nama || '—'}</div><div class="row-meta">Sistem: ${i.stok_sistem} ${i.products?.satuan || ''}${i.stok_fisik !== null ? ` · Selisih: ${i.selisih > 0 ? '+' : ''}${i.selisih}` : ''}${i.user_profiles?.nama ? ` · Dihitung oleh <b>${i.user_profiles.nama}</b>` : ''}</div></div>
         <div class="row-right" style="display:flex; align-items:center; gap:6px;">
           <input type="number" placeholder="Hitung fisik" value="${i.stok_fisik ?? ''}" style="width:90px; border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:12.5px;" onchange="saveOpnameCount('${i.id}', this.value)">
         </div>
       </div>`).join('');
+  }
+
+  // ================= SCAN BARCODE UNTUK OPNAME =================
+  let opnameScanStream = null;
+  let opnameScanInterval = null;
+
+  async function openOpnameScan(){
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay show';
+    overlay.id = 'opname-scan-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card" style="max-width:400px;">
+        <div class="modal-title">Scan Produk untuk Opname</div>
+        <div style="position:relative; width:100%; aspect-ratio:4/3; background:#000; border-radius:12px; overflow:hidden; margin-bottom:14px;">
+          <video id="opname-scan-video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
+        </div>
+        <div id="opname-scan-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Arahkan kamera ke barcode…</div>
+        <div class="modal-actions"><button class="btn-secondary" onclick="closeOpnameScan()">Tutup</button></div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    if (!('BarcodeDetector' in window)){
+      document.getElementById('opname-scan-status').textContent = '⚠️ Browser tidak dukung scan kamera.';
+      return;
+    }
+    try{
+      opnameScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const video = document.getElementById('opname-scan-video');
+      video.srcObject = opnameScanStream;
+      await video.play();
+      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e'] });
+      opnameScanInterval = setInterval(async () => {
+        try{
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0) handleOpnameScanResult(barcodes[0].rawValue);
+        } catch(e){}
+      }, 500);
+    } catch(err){
+      document.getElementById('opname-scan-status').textContent = '⚠️ Tidak bisa akses kamera.';
+    }
+  }
+
+  function closeOpnameScan(){
+    if (opnameScanInterval) clearInterval(opnameScanInterval);
+    if (opnameScanStream) opnameScanStream.getTracks().forEach(t => t.stop());
+    opnameScanStream = null;
+    document.getElementById('opname-scan-overlay')?.remove();
+  }
+
+  function handleOpnameScanResult(kode){
+    const prod = products.find(p => p.kode_produk && p.kode_produk.toLowerCase() === kode.trim().toLowerCase());
+    if (!prod){
+      document.getElementById('opname-scan-status').textContent = `⚠️ Kode "${kode}" tidak dikenali.`;
+      return;
+    }
+    const item = opnameAllItemsCache.find(i => i.product_id === prod.id);
+    if (!item){
+      document.getElementById('opname-scan-status').textContent = `⚠️ "${prod.nama}" tidak ada di sesi opname ini.`;
+      return;
+    }
+    playBeepSound();
+    closeOpnameScan();
+    document.getElementById('opname-search').value = prod.nama;
+    setOpnameKategoriFilter('semua', document.querySelector('#opname-kategori-filter .tab'));
+    setTimeout(() => {
+      const row = document.getElementById('opname-row-' + prod.id);
+      if (row){
+        row.scrollIntoView({ behavior:'smooth', block:'center' });
+        row.querySelector('input').focus();
+        row.style.background = 'var(--brand-tint)';
+      }
+    }, 200);
+    showToast(`✓ Ditemukan: ${prod.nama}`);
   }
 
   async function saveOpnameCount(itemId, value){
@@ -5059,7 +5270,7 @@
   }
 
   async function syncProductFromBatches(productId){
-    const { data: allBatches } = await sb.from('product_batches').select('*').eq('product_id', productId).order('tanggal_kedaluwarsa', { ascending: true, nullsFirst: false });
+    const { data: allBatches } = await sb.from('product_batches').select('*').eq('product_id', productId).eq('status_approval', 'approved').order('tanggal_kedaluwarsa', { ascending: true, nullsFirst: false });
     const totalStok = (allBatches || []).reduce((s,b) => s + b.stok, 0);
     const batchAktif = (allBatches || []).find(b => b.stok > 0);
     await sb.from('products').update({
@@ -5077,9 +5288,13 @@
     const hargaModal = parseFloat(document.getElementById('tb-harga-modal').value) || 0;
     if (jumlah <= 0){ showToast('Jumlah wajib diisi.', true); return; }
 
+    const { data: tenantData } = await sb.from('tenants').select('wajib_approval_stok').eq('id', currentProfile.tenant_id).single();
+    const perluApproval = tenantData?.wajib_approval_stok && currentProfile.role !== 'owner';
+    const statusApproval = perluApproval ? 'pending' : 'approved';
+
     let existing = null;
-    if (noBatch || ed){
-      const { data } = await sb.from('product_batches').select('*').eq('product_id', tbMatchedProduct.id).eq('no_batch', noBatch).eq('tanggal_kedaluwarsa', ed).maybeSingle();
+    if ((noBatch || ed) && !perluApproval){
+      const { data } = await sb.from('product_batches').select('*').eq('product_id', tbMatchedProduct.id).eq('no_batch', noBatch).eq('tanggal_kedaluwarsa', ed).eq('status_approval','approved').maybeSingle();
       existing = data;
     }
     if (existing){
@@ -5092,10 +5307,12 @@
     } else {
       await sb.from('product_batches').insert({
         tenant_id: currentProfile.tenant_id, product_id: tbMatchedProduct.id,
-        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok: jumlah, harga_modal: hargaModal
+        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok: jumlah, harga_modal: hargaModal,
+        status_approval: statusApproval, diinput_oleh: currentProfile.id
       });
     }
 
+    if (perluApproval) showToast('⏳ Barang disimpan, menunggu persetujuan owner');
     await syncProductFromBatches(tbMatchedProduct.id);
 
     await sb.from('inventory_movements').insert({
@@ -5265,14 +5482,17 @@
   }
 
   async function renderBatchList(){
-    const { data } = await sb.from('product_batches').select('*').eq('product_id', currentBatchProductId).gt('stok', 0).order('tanggal_kedaluwarsa', { ascending: true, nullsFirst: false });
+    const { data } = await sb.from('product_batches').select('*, user_profiles!diinput_oleh(nama)').eq('product_id', currentBatchProductId).gt('stok', 0).order('status_approval', { ascending: false }).order('tanggal_kedaluwarsa', { ascending: true, nullsFirst: false });
     const wrap = document.getElementById('batch-list-wrap');
     if (!data || data.length === 0){
       wrap.innerHTML = '<div class="loading-note">Belum ada batch tercatat. Tambahkan di bawah.</div>';
       return;
     }
     const today = new Date();
-    wrap.innerHTML = data.map((b, idx) => {
+    let idxApproved = -1;
+    wrap.innerHTML = data.map((b) => {
+      const pending = b.status_approval === 'pending';
+      if (!pending) idxApproved++;
       let warna = 'var(--ink-soft)', label = b.tanggal_kedaluwarsa ? new Date(b.tanggal_kedaluwarsa).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : 'Tanpa ED';
       if (b.tanggal_kedaluwarsa){
         const sisaHari = Math.ceil((new Date(b.tanggal_kedaluwarsa) - today) / 86400000);
@@ -5281,15 +5501,37 @@
         else if (sisaHari < 90){ warna = 'var(--amber)'; label += ` (${sisaHari} hari lagi)`; }
       }
       return `
-        <div class="row-item">
-          <div class="emp-dot">${idx === 0 ? '🥇' : (idx+1)}</div>
-          <div><div class="row-name">${b.no_batch || '(tanpa no. batch)'}</div><div class="row-meta" style="color:${warna}; font-weight:600;">${label}</div></div>
+        <div class="row-item" style="${pending ? 'background:var(--amber-tint); border-radius:9px; padding:9px;' : ''}">
+          <div class="emp-dot" style="${pending ? 'background:var(--amber); color:#fff;' : ''}">${pending ? '⏳' : (idxApproved === 0 ? '🥇' : (idxApproved+1))}</div>
+          <div>
+            <div class="row-name">${b.no_batch || '(tanpa no. batch)'}${pending ? ' <span style="color:var(--amber); font-weight:700;">· Menunggu Persetujuan</span>' : ''}</div>
+            <div class="row-meta" style="color:${warna}; font-weight:600;">${label}${b.user_profiles?.nama ? ` · Input oleh ${b.user_profiles.nama}` : ''}${b.foto_bukti_url ? ` · <a href="${b.foto_bukti_url}" target="_blank" style="color:var(--brand);">Lihat Foto</a>` : ''}</div>
+          </div>
           <div class="row-right">
             <div class="num" style="font-size:13px;">${b.stok}</div>
-            <button class="btn-secondary" style="font-size:10px; padding:3px 7px; margin-top:4px; color:var(--danger);" onclick="deleteBatch('${b.id}')">Hapus</button>
+            ${pending ? `
+              <div style="display:flex; gap:4px; margin-top:4px;">
+                <button class="btn-secondary owner-only" style="font-size:10px; padding:3px 7px; color:var(--good);" onclick="approveBatch('${b.id}')">Setujui</button>
+                <button class="btn-secondary owner-only" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="rejectBatch('${b.id}')">Tolak</button>
+              </div>` : `<button class="btn-secondary" style="font-size:10px; padding:3px 7px; margin-top:4px; color:var(--danger);" onclick="deleteBatch('${b.id}')">Hapus</button>`}
           </div>
         </div>`;
     }).join('') + (data.length > 0 ? `<div style="font-size:10.5px; color:var(--ink-soft); margin-top:8px;">🥇 = batch yang akan dijual duluan (ED paling dekat)</div>` : '');
+  }
+
+  async function approveBatch(batchId){
+    await sb.from('product_batches').update({ status_approval: 'approved', disetujui_oleh: currentProfile.id }).eq('id', batchId);
+    await syncProductFromBatches(currentBatchProductId);
+    showToast('✓ Batch disetujui, stok sudah aktif');
+    await renderBatchList();
+    await loadStokPage();
+  }
+
+  async function rejectBatch(batchId){
+    if (!confirm('Tolak batch ini? Stok tidak akan masuk ke sistem.')) return;
+    await sb.from('product_batches').update({ status_approval: 'ditolak', stok: 0 }).eq('id', batchId);
+    showToast('✓ Batch ditolak');
+    await renderBatchList();
   }
 
   async function addNewBatch(){
@@ -5300,10 +5542,27 @@
     const supplierId = document.getElementById('batch-new-supplier').value || null;
     if (stok <= 0){ showToast('Jumlah stok wajib diisi.', true); return; }
 
-    // Kalau ada batch dengan No. Batch + ED yang persis sama, tambahkan ke situ saja (bukan bikin baris baru)
+    // Cek apakah tenant ini mewajibkan approval untuk staf non-owner
+    const { data: tenantData } = await sb.from('tenants').select('wajib_approval_stok').eq('id', currentProfile.tenant_id).single();
+    const perluApproval = tenantData?.wajib_approval_stok && currentProfile.role !== 'owner';
+    const statusApproval = perluApproval ? 'pending' : 'approved';
+
+    // Upload foto bukti kalau ada
+    let fotoUrl = null;
+    const fotoFile = document.getElementById('batch-new-foto')?.files[0];
+    if (fotoFile){
+      const path = `${currentProfile.tenant_id}/${Date.now()}-${fotoFile.name}`;
+      const { error: uploadErr } = await sb.storage.from('bukti-terima-barang').upload(path, fotoFile);
+      if (!uploadErr){
+        const { data: urlData } = sb.storage.from('bukti-terima-barang').getPublicUrl(path);
+        fotoUrl = urlData.publicUrl;
+      }
+    }
+
+    // Kalau ada batch dengan No. Batch + ED yang persis sama DAN sudah approved, tambahkan ke situ saja
     let existing = null;
-    if (noBatch || ed){
-      const { data } = await sb.from('product_batches').select('*').eq('product_id', currentBatchProductId).eq('no_batch', noBatch).eq('tanggal_kedaluwarsa', ed).maybeSingle();
+    if ((noBatch || ed) && !perluApproval){
+      const { data } = await sb.from('product_batches').select('*').eq('product_id', currentBatchProductId).eq('no_batch', noBatch).eq('tanggal_kedaluwarsa', ed).eq('status_approval','approved').maybeSingle();
       existing = data;
     }
 
@@ -5316,17 +5575,22 @@
     } else {
       await sb.from('product_batches').insert({
         tenant_id: currentProfile.tenant_id, product_id: currentBatchProductId,
-        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok, supplier_id: supplierId, harga_modal: hargaModal
+        no_batch: noBatch, tanggal_kedaluwarsa: ed, stok, supplier_id: supplierId, harga_modal: hargaModal,
+        status_approval: statusApproval, diinput_oleh: currentProfile.id, foto_bukti_url: fotoUrl
       });
     }
 
-    // Update total stok & ED utama produk = sinkron dari semua batch
+    // Update total stok & ED utama produk = sinkron dari semua batch (cuma yang approved)
     await syncProductFromBatches(currentBatchProductId);
 
     await sb.from('inventory_movements').insert({
       tenant_id: currentProfile.tenant_id, product_id: currentBatchProductId, jenis_mutasi: 'restock',
-      jumlah: stok, keterangan: `Batch baru masuk (No: ${noBatch || '-'}, ED: ${ed || '-'}) oleh ${currentProfile.nama}`
+      jumlah: stok, keterangan: `Batch baru masuk (No: ${noBatch || '-'}, ED: ${ed || '-'}) oleh ${currentProfile.nama}${perluApproval ? ' [MENUNGGU PERSETUJUAN]' : ''}`
     });
+
+    if (perluApproval){
+      showToast('⏳ Batch disimpan, menunggu persetujuan owner sebelum masuk stok aktif');
+    }
 
     // Kalau ini terima barang untuk PO tertentu, update progresnya
     const poItemId = document.getElementById('batch-new-po-link')?.value;
@@ -5369,6 +5633,7 @@
   }
 
   async function loadStokPage(){
+    await loadApprovalToggleStatus();
     const wrap = document.getElementById('stok-table-wrap');
     wrap.innerHTML = '<div class="loading-note">Memuat data stok…</div>';
     const { data, error } = await sb.from('products').select('*').eq('tenant_id', currentProfile.tenant_id).order('nama');
