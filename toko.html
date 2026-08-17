@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Toko Online</title>
+<meta name="description" id="meta-desc" content="Belanja online, pesan langsung, ambil di toko atau diantar.">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:title" id="og-title" content="Toko Online">
+<meta property="og:description" id="og-desc" content="Belanja online, pesan langsung, ambil di toko atau diantar.">
+<meta property="og:image" id="og-image" content="">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json" id="ld-json"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -167,6 +175,11 @@
         <label>Upload Foto Resep</label>
         <input type="file" id="ck-resep-file" accept="image/*">
       </div>
+      <div class="field">
+        <label>Kode Referral (opsional)</label>
+        <input type="text" id="ck-referral" placeholder="Punya kode dari teman? Isi di sini" style="text-transform:uppercase;">
+        <div id="ck-referral-msg" style="font-size:11px; margin-top:5px;"></div>
+      </div>
 
       <div style="background:var(--surface-2); border-radius:12px; padding:14px 16px; margin-top:6px;">
         <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--ink-soft); margin-bottom:6px;">
@@ -192,7 +205,8 @@
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3F7D58" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
       </div>
       <h2 style="font-size:19px; margin-bottom:8px;">Pesanan Terkirim!</h2>
-      <p style="font-size:13px; color:var(--ink-soft); margin-bottom:20px;">Toko akan menghubungi kamu lewat WhatsApp untuk konfirmasi. Terima kasih! 🙏</p>
+      <p style="font-size:13px; color:var(--ink-soft); margin-bottom:8px;">Toko akan menghubungi kamu lewat WhatsApp untuk konfirmasi. Terima kasih! 🙏</p>
+      <p id="success-referral-msg" style="font-size:12.5px; color:var(--good); font-weight:600; margin-bottom:20px;"></p>
       <div style="padding:0 20px;"><button class="btn-primary-full" onclick="location.reload()">Pesan Lagi</button></div>
     </div>
   </div>
@@ -228,7 +242,20 @@
     if (tenant){
       tenantName = tenant.nama_usaha;
       document.getElementById('store-name').textContent = tenant.nama_usaha;
-      document.title = tenant.nama_usaha + ' — Toko Online';
+      document.title = tenant.nama_usaha + ' — Belanja Online, Pesan & Ambil di Toko';
+
+      const deskripsi = `Belanja online di ${tenant.nama_usaha}. Lihat katalog produk, pesan langsung lewat WhatsApp, ambil di toko atau minta diantar.`;
+      document.getElementById('meta-desc').setAttribute('content', deskripsi);
+      document.getElementById('og-title').setAttribute('content', tenant.nama_usaha + ' — Toko Online');
+      document.getElementById('og-desc').setAttribute('content', deskripsi);
+      if (tenant.logo_url) document.getElementById('og-image').setAttribute('content', tenant.logo_url);
+
+      document.getElementById('ld-json').textContent = JSON.stringify({
+        '@context': 'https://schema.org', '@type': 'Store',
+        'name': tenant.nama_usaha, 'description': deskripsi,
+        'image': tenant.logo_url || undefined
+      });
+
       if (tenant.logo_url){
         document.getElementById('store-logo').style.backgroundImage = `url(${tenant.logo_url})`;
         document.getElementById('store-logo').textContent = '';
@@ -402,13 +429,25 @@
       });
       if (error) throw error;
 
+      // Proses kode referral kalau diisi (opsional, gagal di sini tidak membatalkan pesanan)
+      const kodeReferral = document.getElementById('ck-referral').value.trim();
+      let pesanReferral = '';
+      if (kodeReferral){
+        const { data: hasilReferral } = await sb.rpc('proses_referral', {
+          p_tenant_id: TENANT_ID, p_kode_referral: kodeReferral, p_wa_pembeli: wa
+        });
+        if (hasilReferral?.sukses) pesanReferral = ' ' + hasilReferral.pesan;
+      }
+
       document.getElementById('checkout-modal').classList.remove('show');
       document.getElementById('success-modal').classList.add('show');
+      if (pesanReferral) document.getElementById('success-referral-msg').textContent = pesanReferral.trim();
       cart = [];
       document.getElementById('ck-nama').value = '';
       document.getElementById('ck-wa').value = '';
       document.getElementById('ck-alamat').value = '';
       document.getElementById('ck-resep-file').value = '';
+      document.getElementById('ck-referral').value = '';
       updateCartFab();
     } catch(err){
       showToast('Gagal mengirim pesanan: ' + (err.message || 'terjadi kesalahan tak terduga'), true);
