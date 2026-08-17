@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
   if ('serviceWorker' in navigator){
     window.addEventListener('load', () => {
@@ -480,7 +481,7 @@
           <div class="empty-cart">Keranjang masih kosong.<br>Klik produk di sebelah kiri untuk menambahkan.</div>
         </div>
         <div class="cart-summary">
-          <div class="field" style="margin-bottom:10px;">
+          <div class="field" style="margin-bottom:10px;" id="metode-bayar-wrap">
             <label>Metode Pembayaran</label>
             <div style="display:flex; gap:6px;">
               <button class="pay-btn active" data-method="tunai" onclick="setPaymentMethod('tunai', this)">Tunai</button>
@@ -495,16 +496,43 @@
             </div>
             <div class="field">
               <label>No. WA (opsional)</label>
-              <input type="text" id="cart-wa-pelanggan" placeholder="08xxxxxxxxxx" onchange="getActiveCart().waPelanggan = this.value">
+              <input type="text" id="cart-wa-pelanggan" placeholder="08xxxxxxxxxx" onchange="getActiveCart().waPelanggan = this.value; checkPoinPelanggan();">
             </div>
           </div>
           <div class="field" style="margin-bottom:10px;">
             <label>Diskon (Rp)</label>
             <input type="number" id="cart-diskon" placeholder="0" value="0" oninput="updateDiskon(this.value)">
           </div>
+          <div id="poin-tebus-box" style="display:none; background:var(--good-tint); border-radius:9px; padding:9px 11px; margin-bottom:10px; font-size:11.5px;">
+            <label style="display:flex; align-items:center; gap:7px; cursor:pointer; margin-bottom:0;">
+              <input type="checkbox" id="cart-tebus-poin" onchange="updateDiskon(document.getElementById('cart-diskon').value)" style="width:16px; height:16px;">
+              <span>Tebus <b id="poin-tersedia-text">0 poin</b> pelanggan ini (= <span id="poin-nilai-text">Rp 0</span> potongan)</span>
+            </label>
+          </div>
           <div class="sum-row"><span>Subtotal</span><span class="num" id="sum-subtotal">Rp 0</span></div>
           <div class="sum-row"><span>Diskon</span><span class="num" id="sum-diskon">− Rp 0</span></div>
           <div class="sum-row total"><span>Total</span><span class="num" id="sum-total">Rp 0</span></div>
+
+          <div id="split-payment-toggle" style="margin:10px 0 4px;">
+            <label style="display:flex; align-items:center; gap:7px; cursor:pointer; font-size:11.5px; color:var(--ink-soft);">
+              <input type="checkbox" id="cart-split-payment" onchange="toggleSplitPayment()" style="width:15px; height:15px;">
+              Bayar campur (sebagian tunai, sebagian non-tunai)
+            </label>
+          </div>
+          <div id="split-payment-fields" style="display:none; margin-bottom:10px;">
+            <div class="field-row">
+              <div class="field"><label>Tunai (Rp)</label><input type="number" id="split-tunai" placeholder="0" oninput="updateKembalian()"></div>
+              <div class="field"><label>Non-Tunai (Rp)</label><input type="number" id="split-nontunai" placeholder="0" oninput="updateKembalian()"></div>
+            </div>
+          </div>
+
+          <div id="kembalian-box" style="display:none; background:var(--surface-2); border-radius:9px; padding:10px 12px; margin-bottom:10px;">
+            <div class="field" style="margin-bottom:8px;"><label>Uang Diterima (Rp)</label><input type="number" id="cart-uang-diterima" placeholder="0" oninput="updateKembalian()"></div>
+            <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700;">
+              <span>Kembalian</span><span class="num" id="kembalian-value" style="color:var(--brand);">Rp 0</span>
+            </div>
+          </div>
+
           <button class="checkout-btn" id="checkout-btn" disabled onclick="checkout()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
             Selesaikan Transaksi
@@ -526,6 +554,9 @@
         <div style="display:flex; gap:8px;">
           <button class="btn-secondary" style="background:var(--brand-tint); color:var(--brand); border-color:var(--brand);" onclick="openTerimaBarangScan()">
             📷 Scan Barang Masuk
+          </button>
+          <button class="btn-secondary" style="background:var(--amber-tint); color:var(--amber); border-color:var(--amber);" onclick="openBonScanModal()">
+            📸 Scan Bon (AI)
           </button>
           <button class="btn-secondary" onclick="openImportModal()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
@@ -1016,6 +1047,12 @@
         <input type="number" id="pf-isi-kemasan" placeholder="Contoh: 10" value="1" oninput="updateStokSatuanHelper()">
       </div>
     </div>
+    <div class="field" style="background:var(--good-tint); border-radius:10px; padding:11px 13px; margin-bottom:13px;">
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:0; color:var(--good); cursor:pointer;">
+        <input type="checkbox" id="pf-favorit" style="width:16px; height:16px;">
+        ⭐ Tandai sebagai favorit (dipin paling atas di Kasir, biar cepat diakses)
+      </label>
+    </div>
     <div class="field" style="background:var(--amber-tint); border-radius:10px; padding:11px 13px; margin-bottom:13px;">
       <label style="display:flex; align-items:center; gap:8px; margin-bottom:0; color:#7A4B1C; cursor:pointer;">
         <input type="checkbox" id="pf-is-racikan" style="width:16px; height:16px;" onchange="toggleRacikanHint()">
@@ -1483,6 +1520,33 @@
   </div>
 </div>
 
+<!-- MODAL SCAN BON AI (OCR) -->
+<div class="modal-overlay" id="bon-scan-modal">
+  <div class="modal-card" style="max-width:560px;">
+    <div class="modal-title">Scan Bon Pembelian (AI)</div>
+    <div class="auth-note">💡 Foto bon/faktur dari supplier, sistem baca teksnya otomatis. <b>Hasil OCR tidak selalu 100% akurat</b> — pastikan cek & lengkapi tiap baris sebelum konfirmasi ke stok.</div>
+
+    <div id="bon-upload-view">
+      <div class="field"><label>Upload Foto Bon</label><input type="file" id="bon-file-input" accept="image/*" onchange="processBonScan(event)"></div>
+      <div id="bon-progress" style="display:none; text-align:center; padding:20px; font-size:13px; color:var(--ink-soft);">
+        <div style="margin-bottom:8px;">🔍 Membaca teks dari foto…</div>
+        <div id="bon-progress-percent" style="font-weight:700; font-size:16px; color:var(--brand);">0%</div>
+      </div>
+    </div>
+
+    <div id="bon-hasil-view" style="display:none;">
+      <div style="font-size:11.5px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; margin:14px 0 8px;">Cocokkan Tiap Baris ke Produk</div>
+      <div id="bon-items-wrap" style="max-height:320px; overflow-y:auto;"></div>
+      <button class="btn-secondary" style="width:100%; justify-content:center; margin-top:10px;" onclick="addBonRow()">+ Tambah Baris Manual</button>
+      <button class="btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="confirmBonScan()">✓ Konfirmasi & Tambah ke Stok</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('bon-scan-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL TERIMA BARANG (SCAN CEPAT) -->
 <div class="modal-overlay" id="terima-barang-modal">
   <div class="modal-card" style="max-width:420px;">
@@ -1646,6 +1710,7 @@
     getActiveCart().metode = method;
     document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    updateKembalian();
   }
 
   function toggleAuthMode(){
@@ -1862,13 +1927,15 @@
   function renderProducts(){
     const grid = document.getElementById('prod-grid');
     const q = (document.getElementById('pos-search')?.value || '').toLowerCase();
-    const filtered = products.filter(p => p.nama.toLowerCase().includes(q));
+    const filtered = products.filter(p => p.nama.toLowerCase().includes(q))
+      .sort((a,b) => (b.favorit === true) - (a.favorit === true));
     if (filtered.length === 0){
       grid.innerHTML = '<div class="loading-note">Tidak ada produk ditemukan.</div>';
       return;
     }
     grid.innerHTML = filtered.map(p => `
-      <div class="prod-card" onclick="addToCart('${p.id}')">
+      <div class="prod-card" onclick="addToCart('${p.id}')" style="${p.favorit ? 'border-color:var(--good); border-width:1.5px;' : ''}">
+        ${p.favorit ? '<span style="position:absolute; top:8px; left:8px; font-size:13px;">⭐</span>' : ''}
         <span class="prod-tag ${p.kategori}">${p.is_racikan ? 'Racikan' : (KATEGORI_LABEL[p.kategori] || p.kategori)}</span>
         <div class="prod-icon" style="${p.gambar_url ? `background-image:url(${p.gambar_url}); background-size:cover; background-position:center;` : ''}">${p.gambar_url ? '' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/></svg>'}</div>
         <div class="prod-name">${p.nama}</div>
@@ -2200,15 +2267,99 @@
     renderCart();
   }
 
+  function updateItemDiskon(itemId, value){
+    const item = getActiveCart().items.find(c => c.id === itemId);
+    if (item) item.diskonItem = parseFloat(value) || 0;
+    updateDiskon(document.getElementById('cart-diskon').value);
+  }
+
+  function hitungSubtotalBersih(cart){
+    // Subtotal setelah dikurangi diskon per-item (tapi sebelum diskon keseluruhan)
+    return cart.reduce((s,c)=> s + (c.price*c.qty - (c.diskonItem||0)), 0);
+  }
+
   function updateDiskon(value){
     getActiveCart().diskon = parseFloat(value) || 0;
     const cart = getActiveCart().items;
-    const subtotal = cart.reduce((s,c)=> s + c.price*c.qty, 0);
-    const diskon = Math.min(parseFloat(value) || 0, subtotal);
-    const total = subtotal - diskon;
-    document.getElementById('sum-diskon').textContent = '− Rp ' + diskon.toLocaleString('id-ID');
+    const subtotalKotor = cart.reduce((s,c)=> s + c.price*c.qty, 0);
+    const subtotalBersih = hitungSubtotalBersih(cart);
+    const diskonKeseluruhan = Math.min(parseFloat(value) || 0, subtotalBersih);
+
+    const nilaiPoin = getNilaiPoinDitebus();
+    const total = Math.max(0, subtotalBersih - diskonKeseluruhan - nilaiPoin);
+
+    document.getElementById('sum-subtotal').textContent = 'Rp ' + subtotalKotor.toLocaleString('id-ID');
+    document.getElementById('sum-diskon').textContent = '− Rp ' + (diskonKeseluruhan + nilaiPoin).toLocaleString('id-ID');
     document.getElementById('sum-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
+    updateKembalian();
   }
+
+  function getNilaiPoinDitebus(){
+    const checkbox = document.getElementById('cart-tebus-poin');
+    if (!checkbox || !checkbox.checked) return 0;
+    return parseFloat(checkbox.dataset.nilai) || 0;
+  }
+
+  // ================= TEBUS POIN DI KASIR =================
+  async function checkPoinPelanggan(){
+    const wa = document.getElementById('cart-wa-pelanggan').value.trim();
+    const box = document.getElementById('poin-tebus-box');
+    if (!wa){ box.style.display = 'none'; return; }
+
+    const { data } = await sb.from('customer_points').select('poin').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).maybeSingle();
+    const poin = data?.poin || 0;
+    const NILAI_PER_POIN = 500; // 1 poin = Rp500, bisa disesuaikan nanti
+    if (poin > 0){
+      box.style.display = 'block';
+      document.getElementById('poin-tersedia-text').textContent = poin + ' poin';
+      document.getElementById('poin-nilai-text').textContent = 'Rp ' + (poin * NILAI_PER_POIN).toLocaleString('id-ID');
+      document.getElementById('cart-tebus-poin').dataset.nilai = poin * NILAI_PER_POIN;
+      document.getElementById('cart-tebus-poin').dataset.poin = poin;
+      document.getElementById('cart-tebus-poin').checked = false;
+    } else {
+      box.style.display = 'none';
+    }
+  }
+
+  // ================= SPLIT PAYMENT =================
+  function toggleSplitPayment(){
+    const aktif = document.getElementById('cart-split-payment').checked;
+    document.getElementById('split-payment-fields').style.display = aktif ? 'block' : 'none';
+    document.getElementById('metode-bayar-wrap').style.display = aktif ? 'none' : 'block';
+    document.getElementById('split-tunai').value = '';
+    document.getElementById('split-nontunai').value = '';
+    updateKembalian();
+  }
+
+  // ================= KEMBALIAN =================
+  function updateKembalian(){
+    const isSplit = document.getElementById('cart-split-payment')?.checked;
+    const isTunai = selectedPaymentMethod === 'tunai';
+    const box = document.getElementById('kembalian-box');
+
+    const totalText = document.getElementById('sum-total').textContent.replace(/[^\d]/g, '');
+    const total = parseInt(totalText) || 0;
+
+    if (isSplit){
+      box.style.display = 'none';
+      const tunai = parseFloat(document.getElementById('split-tunai').value) || 0;
+      const nonTunai = parseFloat(document.getElementById('split-nontunai').value) || 0;
+      const btn = document.getElementById('checkout-btn');
+      if ((tunai + nonTunai) < total && cart_hasItems()) {
+        // biarkan tombol checkout tetap ikut aturan resep, cuma beri catatan visual lewat note
+      }
+      return;
+    }
+
+    if (!isTunai){ box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    const diterima = parseFloat(document.getElementById('cart-uang-diterima').value) || 0;
+    const kembalian = diterima - total;
+    document.getElementById('kembalian-value').textContent = 'Rp ' + Math.max(0, kembalian).toLocaleString('id-ID');
+    document.getElementById('kembalian-value').style.color = kembalian < 0 ? 'var(--danger)' : 'var(--brand)';
+  }
+
+  function cart_hasItems(){ return getActiveCart().items.length > 0; }
 
   function renderCart(){
     renderCartTabs();
@@ -2234,9 +2385,10 @@
               <div class="qty-val">${c.qty}</div>
               <div class="qty-btn" onclick="changeQty('${c.id}', 1)">+</div>
             </div>
+            <input type="number" placeholder="Diskon item (Rp)" value="${c.diskonItem || ''}" oninput="updateItemDiskon('${c.id}', this.value)" style="margin-top:6px; width:120px; font-size:10.5px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--surface-2);">
           </div>
           <div class="ci-right">
-            <div class="ci-price num">Rp ${(c.price * c.qty).toLocaleString('id-ID')}</div>
+            <div class="ci-price num">Rp ${((c.price * c.qty) - (c.diskonItem||0)).toLocaleString('id-ID')}</div>
             <div class="ci-remove" onclick="removeItem('${c.id}')">Hapus</div>
           </div>
         </div>`).join('');
@@ -2262,6 +2414,17 @@
     const rxOk = !hasRx || document.getElementById('rx-check').checked;
     btn.disabled = !(cart.length > 0 && rxOk);
     note.classList.toggle('show', hasRx && !document.getElementById('rx-check').checked);
+  }
+
+  async function reprintStruk(transactionId){
+    const { data: tx } = await sb.from('transactions').select('*, transaction_items(*)').eq('id', transactionId).single();
+    if (!tx){ showToast('Transaksi tidak ditemukan.', true); return; }
+    const items = tx.transaction_items.map(i => ({ name: i.nama_produk, qty: i.qty, price: parseFloat(i.harga_satuan) }));
+    printReceipt({
+      nomorTransaksi: tx.nomor_transaksi + ' (ULANG)', namaPelanggan: tx.nama_pelanggan || 'Umum',
+      tanggal: new Date(tx.created_at), items, subtotal: parseFloat(tx.subtotal), diskon: parseFloat(tx.diskon),
+      total: parseFloat(tx.total), metode: tx.metode_bayar, kembalian: parseFloat(tx.kembalian || 0), uangDiterima: tx.uang_diterima ? parseFloat(tx.uang_diterima) : null
+    });
   }
 
   function printReceipt(data){
@@ -2301,6 +2464,8 @@
           <tr><td>Diskon</td><td style="text-align:right;">− Rp ${data.diskon.toLocaleString('id-ID')}</td></tr>
           <tr class="total-row"><td>TOTAL</td><td style="text-align:right;">Rp ${data.total.toLocaleString('id-ID')}</td></tr>
           <tr><td>Bayar</td><td style="text-align:right;">${data.metode.replace('_',' ').toUpperCase()}</td></tr>
+          ${data.uangDiterima ? `<tr><td>Uang Diterima</td><td style="text-align:right;">Rp ${data.uangDiterima.toLocaleString('id-ID')}</td></tr>` : ''}
+          ${data.kembalian ? `<tr class="total-row"><td>Kembalian</td><td style="text-align:right;">Rp ${data.kembalian.toLocaleString('id-ID')}</td></tr>` : ''}
         </table>
         <hr>
         <div class="center">Terima kasih 🙏</div>
@@ -2400,13 +2565,17 @@
       mengandung_resep: cart.some(c => c.tag === 'obat_resep'),
       resep_diverifikasi_oleh: cart.some(c => c.tag === 'obat_resep') ? currentProfile.id : null,
       device_id: 'web-browser', offline_created_at: meta.waktuAsli || new Date().toISOString(),
-      shift_id: meta.shiftId || null
+      shift_id: meta.shiftId || null,
+      uang_diterima: meta.uangDiterima || null, kembalian: meta.kembalian || 0,
+      detail_pembayaran: meta.detailPembayaran || null,
+      poin_ditebus: meta.poinDitebus || 0, nilai_poin_ditebus: meta.nilaiPoin || 0
     }).select().single();
     if (txErr) throw txErr;
 
     const items = cart.map(c => ({
       transaction_id: tx.id, product_id: c.isDynamicRacikan ? null : c.id, nama_produk: c.name,
-      harga_satuan: c.price, qty: c.qty, subtotal: c.price * c.qty
+      harga_satuan: c.price, qty: c.qty, subtotal: (c.price * c.qty) - (c.diskonItem||0),
+      diskon_item: c.diskonItem || 0
     }));
     const { data: insertedItems, error: itemsErr } = await sb.from('transaction_items').insert(items).select();
     if (itemsErr) throw itemsErr;
@@ -2455,17 +2624,43 @@
 
   async function checkout(){
     const btn = document.getElementById('checkout-btn');
-    btn.disabled = true; btn.textContent = 'Menyimpan…';
 
     const activeCart = getActiveCart();
     const cart = activeCart.items;
-    const subtotal = cart.reduce((s,c)=> s + c.price*c.qty, 0);
-    const diskon = Math.min(parseFloat(document.getElementById('cart-diskon')?.value) || 0, subtotal);
-    const total = subtotal - diskon;
+    const subtotalKotor = cart.reduce((s,c)=> s + c.price*c.qty, 0);
+    const subtotalBersihItem = hitungSubtotalBersih(cart);
+    const diskonKeseluruhan = Math.min(parseFloat(document.getElementById('cart-diskon')?.value) || 0, subtotalBersihItem);
+    const nilaiPoin = getNilaiPoinDitebus();
+    const total = Math.max(0, subtotalBersihItem - diskonKeseluruhan - nilaiPoin);
+    const diskon = (subtotalKotor - subtotalBersihItem) + diskonKeseluruhan; // total semua diskon (item + keseluruhan) buat dicatat
+
+    const isSplit = document.getElementById('cart-split-payment').checked;
+    let uangDiterima = null, kembalian = 0, detailPembayaran = null, metodeFinal = selectedPaymentMethod;
+
+    if (isSplit){
+      const tunai = parseFloat(document.getElementById('split-tunai').value) || 0;
+      const nonTunai = parseFloat(document.getElementById('split-nontunai').value) || 0;
+      if ((tunai + nonTunai) < total){ showToast('Jumlah bayar tunai + non-tunai kurang dari total.', true); return; }
+      detailPembayaran = { tunai, non_tunai: nonTunai };
+      metodeFinal = 'split';
+      kembalian = (tunai + nonTunai) - total;
+    } else if (selectedPaymentMethod === 'tunai'){
+      uangDiterima = parseFloat(document.getElementById('cart-uang-diterima').value) || 0;
+      if (uangDiterima < total){ showToast('Uang diterima kurang dari total belanja.', true); return; }
+      kembalian = uangDiterima - total;
+    }
+
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+
     const nomorTransaksi = 'TX-' + Date.now();
     const namaPelanggan = document.getElementById('cart-nama-pelanggan').value.trim() || 'Umum';
     const waPelanggan = document.getElementById('cart-wa-pelanggan').value.trim() || null;
-    const meta = { nomorTransaksi, namaPelanggan, waPelanggan, subtotal, diskon, total, metode: selectedPaymentMethod, shiftId: currentShift ? currentShift.id : null, waktuAsli: new Date().toISOString() };
+    const poinDitebus = document.getElementById('cart-tebus-poin').checked ? parseInt(document.getElementById('cart-tebus-poin').dataset.poin) || 0 : 0;
+    const meta = {
+      nomorTransaksi, namaPelanggan, waPelanggan, subtotal: subtotalKotor, diskon, total,
+      metode: metodeFinal, shiftId: currentShift ? currentShift.id : null, waktuAsli: new Date().toISOString(),
+      uangDiterima, kembalian, detailPembayaran, poinDitebus, nilaiPoin
+    };
 
     const bersihkanKeranjang = () => {
       if (carts.length > 1){
@@ -2476,6 +2671,11 @@
         activeCart.diskon = 0;
         activeCart.namaPelanggan = ''; activeCart.waPelanggan = '';
       }
+      document.getElementById('cart-split-payment').checked = false;
+      document.getElementById('cart-tebus-poin').checked = false;
+      document.getElementById('cart-uang-diterima').value = '';
+      document.getElementById('split-tunai').value = ''; document.getElementById('split-nontunai').value = '';
+      toggleSplitPayment();
       renderCart();
       document.getElementById('pos-tx-id').textContent = 'Transaksi baru';
     };
@@ -2484,7 +2684,7 @@
     if (!navigator.onLine){
       queueOfflineTransaction(cart, meta);
       showToast('📡 Offline — transaksi disimpan di HP, akan otomatis terkirim saat online lagi');
-      printReceipt({ nomorTransaksi, namaPelanggan, tanggal: new Date(), items: cart, subtotal, diskon, total, metode: selectedPaymentMethod });
+      printReceipt({ nomorTransaksi, namaPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
       bersihkanKeranjang();
       btn.textContent = 'Selesaikan Transaksi';
       updateCheckoutState();
@@ -2493,8 +2693,15 @@
 
     try{
       await executeCheckoutOnServer(cart, meta);
+
+      // Kalau ada poin yang ditebus, kurangi poin pelanggan
+      if (poinDitebus > 0 && waPelanggan){
+        const { data: cp } = await sb.from('customer_points').select('poin').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', waPelanggan).maybeSingle();
+        if (cp) await sb.from('customer_points').update({ poin: Math.max(0, cp.poin - poinDitebus) }).eq('whatsapp', waPelanggan).eq('tenant_id', currentProfile.tenant_id);
+      }
+
       showToast('✓ Transaksi berhasil disimpan ke database');
-      printReceipt({ nomorTransaksi, namaPelanggan, tanggal: new Date(), items: cart, subtotal, diskon, total, metode: selectedPaymentMethod });
+      printReceipt({ nomorTransaksi, namaPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
       bersihkanKeranjang();
       await loadProducts();
       await loadDashboard();
@@ -2502,7 +2709,7 @@
       // Gagal karena kemungkinan besar koneksi putus di tengah jalan -> simpan offline juga sebagai jaring pengaman
       queueOfflineTransaction(cart, meta);
       showToast('📡 Gagal konek ke server — transaksi diamankan offline, akan otomatis dicoba lagi', true);
-      printReceipt({ nomorTransaksi, namaPelanggan, tanggal: new Date(), items: cart, subtotal, diskon, total, metode: selectedPaymentMethod });
+      printReceipt({ nomorTransaksi, namaPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
       bersihkanKeranjang();
     } finally {
       btn.textContent = 'Selesaikan Transaksi';
@@ -4096,6 +4303,7 @@
     document.getElementById('pf-stok-min').value = 10;
     document.getElementById('pf-margin-preview').value = '';
     document.getElementById('pf-is-racikan').checked = false;
+    document.getElementById('pf-favorit').checked = false;
     toggleRacikanHint();
     pendingProductPhotoUrl = null;
     document.getElementById('pf-foto-preview').style.backgroundImage = '';
@@ -4139,6 +4347,7 @@
     document.getElementById('pf-isi-kemasan').value = p.isi_per_kemasan || 1;
     document.getElementById('pf-produsen').value = p.produsen || '';
     document.getElementById('pf-is-racikan').checked = !!p.is_racikan;
+    document.getElementById('pf-favorit').checked = !!p.favorit;
     toggleRacikanHint();
     pendingProductPhotoUrl = p.gambar_url || null;
     if (p.gambar_url){
@@ -4190,6 +4399,7 @@
       isi_per_kemasan: parseInt(document.getElementById('pf-isi-kemasan').value) || 1,
       produsen: document.getElementById('pf-produsen').value.trim() || null,
       is_racikan: document.getElementById('pf-is-racikan').checked,
+      favorit: document.getElementById('pf-favorit').checked,
       harga_grosir: parseFloat(document.getElementById('pf-harga-grosir').value) || null,
       gambar_url: pendingProductPhotoUrl,
       min_qty_grosir: parseInt(document.getElementById('pf-min-grosir').value) || null,
@@ -4224,6 +4434,110 @@
     if (error){ showToast('Gagal menghapus: ' + error.message, true); return; }
     showToast('✓ Produk dihapus');
     await loadStokPage();
+  }
+
+  // ================= SCAN BON (OCR) =================
+  let bonExtractedLines = [];
+
+  function openBonScanModal(){
+    document.getElementById('bon-file-input').value = '';
+    document.getElementById('bon-upload-view').style.display = 'block';
+    document.getElementById('bon-hasil-view').style.display = 'none';
+    document.getElementById('bon-progress').style.display = 'none';
+    bonExtractedLines = [];
+    document.getElementById('bon-scan-modal').classList.add('show');
+  }
+
+  async function processBonScan(event){
+    const file = event.target.files[0];
+    if (!file) return;
+
+    document.getElementById('bon-progress').style.display = 'block';
+
+    try{
+      const result = await Tesseract.recognize(file, 'ind+eng', {
+        logger: (m) => {
+          if (m.status === 'recognizing text'){
+            document.getElementById('bon-progress-percent').textContent = Math.round(m.progress * 100) + '%';
+          }
+        }
+      });
+
+      const teksMentah = result.data.text;
+      // Ambil baris yang kemungkinan berisi nama barang + angka (harga/qty) — saring baris kosong/terlalu pendek
+      const baris = teksMentah.split('\n').map(b => b.trim()).filter(b => b.length > 3);
+
+      bonExtractedLines = baris.map(b => {
+        // Coba tebak angka terakhir di baris sebagai qty (heuristik sederhana, user tetap harus cek manual)
+        const angkaMatch = b.match(/(\d+)\s*$/);
+        return { teksAsli: b, namaTebakan: angkaMatch ? b.replace(angkaMatch[0], '').trim() : b, qtyTebakan: angkaMatch ? parseInt(angkaMatch[1]) : '', productId: null };
+      });
+
+      document.getElementById('bon-progress').style.display = 'none';
+      document.getElementById('bon-upload-view').style.display = 'none';
+      document.getElementById('bon-hasil-view').style.display = 'block';
+      renderBonItems();
+    } catch(err){
+      document.getElementById('bon-progress').style.display = 'none';
+      showToast('Gagal membaca gambar: ' + err.message, true);
+    }
+  }
+
+  function renderBonItems(){
+    const wrap = document.getElementById('bon-items-wrap');
+    const optionsProduk = '<option value="">— Bukan barang / lewati baris ini —</option>' + products.map(p => `<option value="${p.id}">${p.nama}</option>`).join('');
+
+    wrap.innerHTML = bonExtractedLines.map((line, idx) => `
+      <div style="background:var(--surface-2); border-radius:9px; padding:10px 12px; margin-bottom:8px;">
+        <div style="font-size:10.5px; color:var(--ink-soft); margin-bottom:6px; font-style:italic;">Terbaca: "${line.teksAsli}"</div>
+        <div class="field-row" style="margin-bottom:6px;">
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:10px;">Cocokkan ke Produk</label>
+            <select onchange="bonExtractedLines[${idx}].productId = this.value" style="font-size:12px; padding:7px 9px;">${optionsProduk}</select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:10px;">Jumlah</label>
+            <input type="number" value="${line.qtyTebakan}" oninput="bonExtractedLines[${idx}].qtyTebakan = this.value" style="font-size:12px; padding:7px 9px;">
+          </div>
+        </div>
+        <button class="btn-secondary" style="font-size:10px; padding:3px 8px; color:var(--danger);" onclick="removeBonRow(${idx})">Hapus baris ini</button>
+      </div>`).join('');
+  }
+
+  function addBonRow(){
+    bonExtractedLines.push({ teksAsli: '(baris manual)', namaTebakan: '', qtyTebakan: '', productId: null });
+    renderBonItems();
+  }
+
+  function removeBonRow(idx){
+    bonExtractedLines.splice(idx, 1);
+    renderBonItems();
+  }
+
+  async function confirmBonScan(){
+    const validRows = bonExtractedLines.filter(l => l.productId && parseInt(l.qtyTebakan) > 0);
+    if (validRows.length === 0){ showToast('Belum ada baris yang dicocokkan ke produk dengan jumlah valid.', true); return; }
+
+    let sukses = 0;
+    for (const row of validRows){
+      const jumlah = parseInt(row.qtyTebakan);
+      await sb.from('product_batches').insert({
+        tenant_id: currentProfile.tenant_id, product_id: row.productId, stok: jumlah
+      });
+      const { data: allBatches } = await sb.from('product_batches').select('stok').eq('product_id', row.productId);
+      const totalStok = (allBatches || []).reduce((s,b) => s + b.stok, 0);
+      await sb.from('products').update({ stok: totalStok }).eq('id', row.productId);
+      await sb.from('inventory_movements').insert({
+        tenant_id: currentProfile.tenant_id, product_id: row.productId, jenis_mutasi: 'restock',
+        jumlah, keterangan: `Barang masuk via scan bon AI oleh ${currentProfile.nama}`
+      });
+      sukses++;
+    }
+
+    showToast(`✓ ${sukses} produk berhasil ditambah stok dari bon`);
+    closeModal('bon-scan-modal');
+    await loadProducts();
+    if (document.getElementById('page-stok')?.classList.contains('active')) await loadStokPage();
   }
 
   // ================= SCAN BARANG MASUK (GS1-128 aware) =================
@@ -4568,7 +4882,10 @@
               <td style="text-transform:capitalize">${t.metode_bayar.replace('_',' ')}</td>
               <td>${new Date(t.created_at).toLocaleString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</td>
               <td class="num">Rp ${parseFloat(t.total).toLocaleString('id-ID')}</td>
-              <td>${t.status_transaksi === 'dibatalkan' ? '—' : `<button class="btn-secondary owner-only" style="font-size:10.5px; padding:5px 9px; color:var(--danger);" onclick="openVoidModal('${t.id}','${t.nomor_transaksi}')">Batalkan</button>`}</td>
+              <td>
+                ${t.status_transaksi !== 'dibatalkan' ? `<button class="btn-secondary" style="font-size:10.5px; padding:5px 9px;" onclick="reprintStruk('${t.id}')">Cetak Ulang</button>` : ''}
+                ${t.status_transaksi === 'dibatalkan' ? '—' : `<button class="btn-secondary owner-only" style="font-size:10.5px; padding:5px 9px; color:var(--danger);" onclick="openVoidModal('${t.id}','${t.nomor_transaksi}')">Batalkan</button>`}
+              </td>
             </tr>`).join('')}
         </tbody>
       </table>`;
