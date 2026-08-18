@@ -309,7 +309,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v18-2130</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v19-2002</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -2325,7 +2325,7 @@
       return;
     }
     grid.innerHTML = filtered.map(p => `
-      <div class="prod-card" onclick="openQtyConfirmForProduct('${p.id}')" style="${p.favorit ? 'border-color:var(--good); border-width:1.5px;' : ''}">
+      <div class="prod-card" onclick="handleProductTapKasir('${p.id}')" style="${p.favorit ? 'border-color:var(--good); border-width:1.5px;' : ''}">
         ${p.favorit ? '<span style="position:absolute; top:8px; left:8px; font-size:13px;">⭐</span>' : ''}
         <span class="prod-tag ${p.kategori}">${p.is_racikan ? 'Racikan' : (KATEGORI_LABEL[p.kategori] || p.kategori)}</span>
         <div class="prod-icon" style="${p.gambar_url ? `background-image:url(${p.gambar_url}); background-size:cover; background-position:center;` : ''}">${p.gambar_url ? '' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/></svg>'}</div>
@@ -2948,6 +2948,23 @@
   let scanFoundProduct = null;
   let scanConfirmQty = 1;
   let scanViaManualClick = false;
+
+  // Tap produk di Kasir: kalau produk tidak punya pilihan satuan kemasan (Box/Strip dll),
+  // langsung tambahkan 1 ke keranjang tanpa popup — lebih cepat saat toko ramai.
+  // Kalau produk punya kemasan, tetap buka popup "Pilih Jumlah" supaya kasir bisa pilih satuan.
+  function handleProductTapKasir(productId){
+    const prod = products.find(p => p.id === productId);
+    if (!prod) return;
+    const hasKemasan = prod.satuan_kemasan && prod.isi_per_kemasan > 1;
+    if (hasKemasan){
+      openQtyConfirmForProduct(productId);
+      return;
+    }
+    if (!prod.is_racikan && prod.stok <= 0){ showToast('Stok produk ini habis.', true); return; }
+    addToCart(productId);
+    if (navigator.vibrate) navigator.vibrate(30);
+    showToast(`✓ "${prod.nama}" ditambahkan ke keranjang`);
+  }
 
   function openQtyConfirmForProduct(productId){
     const prod = products.find(p => p.id === productId);
