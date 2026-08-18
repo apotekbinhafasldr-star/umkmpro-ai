@@ -1084,42 +1084,31 @@
         <div class="panel" style="margin-bottom:16px;">
           <div class="panel-head">
             <div>
-              <div class="panel-title">Cari & Kelola Member</div>
-              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Semua pelanggan yang pernah tercatat poinnya — buat kartu member digital dari sini</div>
-            </div>
-          </div>
-          <div class="panel-body">
-            <input type="text" id="member-search-input" placeholder="Cari nama atau No. WA…" oninput="renderMemberList()" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px; margin-bottom:12px;">
-            <div id="member-list"><div class="loading-note">Memuat data…</div></div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head">
-            <div>
-              <div class="panel-title">Pelanggan Khusus / Reseller</div>
-              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Dokter, bidan, perawat, atau reseller langganan — otomatis dapat harga grosir setiap transaksi, berapapun jumlahnya</div>
+              <div class="panel-title">Semua Pelanggan Terdaftar</div>
+              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Member biasa dapat poin tiap belanja. Dokter/Bidan/Perawat/Reseller otomatis dapat harga grosir (tanpa poin).</div>
             </div>
           </div>
           <div class="panel-body">
             <div style="border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:16px;">
-              <div style="font-size:12px; font-weight:700; margin-bottom:10px;">+ Tambah Pelanggan Khusus</div>
+              <div style="font-size:12px; font-weight:700; margin-bottom:10px;">+ Daftarkan Pelanggan Baru</div>
               <div class="field-row">
-                <div class="field"><label>Nama</label><input type="text" id="pk-nama" placeholder="Nama lengkap"></div>
-                <div class="field"><label>No. WhatsApp</label><input type="text" id="pk-wa" placeholder="08xxxxxxxxxx"></div>
+                <div class="field"><label>Nama</label><input type="text" id="dm-nama" placeholder="Nama pelanggan"></div>
+                <div class="field"><label>No. WhatsApp</label><input type="text" id="dm-wa" placeholder="08xxxxxxxxxx"></div>
               </div>
               <div class="field">
-                <label>Tipe</label>
-                <select id="pk-tipe">
-                  <option value="dokter">Dokter</option>
-                  <option value="bidan">Bidan</option>
-                  <option value="perawat">Perawat</option>
-                  <option value="reseller">Reseller</option>
+                <label>Tipe Pelanggan</label>
+                <select id="dm-tipe">
+                  <option value="umum">Member Biasa (dapat poin tiap belanja)</option>
+                  <option value="dokter">Dokter (harga grosir otomatis)</option>
+                  <option value="bidan">Bidan (harga grosir otomatis)</option>
+                  <option value="perawat">Perawat (harga grosir otomatis)</option>
+                  <option value="reseller">Reseller (harga grosir otomatis)</option>
                 </select>
               </div>
-              <button class="btn-primary" style="width:100%; justify-content:center;" onclick="tambahPelangganKhusus()">+ Tambahkan</button>
+              <button class="btn-primary" style="width:100%; justify-content:center;" onclick="daftarMemberBaru()">+ Daftarkan</button>
             </div>
-            <div id="pelanggan-khusus-list"><div class="loading-note">Memuat data…</div></div>
+            <input type="text" id="member-search-input" placeholder="Cari nama atau No. WA…" oninput="renderMemberList()" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px; margin-bottom:12px;">
+            <div id="member-list"><div class="loading-note">Memuat data…</div></div>
           </div>
         </div>
       </div>
@@ -2491,6 +2480,25 @@
   }
 
   let memberListCache = [];
+
+  async function daftarMemberBaru(){
+    const nama = document.getElementById('dm-nama').value.trim();
+    const wa = document.getElementById('dm-wa').value.trim();
+    const tipe = document.getElementById('dm-tipe').value;
+    if (!nama || !wa){ showToast('Nama dan No. WA wajib diisi.', true); return; }
+
+    const { data: existing } = await sb.from('customer_points').select('id').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).maybeSingle();
+    if (existing){ showToast('No. WA ini sudah terdaftar.', true); return; }
+
+    const { error } = await sb.from('customer_points').insert({ tenant_id: currentProfile.tenant_id, nama, whatsapp: wa, poin: 0, tipe_pelanggan: tipe });
+    if (error){ showToast('Gagal mendaftarkan: ' + error.message, true); return; }
+    showToast(tipe === 'umum' ? '✓ Member baru terdaftar, poin mulai dari 0' : '✓ Pelanggan khusus terdaftar, otomatis dapat harga grosir');
+    document.getElementById('dm-nama').value = '';
+    document.getElementById('dm-wa').value = '';
+    document.getElementById('dm-tipe').value = 'umum';
+    await loadMemberList();
+  }
+
   async function loadMemberList(){
     const { data } = await sb.from('customer_points').select('*').eq('tenant_id', currentProfile.tenant_id).order('poin', { ascending: false });
     memberListCache = data || [];
@@ -2508,7 +2516,10 @@
       <div class="row-item">
         <div><div class="row-name">${m.nama || 'Tanpa nama'}${m.tipe_pelanggan && m.tipe_pelanggan !== 'umum' ? ' · ' + TIPE_LABEL[m.tipe_pelanggan] : ''}</div><div class="row-meta">${m.whatsapp} · ${m.poin || 0} poin</div></div>
         <div class="row-right">
-          <button class="btn-secondary" style="font-size:10px; padding:3px 7px; background:var(--brand-tint); color:var(--brand);" onclick='bukaKartuDigital(${JSON.stringify({nama:m.nama,whatsapp:m.whatsapp,tipe:m.tipe_pelanggan||"umum"}).replace(/'/g,"&#39;")})'>🪪 Kartu Digital</button>
+          <div style="display:flex; gap:4px;">
+            <button class="btn-secondary" style="font-size:10px; padding:3px 7px; background:var(--brand-tint); color:var(--brand);" onclick='bukaKartuDigital(${JSON.stringify({nama:m.nama,whatsapp:m.whatsapp,tipe:m.tipe_pelanggan||"umum"}).replace(/'/g,"&#39;")})'>🪪 Kartu Digital</button>
+            ${m.tipe_pelanggan && m.tipe_pelanggan !== 'umum' ? `<button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="hapusPelangganKhusus('${m.whatsapp}')">Jadikan Umum</button>` : ''}
+          </div>
         </div>
       </div>`).join('');
   }
@@ -2650,54 +2661,12 @@
     });
   }
 
-  // ================= PELANGGAN KHUSUS / RESELLER =================
-  async function loadPelangganKhususList(){
-    const el = document.getElementById('pelanggan-khusus-list');
-    el.innerHTML = '<div class="loading-note">Memuat data…</div>';
-    const { data } = await sb.from('customer_points').select('*').eq('tenant_id', currentProfile.tenant_id).neq('tipe_pelanggan', 'umum').order('updated_at', { ascending: false });
-    if (!data || data.length === 0){
-      el.innerHTML = '<div class="loading-note">Belum ada pelanggan khusus terdaftar.</div>';
-      return;
-    }
-    const TIPE_LABEL = { dokter:'👨‍⚕️ Dokter', bidan:'🤰 Bidan', perawat:'👩‍⚕️ Perawat', reseller:'🏪 Reseller' };
-    el.innerHTML = data.map(p => `
-      <div class="row-item">
-        <div><div class="row-name">${p.nama || 'Tanpa nama'}</div><div class="row-meta">${TIPE_LABEL[p.tipe_pelanggan] || p.tipe_pelanggan} · ${p.whatsapp}</div></div>
-        <div class="row-right">
-          <div style="display:flex; gap:4px;">
-            <button class="btn-secondary" style="font-size:10px; padding:3px 7px; background:var(--brand-tint); color:var(--brand);" onclick='bukaKartuDigital(${JSON.stringify({nama:p.nama,whatsapp:p.whatsapp,tipe:p.tipe_pelanggan}).replace(/'/g,"&#39;")})'>🪪 Kartu Digital</button>
-            <button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="hapusPelangganKhusus('${p.whatsapp}')">Jadikan Umum</button>
-          </div>
-        </div>
-      </div>`).join('');
-  }
-
-  async function tambahPelangganKhusus(){
-    const nama = document.getElementById('pk-nama').value.trim();
-    const wa = document.getElementById('pk-wa').value.trim();
-    if (!nama || !wa){ showToast('Nama dan No. WA wajib diisi.', true); return; }
-
-    const { data: existing } = await sb.from('customer_points').select('id').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).maybeSingle();
-    const tipe = document.getElementById('pk-tipe').value;
-
-    let error;
-    if (existing){
-      ({ error } = await sb.from('customer_points').update({ nama, tipe_pelanggan: tipe }).eq('id', existing.id));
-    } else {
-      ({ error } = await sb.from('customer_points').insert({ tenant_id: currentProfile.tenant_id, nama, whatsapp: wa, tipe_pelanggan: tipe, poin: 0 }));
-    }
-    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
-    showToast('✓ Pelanggan khusus ditambahkan — otomatis dapat harga grosir tiap transaksi');
-    document.getElementById('pk-nama').value = '';
-    document.getElementById('pk-wa').value = '';
-    await loadPelangganKhususList();
-  }
-
+  // ================= PELANGGAN KHUSUS / RESELLER (aksi jadikan umum) =================
   async function hapusPelangganKhusus(wa){
     if (!confirm('Jadikan pelanggan ini "Umum" lagi? Mereka tidak akan otomatis dapat harga grosir lagi.')) return;
     await sb.from('customer_points').update({ tipe_pelanggan: 'umum' }).eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa);
     showToast('✓ Diubah jadi pelanggan umum');
-    await loadPelangganKhususList();
+    await loadMemberList();
   }
 
   // ================= DAFTAR TUNGGU (BARANG KOSONG) =================
@@ -3825,7 +3794,7 @@
     if (sub === 'online'){ loadOnlineOrders(); loadTokoOnlineToggle(); }
     if (sub === 'promosi') loadPromoProductSelect();
     if (sub === 'tunggu') loadWaitingListFull();
-    if (sub === 'khusus'){ loadPelangganKhususList(); loadPengaturanPoin(); loadMemberList(); }
+    if (sub === 'khusus'){ loadPengaturanPoin(); loadMemberList(); }
   }
 
   async function loadPelangganPage(){
