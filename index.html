@@ -209,7 +209,7 @@
   .cart-summary{ padding:14px 20px; border-top:1px solid var(--surface-2); }
   .sum-row{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--ink-soft); margin-bottom:6px; }
   .sum-row.total{ font-size:16px; font-weight:700; color:var(--ink); margin-top:10px; }
-  .checkout-btn{ width:100%; background:linear-gradient(155deg, #375A47 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:16px; padding:16px; font-size:15px; font-weight:700; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 12px 28px rgba(26,46,35,0.25); display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; letter-spacing:0.02em; transition:transform .1s ease; }
+  .checkout-btn{ width:100%; background:linear-gradient(150deg, #4A6B45 0%, #2C4A3A 55%, #9B7A3E 100%); color:#fff; border:none; border-radius:16px; padding:16px; font-size:15px; font-weight:700; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 12px 28px rgba(26,46,35,0.25); display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; letter-spacing:0.02em; transition:transform .1s ease; }
   .checkout-btn:active{ transform:translateY(1px); }
   .checkout-btn:disabled{ background:#C9C2B4; box-shadow:none; color:var(--ink-soft); cursor:not-allowed; }
   .checkout-note{ text-align:center; font-size:11px; color:var(--danger); margin-top:8px; font-weight:600; display:none; }
@@ -226,13 +226,13 @@
 
   .loading-note{ font-size:12.5px; color:var(--ink-soft); padding:20px; text-align:center; }
 
-  .btn-primary{ background:linear-gradient(155deg, #375A47 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:14px; padding:12px 20px; font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 6px 16px rgba(26,46,35,0.28); letter-spacing:0.015em; transition:transform .1s ease, box-shadow .1s ease; }
+  .btn-primary{ background:linear-gradient(150deg, #4A6B45 0%, #2C4A3A 55%, #9B7A3E 100%); color:#fff; border:none; border-radius:14px; padding:12px 20px; font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 6px 16px rgba(26,46,35,0.28); letter-spacing:0.015em; transition:transform .1s ease, box-shadow .1s ease; }
   .btn-primary:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.18), 0 2px 6px rgba(26,46,35,0.2); }
   .btn-secondary{ background:var(--surface); color:var(--ink); border:1.5px solid var(--line); border-radius:13px; padding:9px 15px; font-size:12.5px; font-weight:700; box-shadow:0 2px 0 rgba(26,46,35,0.05), 0 2px 6px rgba(26,46,35,0.06); transition:transform .1s ease, border-color .1s ease; }
   .btn-secondary:active{ background:var(--surface-2); transform:translateY(1px); box-shadow:0 1px 2px rgba(26,46,35,0.06); }
   .tabs{ display:flex; gap:6px; margin-bottom:16px; }
   .tab{ font-size:12.5px; font-weight:700; padding:9px 16px; border-radius:24px; background:var(--surface); border:1.5px solid var(--line); color:var(--ink-soft); cursor:pointer; transition:all .12s ease; }
-  .tab.active{ background:linear-gradient(155deg, #375A47 0%, var(--brand-deep) 100%); border-color:var(--brand-deep); color:#fff; box-shadow:0 3px 10px rgba(26,46,35,0.3); }
+  .tab.active{ background:linear-gradient(150deg, #4A6B45 0%, #2C4A3A 55%, #9B7A3E 100%); border-color:var(--brand-deep); color:#fff; box-shadow:0 3px 10px rgba(26,46,35,0.3); }
   .calc-row{ display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:11.5px; }
   .calc-label{ color:var(--ink-soft); }
   .calc-label.main{ color:var(--ink); font-weight:600; }
@@ -2309,6 +2309,17 @@
   function renderProducts(){
     const grid = document.getElementById('prod-grid');
     const q = (document.getElementById('pos-search')?.value || '').toLowerCase();
+
+    if (!q){
+      grid.innerHTML = `
+        <div style="grid-column:1/-1; text-align:center; padding:50px 20px; color:var(--ink-soft);">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="opacity:.4; margin-bottom:10px;"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <div style="font-size:13px; font-weight:700;">Ketik nama produk untuk mulai</div>
+          <div style="font-size:11.5px; margin-top:4px;">Atau pakai tombol Scan buat baca barcode langsung</div>
+        </div>`;
+      return;
+    }
+
     const filtered = products.filter(p => p.nama.toLowerCase().includes(q))
       .sort((a,b) => (b.favorit === true) - (a.favorit === true));
     if (filtered.length === 0){
