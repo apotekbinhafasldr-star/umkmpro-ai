@@ -68,7 +68,8 @@
   .auth-sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:22px; }
   .field{ margin-bottom:14px; }
   .field label{ font-size:11.5px; font-weight:600; display:block; margin-bottom:5px; }
-  .field input{ width:100%; border:1px solid var(--line); border-radius:9px; padding:10px 12px; font-size:13.5px; background:var(--surface-2); }
+  .field input{ width:100%; border:1.5px solid var(--line); border-radius:11px; padding:10px 13px; font-size:13.5px; background:var(--surface-2); transition:border-color .12s ease; }
+  .field input:focus{ outline:none; border-color:var(--brand); background:var(--surface); }
   .auth-btn{ width:100%; background:var(--brand); color:#fff; border:none; border-radius:10px; padding:12px; font-size:13.5px; font-weight:700; margin-top:6px; }
   .auth-switch{ text-align:center; font-size:12px; color:var(--ink-soft); margin-top:16px; }
   .auth-switch a{ color:var(--brand); font-weight:600; cursor:pointer; }
@@ -164,7 +165,8 @@
   .cat-search{ display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 15px; box-shadow:var(--shadow); margin-bottom:16px; }
   .cat-search input{ border:none; outline:none; font-size:14px; flex:1; background:transparent; color:var(--ink); }
   .prod-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .prod-card{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:var(--shadow); position:relative; cursor:pointer; }
+  .prod-card{ background:var(--surface); border:1.5px solid var(--line); border-radius:16px; padding:14px; box-shadow:0 2px 0 rgba(26,46,35,0.04), var(--shadow); position:relative; cursor:pointer; transition:transform .1s ease, box-shadow .1s ease; }
+  .prod-card:active{ transform:translateY(1px) scale(0.98); box-shadow:0 1px 4px rgba(26,46,35,0.1); }
   .prod-card:active{ transform:scale(.97); }
   .prod-tag{ position:absolute; top:10px; right:10px; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
   .prod-tag.obat_resep{ background:var(--brand-tint); color:var(--brand); }
@@ -207,7 +209,7 @@
   .cart-summary{ padding:14px 20px; border-top:1px solid var(--surface-2); }
   .sum-row{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--ink-soft); margin-bottom:6px; }
   .sum-row.total{ font-size:16px; font-weight:700; color:var(--ink); margin-top:10px; }
-  .checkout-btn{ width:100%; background:linear-gradient(155deg, var(--brand) 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:11px; padding:15px; font-size:14.5px; font-weight:700; box-shadow:0 2px 0 rgba(0,0,0,0.14), 0 10px 24px rgba(26,46,35,0.18); display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; letter-spacing:0.015em; transition:transform .12s ease; }
+  .checkout-btn{ width:100%; background:linear-gradient(155deg, #375A47 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:16px; padding:16px; font-size:15px; font-weight:700; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 12px 28px rgba(26,46,35,0.25); display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; letter-spacing:0.02em; transition:transform .1s ease; }
   .checkout-btn:active{ transform:translateY(1px); }
   .checkout-btn:disabled{ background:#C9C2B4; box-shadow:none; color:var(--ink-soft); cursor:not-allowed; }
   .checkout-note{ text-align:center; font-size:11px; color:var(--danger); margin-top:8px; font-weight:600; display:none; }
@@ -224,13 +226,13 @@
 
   .loading-note{ font-size:12.5px; color:var(--ink-soft); padding:20px; text-align:center; }
 
-  .btn-primary{ background:linear-gradient(155deg, var(--brand) 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:10px; padding:11px 18px; font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px; box-shadow:0 2px 0 rgba(0,0,0,0.12), var(--shadow); letter-spacing:0.01em; transition:transform .12s ease, box-shadow .12s ease; }
-  .btn-primary:active{ transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,0.12), 0 2px 8px rgba(26,46,35,0.12); }
-  .btn-secondary{ background:var(--surface); color:var(--ink); border:1.5px solid var(--line); border-radius:9px; padding:8px 13px; font-size:12.5px; font-weight:700; box-shadow:0 1px 2px rgba(26,46,35,0.04); transition:border-color .12s ease, background .12s ease; }
-  .btn-secondary:active{ background:var(--surface-2); }
+  .btn-primary{ background:linear-gradient(155deg, #375A47 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:14px; padding:12px 20px; font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 6px 16px rgba(26,46,35,0.28); letter-spacing:0.015em; transition:transform .1s ease, box-shadow .1s ease; }
+  .btn-primary:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.18), 0 2px 6px rgba(26,46,35,0.2); }
+  .btn-secondary{ background:var(--surface); color:var(--ink); border:1.5px solid var(--line); border-radius:13px; padding:9px 15px; font-size:12.5px; font-weight:700; box-shadow:0 2px 0 rgba(26,46,35,0.05), 0 2px 6px rgba(26,46,35,0.06); transition:transform .1s ease, border-color .1s ease; }
+  .btn-secondary:active{ background:var(--surface-2); transform:translateY(1px); box-shadow:0 1px 2px rgba(26,46,35,0.06); }
   .tabs{ display:flex; gap:6px; margin-bottom:16px; }
-  .tab{ font-size:12.5px; font-weight:700; padding:8px 14px; border-radius:20px; background:var(--surface); border:1px solid var(--line); color:var(--ink-soft); cursor:pointer; transition:all .12s ease; }
-  .tab.active{ background:linear-gradient(155deg, var(--brand) 0%, var(--brand-deep) 100%); border-color:var(--brand-deep); color:#fff; box-shadow:0 2px 6px rgba(26,46,35,0.2); }
+  .tab{ font-size:12.5px; font-weight:700; padding:9px 16px; border-radius:24px; background:var(--surface); border:1.5px solid var(--line); color:var(--ink-soft); cursor:pointer; transition:all .12s ease; }
+  .tab.active{ background:linear-gradient(155deg, #375A47 0%, var(--brand-deep) 100%); border-color:var(--brand-deep); color:#fff; box-shadow:0 3px 10px rgba(26,46,35,0.3); }
   .calc-row{ display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:11.5px; }
   .calc-label{ color:var(--ink-soft); }
   .calc-label.main{ color:var(--ink); font-weight:600; }
@@ -253,7 +255,8 @@
   .modal-title{ font-size:17px; font-weight:600; margin-bottom:16px; }
   .field{ margin-bottom:13px; }
   .field label{ font-size:11.5px; font-weight:600; display:block; margin-bottom:5px; color:var(--ink-soft); }
-  .field input, .field select{ width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-size:13px; font-family:inherit; background:var(--surface-2); color:var(--ink); }
+  .field input, .field select{ width:100%; border:1.5px solid var(--line); border-radius:11px; padding:9px 12px; font-size:13px; font-family:inherit; background:var(--surface-2); color:var(--ink); transition:border-color .12s ease; }
+  .field input:focus, .field select:focus{ outline:none; border-color:var(--brand); background:var(--surface); }
   .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .modal-actions{ display:flex; gap:10px; margin-top:18px; }
   .modal-actions .btn-primary{ flex:1; justify-content:center; }
@@ -571,7 +574,7 @@
 
           <button class="checkout-btn" id="checkout-btn" disabled onclick="checkout()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
-            Selesaikan Transaksi
+            Checkout Sekarang
           </button>
           <div class="checkout-note" id="checkout-note">Lengkapi validasi resep dulu sebelum bisa checkout.</div>
         </div>
@@ -3620,7 +3623,7 @@
       showToast('📡 Offline — transaksi disimpan di HP, akan otomatis terkirim saat online lagi');
       printReceipt({ nomorTransaksi, namaPelanggan, waPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
       bersihkanKeranjang();
-      btn.textContent = 'Selesaikan Transaksi';
+      btn.textContent = 'Checkout Sekarang';
       updateCheckoutState();
       return;
     }
@@ -3664,7 +3667,7 @@
       printReceipt({ nomorTransaksi, namaPelanggan, waPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
       bersihkanKeranjang();
     } finally {
-      btn.textContent = 'Selesaikan Transaksi';
+      btn.textContent = 'Checkout Sekarang';
       updateCheckoutState();
     }
   }
