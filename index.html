@@ -2324,7 +2324,7 @@
       return;
     }
     grid.innerHTML = filtered.map(p => `
-      <div class="prod-card" onclick="addToCart('${p.id}')" style="${p.favorit ? 'border-color:var(--good); border-width:1.5px;' : ''}">
+      <div class="prod-card" onclick="openQtyConfirmForProduct('${p.id}')" style="${p.favorit ? 'border-color:var(--good); border-width:1.5px;' : ''}">
         ${p.favorit ? '<span style="position:absolute; top:8px; left:8px; font-size:13px;">⭐</span>' : ''}
         <span class="prod-tag ${p.kategori}">${p.is_racikan ? 'Racikan' : (KATEGORI_LABEL[p.kategori] || p.kategori)}</span>
         <div class="prod-icon" style="${p.gambar_url ? `background-image:url(${p.gambar_url}); background-size:cover; background-position:center;` : ''}">${p.gambar_url ? '' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/></svg>'}</div>
@@ -2883,7 +2883,11 @@
 
   async function openScanModal(targetInputId){
     scanTargetInputId = targetInputId || null;
+    scanViaManualClick = false;
     scanFoundProduct = null;
+    document.getElementById('scan-video-wrap').style.display = 'block';
+    document.getElementById('scan-status').style.display = 'block';
+    document.querySelector('#scan-modal .field').style.display = 'block';
     document.getElementById('scan-confirm-box').style.display = 'none';
     document.getElementById('scan-manual-input').value = '';
     document.getElementById('scan-status').textContent = 'Membuka kamera…';
@@ -2942,6 +2946,46 @@
 
   let scanFoundProduct = null;
   let scanConfirmQty = 1;
+  let scanViaManualClick = false;
+
+  function openQtyConfirmForProduct(productId){
+    const prod = products.find(p => p.id === productId);
+    if (!prod) return;
+
+    scanTargetInputId = null;
+    scanViaManualClick = true;
+    scanFoundProduct = prod;
+    scanConfirmQty = 1;
+
+    document.querySelector('#scan-modal .modal-title').textContent = 'Pilih Jumlah';
+    document.getElementById('scan-video-wrap').style.display = 'none';
+    document.getElementById('scan-status').style.display = 'none';
+    document.querySelector('#scan-modal .field').style.display = 'none';
+    document.getElementById('scan-confirm-box').style.display = 'block';
+    document.getElementById('scan-confirm-qty').textContent = '1';
+
+    const hasKemasan = prod.satuan_kemasan && prod.isi_per_kemasan > 1;
+    const satuanWrap = document.getElementById('scan-confirm-satuan-wrap');
+    if (hasKemasan){
+      satuanWrap.style.display = 'block';
+      let hargaPerKemasan, labelHarga = '';
+      if (prod.harga_jual_kemasan){
+        hargaPerKemasan = parseFloat(prod.harga_jual_kemasan);
+        labelHarga = ' (Harga Paket)';
+      } else {
+        const kemasanDapatGrosir = prod.harga_grosir && prod.min_qty_grosir && prod.isi_per_kemasan >= prod.min_qty_grosir;
+        hargaPerKemasan = kemasanDapatGrosir ? parseFloat(prod.harga_grosir) * prod.isi_per_kemasan : parseFloat(prod.harga) * prod.isi_per_kemasan;
+        labelHarga = kemasanDapatGrosir ? ' (Harga Grosir)' : '';
+      }
+      document.getElementById('scan-confirm-satuan').innerHTML = `
+        <option value="1">Per ${prod.satuan} — Rp ${parseFloat(prod.harga).toLocaleString('id-ID')}</option>
+        <option value="${prod.isi_per_kemasan}">Per ${prod.satuan_kemasan} (${prod.isi_per_kemasan} ${prod.satuan}) — Rp ${hargaPerKemasan.toLocaleString('id-ID')}${labelHarga}</option>`;
+    } else {
+      satuanWrap.style.display = 'none';
+    }
+    updateScanConfirmHarga();
+    document.getElementById('scan-modal').classList.add('show');
+  }
 
   function searchByBarcode(kode){
     if (!kode || scanFoundProduct) return; // sudah ada produk terkonfirmasi, jangan proses scan baru dulu
@@ -3042,6 +3086,12 @@
   function batalKonfirmasiScan(){
     scanFoundProduct = null;
     document.getElementById('scan-confirm-box').style.display = 'none';
+
+    if (scanViaManualClick){
+      closeScanModal();
+      return;
+    }
+
     document.getElementById('scan-status').textContent = 'Arahkan kamera ke barcode produk…';
     // Lanjutkan scan lagi
     if (('BarcodeDetector' in window) && !scanDetectorInterval){
