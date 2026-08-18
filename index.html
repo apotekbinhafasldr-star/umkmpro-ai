@@ -41,7 +41,7 @@
     --radius:14px; --shadow:0 2px 4px rgba(26,46,35,0.08), 0 10px 28px rgba(26,46,35,0.08);
   }
   *{ box-sizing:border-box; } html,body{ margin:0; padding:0; }
-  body{ background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans',sans-serif; font-weight:500; -webkit-font-smoothing:antialiased; }
+  body{ background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans',sans-serif; font-weight:500; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
   h1,h2,h3{ font-family:'Fraunces',serif; letter-spacing:-0.01em; margin:0; font-weight:700; }
   .num{ font-family:'IBM Plex Mono',monospace; font-weight:700; }
   button{ font-family:inherit; cursor:pointer; font-weight:700; }
@@ -158,7 +158,7 @@
 
   /* ---------- POS ---------- */
   #page-pos .pos-app{ display:grid; grid-template-columns:1fr 380px; }
-  .pos-topbar{ grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; padding:14px 24px; background:var(--brand-deep); color:#E9F0EC; }
+  .pos-topbar{ grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px 14px; padding:14px 24px; background:var(--brand-deep); color:#E9F0EC; }
   .pos-tb-title{ font-size:14.5px; font-weight:600; }
   .pos-tb-sub{ font-size:11px; color:#9FB3A9; }
   .catalog{ padding:16px 18px 12px; }
@@ -199,15 +199,20 @@
   .rx-verify input{ width:16px; height:16px; accent-color:var(--brand); }
   .cart-items{ flex:1; overflow-y:auto; padding:14px 16px; }
   .empty-cart{ text-align:center; color:var(--ink-soft); font-size:12.5px; padding:40px 10px; }
-  .cart-item{ display:flex; gap:10px; padding:13px 14px; margin-bottom:8px; background:var(--surface); border:1.5px solid var(--line); border-radius:14px; box-shadow:0 1px 3px rgba(26,46,35,0.05); }
-  .ci-name{ font-size:12.5px; font-weight:700; }
-  .ci-tag{ font-size:10px; font-weight:700; color:var(--brand); }
-  .ci-qty{ display:flex; align-items:center; gap:9px; margin-top:7px; }
-  .qty-btn{ width:26px; height:26px; border-radius:9px; border:1.5px solid var(--line); background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:var(--brand); transition:all .1s ease; }
+  .cart-item{ display:flex; flex-direction:column; gap:8px; padding:13px 14px; margin-bottom:8px; background:var(--surface); border:1.5px solid var(--line); border-radius:14px; box-shadow:0 1px 3px rgba(26,46,35,0.05); overflow:hidden; }
+  .ci-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .ci-name-wrap{ min-width:0; flex:1; }
+  .ci-name{ font-size:12.5px; font-weight:700; overflow-wrap:anywhere; }
+  .ci-tag{ font-size:10px; font-weight:700; color:var(--brand); margin-top:2px; }
+  .ci-price{ flex-shrink:0; white-space:nowrap; }
+  .ci-bottom{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .ci-qty{ display:flex; align-items:center; gap:9px; }
+  .qty-btn{ width:26px; height:26px; border-radius:9px; border:1.5px solid var(--line); background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:var(--brand); transition:all .1s ease; flex-shrink:0; }
   .qty-btn:active{ background:var(--brand-tint); transform:scale(0.92); }
   .qty-val{ font-size:13px; font-weight:700; min-width:16px; text-align:center; }
-  .ci-right{ margin-left:auto; text-align:right; }
-  .ci-remove{ font-size:10px; color:var(--danger); margin-top:4px; cursor:pointer; font-weight:700; }
+  .ci-actions{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .ci-diskon-input{ width:104px; font-size:10.5px; padding:5px 7px; border:1px solid var(--line); border-radius:6px; background:var(--surface-2); min-width:0; }
+  .ci-remove{ font-size:10px; color:var(--danger); cursor:pointer; font-weight:700; white-space:nowrap; }
   .cart-summary{ padding:16px 20px; border-top:1.5px solid var(--line); background:var(--surface); }
   .sum-row{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--ink-soft); margin-bottom:7px; font-weight:600; }
   .sum-row.total{ font-size:19px; font-weight:800; color:var(--brand-deep); margin-top:12px; padding-top:12px; border-top:1.5px dashed var(--line); }
@@ -309,7 +314,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v19-2002</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v20-2119</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -3342,19 +3347,23 @@
     } else {
       list.innerHTML = cart.map(c => `
         <div class="cart-item">
-          <div style="flex:1">
-            <div class="ci-name">${c.name}</div>
-            <div class="ci-tag" style="${c.tag!=='obat_resep' ? 'color:var(--ink-soft)' : ''}">${KATEGORI_LABEL[c.tag] || c.tag}${c.isGrosir ? ' · <span style="color:var(--good)">Harga Grosir</span>' : ''}</div>
+          <div class="ci-top">
+            <div class="ci-name-wrap">
+              <div class="ci-name">${c.name}</div>
+              <div class="ci-tag" style="${c.tag!=='obat_resep' ? 'color:var(--ink-soft)' : ''}">${KATEGORI_LABEL[c.tag] || c.tag}${c.isGrosir ? ' · <span style="color:var(--good)">Harga Grosir</span>' : ''}</div>
+            </div>
+            <div class="ci-price num">Rp ${((c.price * c.qty) - (c.diskonItem||0)).toLocaleString('id-ID')}</div>
+          </div>
+          <div class="ci-bottom">
             <div class="ci-qty">
               <div class="qty-btn" onclick="changeQty('${c.id}', -1)">−</div>
               <div class="qty-val">${c.qty}</div>
               <div class="qty-btn" onclick="changeQty('${c.id}', 1)">+</div>
             </div>
-            <input type="number" placeholder="Diskon item (Rp)" value="${c.diskonItem || ''}" oninput="updateItemDiskon('${c.id}', this.value)" style="margin-top:6px; width:120px; font-size:10.5px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--surface-2);">
-          </div>
-          <div class="ci-right">
-            <div class="ci-price num">Rp ${((c.price * c.qty) - (c.diskonItem||0)).toLocaleString('id-ID')}</div>
-            <div class="ci-remove" onclick="removeItem('${c.id}')">Hapus</div>
+            <div class="ci-actions">
+              <input type="number" class="ci-diskon-input" placeholder="Diskon (Rp)" value="${c.diskonItem || ''}" oninput="updateItemDiskon('${c.id}', this.value)">
+              <div class="ci-remove" onclick="removeItem('${c.id}')">Hapus</div>
+            </div>
           </div>
         </div>`).join('');
     }
