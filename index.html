@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
   if ('serviceWorker' in navigator){
     window.addEventListener('load', () => {
@@ -470,6 +471,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input type="text" id="pos-search" placeholder="Cari nama obat…" oninput="renderProducts()">
           <button class="btn-secondary" style="white-space:nowrap;" onclick="openScanModal()">📷 Scan</button>
+          <button class="btn-secondary" style="white-space:nowrap; background:var(--brand-tint); color:var(--brand); border-color:var(--brand);" onclick="openScanKartuPelanggan()">🪪 Scan Kartu</button>
           <button class="btn-secondary" style="white-space:nowrap; background:var(--amber-tint); color:var(--amber); border-color:var(--amber);" onclick="openWaitingListModal()">📋 Barang Kosong?</button>
           <button class="btn-secondary apoteker-access" style="white-space:nowrap;" onclick="openDynamicRacikanModal()">🧪 Racikan Dinamis</button>
         </div>
@@ -525,6 +527,7 @@
               <input type="number" id="cart-harga-nego" placeholder="Contoh: 15000" oninput="updateHargaNego(this.value)" style="width:100%; margin-top:4px; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:12.5px;">
             </div>
           </div>
+          <div id="reseller-badge" style="display:none; background:var(--brand-tint); color:var(--brand); border-radius:9px; padding:9px 11px; margin-bottom:10px; font-size:11.5px; font-weight:700;"></div>
           <div id="poin-tebus-box" style="display:none; background:var(--good-tint); border-radius:9px; padding:9px 11px; margin-bottom:10px; font-size:11.5px;">
             <label style="display:flex; align-items:center; gap:7px; cursor:pointer; margin-bottom:0;">
               <input type="checkbox" id="cart-tebus-poin" onchange="updateDiskon(document.getElementById('cart-diskon').value)" style="width:16px; height:16px;">
@@ -923,6 +926,7 @@
         <div class="tab" data-sub="online" onclick="setPelangganTab('online', this)">Pesanan Online</div>
         <div class="tab" data-sub="promosi" onclick="setPelangganTab('promosi', this)">Buat Promosi</div>
         <div class="tab" data-sub="tunggu" onclick="setPelangganTab('tunggu', this)">Daftar Tunggu Barang</div>
+        <div class="tab" data-sub="khusus" onclick="setPelangganTab('khusus', this)">Pelanggan Khusus/Reseller</div>
       </div>
 
       <!-- PIUTANG -->
@@ -1054,6 +1058,68 @@
               <div class="tab" data-status="semua" onclick="setWaitingListFilter('semua', this)">Semua</div>
             </div>
             <div id="waiting-list-full"><div class="loading-note">Memuat data…</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PELANGGAN KHUSUS / RESELLER -->
+      <div class="sub-page" id="sub-khusus">
+        <div class="panel owner-only" style="margin-bottom:16px;">
+          <div class="panel-head"><div class="panel-title">Pengaturan Poin Member</div></div>
+          <div class="panel-body">
+            <div class="field-row">
+              <div class="field">
+                <label>Belanja Rp berapa = 1 Poin</label>
+                <input type="number" id="poin-per-belanja-input" placeholder="10000" onchange="updatePengaturanPoin()">
+              </div>
+              <div class="field">
+                <label>Nilai Tukar 1 Poin (Rp)</label>
+                <input type="number" id="nilai-tukar-poin-input" placeholder="100" onchange="updatePengaturanPoin()">
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--ink-soft);">💡 Contoh dengan pengaturan di atas: belanja Rp10.000 dapat 1 poin, dan 1 poin bisa ditukar jadi potongan Rp100 saat checkout.</div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Cari & Kelola Member</div>
+              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Semua pelanggan yang pernah tercatat poinnya — buat kartu member digital dari sini</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <input type="text" id="member-search-input" placeholder="Cari nama atau No. WA…" oninput="renderMemberList()" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px; margin-bottom:12px;">
+            <div id="member-list"><div class="loading-note">Memuat data…</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Pelanggan Khusus / Reseller</div>
+              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Dokter, bidan, perawat, atau reseller langganan — otomatis dapat harga grosir setiap transaksi, berapapun jumlahnya</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div style="border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:16px;">
+              <div style="font-size:12px; font-weight:700; margin-bottom:10px;">+ Tambah Pelanggan Khusus</div>
+              <div class="field-row">
+                <div class="field"><label>Nama</label><input type="text" id="pk-nama" placeholder="Nama lengkap"></div>
+                <div class="field"><label>No. WhatsApp</label><input type="text" id="pk-wa" placeholder="08xxxxxxxxxx"></div>
+              </div>
+              <div class="field">
+                <label>Tipe</label>
+                <select id="pk-tipe">
+                  <option value="dokter">Dokter</option>
+                  <option value="bidan">Bidan</option>
+                  <option value="perawat">Perawat</option>
+                  <option value="reseller">Reseller</option>
+                </select>
+              </div>
+              <button class="btn-primary" style="width:100%; justify-content:center;" onclick="tambahPelangganKhusus()">+ Tambahkan</button>
+            </div>
+            <div id="pelanggan-khusus-list"><div class="loading-note">Memuat data…</div></div>
           </div>
         </div>
       </div>
@@ -1246,6 +1312,11 @@
         <label>Minimal Qty Grosir</label>
         <input type="number" id="pf-min-grosir" placeholder="Contoh: 10">
       </div>
+    </div>
+    <div class="field" id="pf-harga-kemasan-wrap" style="display:none;">
+      <label>Harga Jual per Kemasan Besar (Rp) — opsional</label>
+      <input type="number" id="pf-harga-jual-kemasan" placeholder="Kosongkan untuk hitung otomatis dari harga satuan">
+      <div style="font-size:10.5px; color:var(--ink-soft); margin-top:5px;">💡 Isi ini kalau harga paket Box-nya beda dari hitungan otomatis (misal ada diskon khusus beli 1 Box)</div>
     </div>
     <div class="field-row">
       <div class="field" style="flex:1;">
@@ -1605,6 +1676,40 @@
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('waiting-list-modal')">Batal</button>
       <button class="btn-primary" id="wl-submit-btn" onclick="submitWaitingList()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SCAN KARTU PELANGGAN -->
+<div class="modal-overlay" id="scan-kartu-modal">
+  <div class="modal-card" style="max-width:420px;">
+    <div class="modal-title">Scan Kartu Pelanggan</div>
+    <div style="position:relative; width:100%; aspect-ratio:4/3; background:#000; border-radius:12px; overflow:hidden; margin-bottom:14px;">
+      <video id="scan-kartu-video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
+    </div>
+    <div id="scan-kartu-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Minta pelanggan tunjukkan QR kartu digitalnya…</div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeScanKartuModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KARTU DIGITAL RESELLER -->
+<div class="modal-overlay" id="kartu-digital-modal">
+  <div class="modal-card" style="max-width:400px; text-align:center;">
+    <div class="modal-title">Kartu Pelanggan Digital</div>
+    <div id="kartu-digital-canvas-wrap" style="background:#fff; border-radius:16px; padding:20px; margin:14px 0; border:1.5px solid var(--line);">
+      <div id="kartu-digital-tenant-nama" style="font-weight:700; font-size:15px; margin-bottom:2px;"></div>
+      <div style="font-size:10.5px; color:var(--ink-soft); margin-bottom:14px;">KARTU PELANGGAN RESELLER</div>
+      <canvas id="kartu-digital-qr" style="margin:0 auto;"></canvas>
+      <div id="kartu-digital-nama" style="font-weight:700; font-size:16px; margin-top:14px;"></div>
+      <div id="kartu-digital-tipe" style="font-size:11.5px; color:var(--brand); font-weight:600;"></div>
+      <div style="font-size:10px; color:var(--ink-soft); margin-top:10px;">Tunjukkan QR ini ke kasir setiap belanja untuk harga khusus otomatis</div>
+    </div>
+    <button class="btn-primary" style="width:100%; justify-content:center;" onclick="bagikanKartuDigital()">📤 Bagikan ke WhatsApp Pelanggan</button>
+    <button class="btn-secondary" style="width:100%; justify-content:center; margin-top:8px;" onclick="unduhKartuDigital()">⬇️ Unduh Gambar Kartu</button>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('kartu-digital-modal')">Tutup</button>
     </div>
   </div>
 </div>
@@ -2369,6 +2474,232 @@
     await loadShiftStatus();
   }
 
+  // ================= PENGATURAN POIN & DAFTAR MEMBER =================
+  async function loadPengaturanPoin(){
+    const { data } = await sb.from('tenants').select('poin_per_belanja, nilai_tukar_poin').eq('id', currentProfile.tenant_id).single();
+    const p1 = document.getElementById('poin-per-belanja-input');
+    const p2 = document.getElementById('nilai-tukar-poin-input');
+    if (p1) p1.value = data?.poin_per_belanja ?? 10000;
+    if (p2) p2.value = data?.nilai_tukar_poin ?? 100;
+  }
+
+  async function updatePengaturanPoin(){
+    const poinPerBelanja = parseFloat(document.getElementById('poin-per-belanja-input').value) || 10000;
+    const nilaiTukar = parseFloat(document.getElementById('nilai-tukar-poin-input').value) || 100;
+    await sb.from('tenants').update({ poin_per_belanja: poinPerBelanja, nilai_tukar_poin: nilaiTukar }).eq('id', currentProfile.tenant_id);
+    showToast('✓ Pengaturan poin disimpan');
+  }
+
+  let memberListCache = [];
+  async function loadMemberList(){
+    const { data } = await sb.from('customer_points').select('*').eq('tenant_id', currentProfile.tenant_id).order('poin', { ascending: false });
+    memberListCache = data || [];
+    renderMemberList();
+  }
+
+  function renderMemberList(){
+    const q = (document.getElementById('member-search-input')?.value || '').toLowerCase();
+    const filtered = memberListCache.filter(m => (m.nama||'').toLowerCase().includes(q) || (m.whatsapp||'').includes(q));
+    const el = document.getElementById('member-list');
+    if (filtered.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada member tercatat.</div>'; return; }
+
+    const TIPE_LABEL = { dokter:'👨‍⚕️ Dokter', bidan:'🤰 Bidan', perawat:'👩‍⚕️ Perawat', reseller:'🏪 Reseller' };
+    el.innerHTML = filtered.slice(0, 50).map(m => `
+      <div class="row-item">
+        <div><div class="row-name">${m.nama || 'Tanpa nama'}${m.tipe_pelanggan && m.tipe_pelanggan !== 'umum' ? ' · ' + TIPE_LABEL[m.tipe_pelanggan] : ''}</div><div class="row-meta">${m.whatsapp} · ${m.poin || 0} poin</div></div>
+        <div class="row-right">
+          <button class="btn-secondary" style="font-size:10px; padding:3px 7px; background:var(--brand-tint); color:var(--brand);" onclick='bukaKartuDigital(${JSON.stringify({nama:m.nama,whatsapp:m.whatsapp,tipe:m.tipe_pelanggan||"umum"}).replace(/'/g,"&#39;")})'>🪪 Kartu Digital</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // ================= SCAN KARTU PELANGGAN (baca QR) =================
+  let scanKartuStream = null;
+  let scanKartuInterval = null;
+
+  async function openScanKartuPelanggan(){
+    document.getElementById('scan-kartu-status').textContent = 'Membuka kamera…';
+    document.getElementById('scan-kartu-modal').classList.add('show');
+
+    if (!('BarcodeDetector' in window)){
+      document.getElementById('scan-kartu-status').innerHTML = '⚠️ Browser ini belum mendukung scan kamera.';
+      return;
+    }
+    try{
+      scanKartuStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const video = document.getElementById('scan-kartu-video');
+      video.srcObject = scanKartuStream;
+      await video.play();
+      document.getElementById('scan-kartu-status').textContent = 'Arahkan kamera ke QR kartu pelanggan…';
+
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      scanKartuInterval = setInterval(async () => {
+        try{
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0) prosesKartuTerscan(barcodes[0].rawValue);
+        } catch(e){}
+      }, 500);
+    } catch(err){
+      document.getElementById('scan-kartu-status').innerHTML = '⚠️ Tidak bisa akses kamera.';
+    }
+  }
+
+  function closeScanKartuModal(){
+    if (scanKartuInterval) clearInterval(scanKartuInterval);
+    scanKartuInterval = null;
+    if (scanKartuStream) scanKartuStream.getTracks().forEach(t => t.stop());
+    scanKartuStream = null;
+    document.getElementById('scan-kartu-modal').classList.remove('show');
+  }
+
+  async function prosesKartuTerscan(kode){
+    if (!kode.startsWith(KARTU_PREFIX)){
+      document.getElementById('scan-kartu-status').innerHTML = '⚠️ Ini bukan QR kartu pelanggan yang valid.';
+      return;
+    }
+    const wa = kode.replace(KARTU_PREFIX, '');
+    playBeepSound();
+    if (scanKartuInterval) clearInterval(scanKartuInterval);
+
+    document.getElementById('cart-wa-pelanggan').value = wa;
+    getActiveCart().waPelanggan = wa;
+    await checkPoinPelanggan();
+
+    if (getActiveCart().isResellerCustomer){
+      document.getElementById('scan-kartu-status').innerHTML = `✓ Kartu dikenali: <b>${getActiveCart().resellerNama}</b>`;
+      showToast(`✓ ${getActiveCart().resellerNama} — harga khusus diterapkan`);
+    } else {
+      document.getElementById('scan-kartu-status').innerHTML = `⚠️ Nomor terbaca tapi belum terdaftar sebagai pelanggan khusus.`;
+    }
+    setTimeout(() => closeScanKartuModal(), 900);
+  }
+
+  // ================= KARTU DIGITAL RESELLER (QR) =================
+  const KARTU_PREFIX = 'UMKMPRO-PELANGGAN:';
+  let kartuDigitalData = null;
+
+  function bukaKartuDigital(p){
+    kartuDigitalData = p;
+    const TIPE_LABEL = { dokter:'Dokter', bidan:'Bidan', perawat:'Perawat', reseller:'Reseller', umum:'Member' };
+    document.getElementById('kartu-digital-tenant-nama').textContent = document.getElementById('sidebar-tenant').textContent || 'Toko';
+    document.getElementById('kartu-digital-nama').textContent = p.nama || 'Pelanggan';
+    document.getElementById('kartu-digital-tipe').textContent = TIPE_LABEL[p.tipe] || p.tipe;
+
+    const kodeUnik = KARTU_PREFIX + p.whatsapp;
+    const canvas = document.getElementById('kartu-digital-qr');
+    QRCode.toCanvas(canvas, kodeUnik, { width: 200, margin: 1 }, (err) => {
+      if (err) showToast('Gagal membuat QR: ' + err.message, true);
+    });
+
+    document.getElementById('kartu-digital-modal').classList.add('show');
+  }
+
+  function composeKartuDigitalImage(callback){
+    const qrCanvas = document.getElementById('kartu-digital-qr');
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = 360; finalCanvas.height = 460;
+    const ctx = finalCanvas.getContext('2d');
+
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 360, 460);
+    ctx.strokeStyle = '#e2e2e2'; ctx.lineWidth = 2; ctx.strokeRect(10, 10, 340, 440);
+
+    const tenantNama = document.getElementById('sidebar-tenant').textContent || 'Toko';
+    ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(tenantNama, 180, 50);
+    ctx.fillStyle = '#888'; ctx.font = '11px sans-serif';
+    ctx.fillText('KARTU PELANGGAN RESELLER', 180, 70);
+
+    ctx.drawImage(qrCanvas, 80, 100, 200, 200);
+
+    const TIPE_LABEL = { dokter:'Dokter', bidan:'Bidan', perawat:'Perawat', reseller:'Reseller', umum:'Member' };
+    ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold 20px sans-serif';
+    ctx.fillText(kartuDigitalData.nama || 'Pelanggan', 180, 340);
+    ctx.fillStyle = '#2E7D5B'; ctx.font = 'bold 13px sans-serif';
+    ctx.fillText(TIPE_LABEL[kartuDigitalData.tipe] || kartuDigitalData.tipe, 180, 365);
+
+    ctx.fillStyle = '#888'; ctx.font = '10px sans-serif';
+    ctx.fillText('Tunjukkan QR ini ke kasir setiap belanja', 180, 410);
+    ctx.fillText('untuk mendapat harga khusus otomatis', 180, 425);
+
+    finalCanvas.toBlob(callback, 'image/png');
+  }
+
+  function unduhKartuDigital(){
+    composeKartuDigitalImage((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `Kartu-${(kartuDigitalData.nama || 'pelanggan').replace(/\s+/g,'-')}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  async function bagikanKartuDigital(){
+    composeKartuDigitalImage(async (blob) => {
+      const file = new File([blob], 'kartu-pelanggan.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })){
+        try{
+          await navigator.share({
+            files: [file], title: 'Kartu Pelanggan',
+            text: `Halo ${kartuDigitalData.nama}, ini kartu pelanggan digital kamu. Tunjukkan QR ini tiap belanja ya!`
+          });
+        } catch(e){ /* user batalkan share, tidak masalah */ }
+      } else {
+        showToast('Perangkat ini belum dukung bagikan langsung. Pakai tombol "Unduh Gambar Kartu" lalu kirim manual lewat WhatsApp.', true);
+      }
+    });
+  }
+
+  // ================= PELANGGAN KHUSUS / RESELLER =================
+  async function loadPelangganKhususList(){
+    const el = document.getElementById('pelanggan-khusus-list');
+    el.innerHTML = '<div class="loading-note">Memuat data…</div>';
+    const { data } = await sb.from('customer_points').select('*').eq('tenant_id', currentProfile.tenant_id).neq('tipe_pelanggan', 'umum').order('updated_at', { ascending: false });
+    if (!data || data.length === 0){
+      el.innerHTML = '<div class="loading-note">Belum ada pelanggan khusus terdaftar.</div>';
+      return;
+    }
+    const TIPE_LABEL = { dokter:'👨‍⚕️ Dokter', bidan:'🤰 Bidan', perawat:'👩‍⚕️ Perawat', reseller:'🏪 Reseller' };
+    el.innerHTML = data.map(p => `
+      <div class="row-item">
+        <div><div class="row-name">${p.nama || 'Tanpa nama'}</div><div class="row-meta">${TIPE_LABEL[p.tipe_pelanggan] || p.tipe_pelanggan} · ${p.whatsapp}</div></div>
+        <div class="row-right">
+          <div style="display:flex; gap:4px;">
+            <button class="btn-secondary" style="font-size:10px; padding:3px 7px; background:var(--brand-tint); color:var(--brand);" onclick='bukaKartuDigital(${JSON.stringify({nama:p.nama,whatsapp:p.whatsapp,tipe:p.tipe_pelanggan}).replace(/'/g,"&#39;")})'>🪪 Kartu Digital</button>
+            <button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="hapusPelangganKhusus('${p.whatsapp}')">Jadikan Umum</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  async function tambahPelangganKhusus(){
+    const nama = document.getElementById('pk-nama').value.trim();
+    const wa = document.getElementById('pk-wa').value.trim();
+    if (!nama || !wa){ showToast('Nama dan No. WA wajib diisi.', true); return; }
+
+    const { data: existing } = await sb.from('customer_points').select('id').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).maybeSingle();
+    const tipe = document.getElementById('pk-tipe').value;
+
+    let error;
+    if (existing){
+      ({ error } = await sb.from('customer_points').update({ nama, tipe_pelanggan: tipe }).eq('id', existing.id));
+    } else {
+      ({ error } = await sb.from('customer_points').insert({ tenant_id: currentProfile.tenant_id, nama, whatsapp: wa, tipe_pelanggan: tipe, poin: 0 }));
+    }
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Pelanggan khusus ditambahkan — otomatis dapat harga grosir tiap transaksi');
+    document.getElementById('pk-nama').value = '';
+    document.getElementById('pk-wa').value = '';
+    await loadPelangganKhususList();
+  }
+
+  async function hapusPelangganKhusus(wa){
+    if (!confirm('Jadikan pelanggan ini "Umum" lagi? Mereka tidak akan otomatis dapat harga grosir lagi.')) return;
+    await sb.from('customer_points').update({ tipe_pelanggan: 'umum' }).eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa);
+    showToast('✓ Diubah jadi pelanggan umum');
+    await loadPelangganKhususList();
+  }
+
   // ================= DAFTAR TUNGGU (BARANG KOSONG) =================
   let waitingListFilterStatus = 'menunggu';
 
@@ -2580,11 +2911,18 @@
       const satuanWrap = document.getElementById('scan-confirm-satuan-wrap');
       if (hasKemasan){
         satuanWrap.style.display = 'block';
-        const kemasanDapatGrosir = prod.harga_grosir && prod.min_qty_grosir && prod.isi_per_kemasan >= prod.min_qty_grosir;
-        const hargaPerKemasan = kemasanDapatGrosir ? parseFloat(prod.harga_grosir) * prod.isi_per_kemasan : parseFloat(prod.harga) * prod.isi_per_kemasan;
+        let hargaPerKemasan, labelHarga = '';
+        if (prod.harga_jual_kemasan){
+          hargaPerKemasan = parseFloat(prod.harga_jual_kemasan);
+          labelHarga = ' (Harga Paket)';
+        } else {
+          const kemasanDapatGrosir = prod.harga_grosir && prod.min_qty_grosir && prod.isi_per_kemasan >= prod.min_qty_grosir;
+          hargaPerKemasan = kemasanDapatGrosir ? parseFloat(prod.harga_grosir) * prod.isi_per_kemasan : parseFloat(prod.harga) * prod.isi_per_kemasan;
+          labelHarga = kemasanDapatGrosir ? ' (Harga Grosir)' : '';
+        }
         document.getElementById('scan-confirm-satuan').innerHTML = `
           <option value="1">Per ${prod.satuan} — Rp ${parseFloat(prod.harga).toLocaleString('id-ID')}</option>
-          <option value="${prod.isi_per_kemasan}">Per ${prod.satuan_kemasan} (${prod.isi_per_kemasan} ${prod.satuan}) — Rp ${hargaPerKemasan.toLocaleString('id-ID')}${kemasanDapatGrosir ? ' (Harga Grosir)' : ''}</option>`;
+          <option value="${prod.isi_per_kemasan}">Per ${prod.satuan_kemasan} (${prod.isi_per_kemasan} ${prod.satuan}) — Rp ${hargaPerKemasan.toLocaleString('id-ID')}${labelHarga}</option>`;
       } else {
         satuanWrap.style.display = 'none';
       }
@@ -2613,8 +2951,10 @@
     const cart = getActiveCart().items;
     const existing = cart.find(c => c.id === scanFoundProduct.id && !!c.isKemasanItem === isKemasan);
 
-    const kemasanDapatGrosir = isKemasan && scanFoundProduct.harga_grosir && scanFoundProduct.min_qty_grosir && scanFoundProduct.isi_per_kemasan >= scanFoundProduct.min_qty_grosir;
-    const hargaKemasanFinal = kemasanDapatGrosir ? parseFloat(scanFoundProduct.harga_grosir) * multiplier : parseFloat(scanFoundProduct.harga) * multiplier;
+    const kemasanDapatGrosir = isKemasan && !scanFoundProduct.harga_jual_kemasan && scanFoundProduct.harga_grosir && scanFoundProduct.min_qty_grosir && scanFoundProduct.isi_per_kemasan >= scanFoundProduct.min_qty_grosir;
+    const hargaKemasanFinal = scanFoundProduct.harga_jual_kemasan
+      ? parseFloat(scanFoundProduct.harga_jual_kemasan)
+      : (kemasanDapatGrosir ? parseFloat(scanFoundProduct.harga_grosir) * multiplier : parseFloat(scanFoundProduct.harga) * multiplier);
 
     if (existing){
       existing.qty += scanConfirmQty;
@@ -2629,7 +2969,7 @@
         minGrosir: isKemasan ? null : (scanFoundProduct.min_qty_grosir || null),
         isRacikanItem: !!scanFoundProduct.is_racikan,
         isKemasanItem: isKemasan, baseUnitQty: multiplier,
-        isGrosir: isKemasan ? kemasanDapatGrosir : false
+        isGrosir: isKemasan ? (kemasanDapatGrosir || !!scanFoundProduct.harga_jual_kemasan) : false
       });
     }
     applyGrosirPricing(cart);
@@ -2686,8 +3026,9 @@
   }
 
   function applyGrosirPricing(cart){
+    const isReseller = getActiveCart().isResellerCustomer;
     cart.forEach(item => {
-      if (item.hargaGrosir && item.minGrosir && item.qty >= item.minGrosir){
+      if (item.hargaGrosir && (isReseller || (item.minGrosir && item.qty >= item.minGrosir))){
         item.price = item.hargaGrosir; item.isGrosir = true;
       } else if (item.hargaGrosir){
         item.price = item.hargaEceran; item.isGrosir = false;
@@ -2763,12 +3104,25 @@
   async function checkPoinPelanggan(){
     const wa = document.getElementById('cart-wa-pelanggan').value.trim();
     const box = document.getElementById('poin-tebus-box');
-    if (!wa){ box.style.display = 'none'; return; }
+    getActiveCart().isResellerCustomer = false;
+    getActiveCart().resellerNama = null;
 
-    const { data } = await sb.from('customer_points').select('poin').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).maybeSingle();
+    if (!wa){ box.style.display = 'none'; applyGrosirPricing(getActiveCart().items); renderCart(); return; }
+
+    const { data } = await sb.from('customer_points').select('poin, tipe_pelanggan, nama').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).maybeSingle();
+
+    const TIPE_LABEL = { reseller:'Reseller', dokter:'Dokter', bidan:'Bidan', perawat:'Perawat' };
+    const adalahReseller = data?.tipe_pelanggan && data.tipe_pelanggan !== 'umum';
+    if (adalahReseller){
+      getActiveCart().isResellerCustomer = true;
+      getActiveCart().resellerNama = `${data.nama || 'Pelanggan'} (${TIPE_LABEL[data.tipe_pelanggan]})`;
+    }
+
+    // Kotak tebus poin cuma buat pelanggan biasa — reseller sudah dapat untung dari harga grosir, tidak perlu poin juga
     const poin = data?.poin || 0;
-    const NILAI_PER_POIN = 500; // 1 poin = Rp500, bisa disesuaikan nanti
-    if (poin > 0){
+    if (poin > 0 && !adalahReseller){
+      const { data: tenantData } = await sb.from('tenants').select('nilai_tukar_poin').eq('id', currentProfile.tenant_id).single();
+      const NILAI_PER_POIN = tenantData?.nilai_tukar_poin || 100;
       box.style.display = 'block';
       document.getElementById('poin-tersedia-text').textContent = poin + ' poin';
       document.getElementById('poin-nilai-text').textContent = 'Rp ' + (poin * NILAI_PER_POIN).toLocaleString('id-ID');
@@ -2778,6 +3132,9 @@
     } else {
       box.style.display = 'none';
     }
+
+    applyGrosirPricing(getActiveCart().items);
+    renderCart();
   }
 
   // ================= SPLIT PAYMENT =================
@@ -2839,6 +3196,13 @@
     const cart = activeCart.items;
     document.getElementById('cart-nama-pelanggan').value = activeCart.namaPelanggan || '';
     document.getElementById('cart-wa-pelanggan').value = activeCart.waPelanggan || '';
+    const resellerBadge = document.getElementById('reseller-badge');
+    if (activeCart.isResellerCustomer){
+      resellerBadge.style.display = 'block';
+      resellerBadge.textContent = `🏅 ${activeCart.resellerNama || 'Pelanggan'} — Reseller, otomatis harga grosir semua item`;
+    } else {
+      resellerBadge.style.display = 'none';
+    }
     const list = document.getElementById('cart-items');
     const hasRx = cart.some(c => c.tag === 'obat_resep');
     document.getElementById('rx-card').classList.toggle('show', hasRx);
@@ -3214,7 +3578,25 @@
         if (cp) await sb.from('customer_points').update({ poin: Math.max(0, cp.poin - poinDitebus) }).eq('whatsapp', waPelanggan).eq('tenant_id', currentProfile.tenant_id);
       }
 
-      showToast('✓ Transaksi berhasil disimpan ke database');
+      // Kasih poin baru otomatis dari belanja ini — cuma untuk pelanggan biasa, BUKAN reseller (reseller sudah dapat untung dari harga grosir)
+      if (waPelanggan && total > 0 && !getActiveCart().isResellerCustomer){
+        const { data: tenantData } = await sb.from('tenants').select('poin_per_belanja').eq('id', currentProfile.tenant_id).single();
+        const poinPerBelanja = tenantData?.poin_per_belanja || 10000;
+        const poinDiperoleh = Math.floor(total / poinPerBelanja);
+        if (poinDiperoleh > 0){
+          const { data: cpExisting } = await sb.from('customer_points').select('poin').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', waPelanggan).maybeSingle();
+          if (cpExisting){
+            await sb.from('customer_points').update({ poin: cpExisting.poin + poinDiperoleh, nama: namaPelanggan !== 'Umum' ? namaPelanggan : undefined }).eq('whatsapp', waPelanggan).eq('tenant_id', currentProfile.tenant_id);
+          } else {
+            await sb.from('customer_points').insert({ tenant_id: currentProfile.tenant_id, whatsapp: waPelanggan, nama: namaPelanggan !== 'Umum' ? namaPelanggan : null, poin: poinDiperoleh });
+          }
+          showToast(`✓ Transaksi disimpan — pelanggan dapat +${poinDiperoleh} poin`);
+        } else {
+          showToast('✓ Transaksi berhasil disimpan ke database');
+        }
+      } else {
+        showToast('✓ Transaksi berhasil disimpan ke database');
+      }
       printReceipt({ nomorTransaksi, namaPelanggan, waPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
       bersihkanKeranjang();
       await loadProducts();
@@ -3443,6 +3825,7 @@
     if (sub === 'online'){ loadOnlineOrders(); loadTokoOnlineToggle(); }
     if (sub === 'promosi') loadPromoProductSelect();
     if (sub === 'tunggu') loadWaitingListFull();
+    if (sub === 'khusus'){ loadPelangganKhususList(); loadPengaturanPoin(); loadMemberList(); }
   }
 
   async function loadPelangganPage(){
@@ -3540,12 +3923,23 @@
     const { data } = await sb.from('customer_points').select('*').eq('tenant_id', currentProfile.tenant_id).order('poin', {ascending:false});
     if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada data poin pelanggan.</div>'; return; }
     el.innerHTML = data.map(p => `
-      <div class="row-item">
-        <div class="emp-dot">${(p.nama || p.whatsapp).substring(0,2).toUpperCase()}</div>
-        <div><div class="row-name">${p.nama || 'Pelanggan'}</div><div class="row-meta">${p.whatsapp}${p.kode_referral ? ` · Kode: <b>${p.kode_referral}</b>` : ''}${p.jumlah_referral > 0 ? ` · ${p.jumlah_referral}x referral` : ''}</div></div>
-        <div class="row-right"><div class="num" style="font-size:14px;">${p.poin} poin</div></div>
+      <div class="row-item" style="${p.tipe_pelanggan === 'reseller' ? 'background:var(--amber-tint); border-radius:9px; padding:9px;' : ''}">
+        <div class="emp-dot" style="${p.tipe_pelanggan === 'reseller' ? 'background:var(--amber); color:#fff;' : ''}">${p.tipe_pelanggan === 'reseller' ? '🏅' : (p.nama || p.whatsapp).substring(0,2).toUpperCase()}</div>
+        <div><div class="row-name">${p.nama || 'Pelanggan'}${p.tipe_pelanggan === 'reseller' ? ' <span style="color:var(--amber); font-weight:700;">· Reseller</span>' : ''}</div><div class="row-meta">${p.whatsapp}${p.kode_referral ? ` · Kode: <b>${p.kode_referral}</b>` : ''}${p.jumlah_referral > 0 ? ` · ${p.jumlah_referral}x referral` : ''}</div></div>
+        <div class="row-right">
+          <div class="num" style="font-size:14px;">${p.poin} poin</div>
+          <button class="btn-secondary" style="font-size:10px; padding:3px 7px; margin-top:4px;" onclick="toggleTipeReseller('${p.id}', ${p.tipe_pelanggan !== 'reseller'})">${p.tipe_pelanggan === 'reseller' ? 'Jadikan Umum' : 'Jadikan Reseller'}</button>
+        </div>
       </div>`).join('');
   }
+
+  async function toggleTipeReseller(id, jadiReseller){
+    const { error } = await sb.from('customer_points').update({ tipe_pelanggan: jadiReseller ? 'reseller' : 'umum' }).eq('id', id);
+    if (error){ showToast('Gagal mengubah: ' + error.message, true); return; }
+    showToast(jadiReseller ? '✓ Ditandai Reseller — otomatis dapat harga grosir tiap transaksi' : '✓ Dikembalikan jadi pelanggan umum');
+    await loadPoints();
+  }
+
   function openPointsModal(){
     ['pt-wa','pt-nama','pt-poin'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('points-modal').classList.add('show');
@@ -5258,7 +5652,7 @@
     editingProductId = null;
     document.getElementById('pf-modal-title').textContent = 'Tambah Produk Baru';
     document.getElementById('pf-submit-btn').textContent = 'Simpan Produk';
-    ['pf-nama','pf-kode','pf-produsen','pf-harga-modal','pf-harga','pf-harga-grosir','pf-min-grosir','pf-stok','pf-batch','pf-expired','pf-supplier'].forEach(id => document.getElementById(id).value = '');
+    ['pf-nama','pf-kode','pf-produsen','pf-harga-modal','pf-harga','pf-harga-grosir','pf-min-grosir','pf-harga-jual-kemasan','pf-stok','pf-batch','pf-expired','pf-supplier'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('pf-kategori').value = 'obat_bebas';
     document.getElementById('pf-satuan').value = 'Pcs';
     document.getElementById('pf-satuan-kemasan').value = '';
@@ -5284,11 +5678,15 @@
     const isiPerKemasan = parseInt(document.getElementById('pf-isi-kemasan').value) || 1;
     document.getElementById('pf-stok-satuan-label').textContent = satuan;
     const helper = document.getElementById('pf-stok-kemasan-helper');
+    const hargaKemasanWrap = document.getElementById('pf-harga-kemasan-wrap');
     if (satuanKemasan && isiPerKemasan > 1){
       helper.style.display = 'block';
       document.getElementById('pf-stok-kemasan-satuan').textContent = `${satuanKemasan} (1 ${satuanKemasan} = ${isiPerKemasan} ${satuan})`;
+      hargaKemasanWrap.style.display = 'block';
+      document.querySelector('#pf-harga-kemasan-wrap label').textContent = `Harga Jual per ${satuanKemasan} (Rp) — opsional`;
     } else {
       helper.style.display = 'none';
+      hargaKemasanWrap.style.display = 'none';
     }
   }
 
@@ -5321,6 +5719,7 @@
       document.getElementById('pf-foto-preview').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>';
     }
     document.getElementById('pf-harga-grosir').value = p.harga_grosir || '';
+    document.getElementById('pf-harga-jual-kemasan').value = p.harga_jual_kemasan || '';
     document.getElementById('pf-min-grosir').value = p.min_qty_grosir || '';
     document.getElementById('pf-harga-modal').value = p.harga_modal || 0;
     document.getElementById('pf-harga').value = p.harga;
@@ -5364,6 +5763,7 @@
       is_racikan: document.getElementById('pf-is-racikan').checked,
       favorit: document.getElementById('pf-favorit').checked,
       harga_grosir: parseFloat(document.getElementById('pf-harga-grosir').value) || null,
+      harga_jual_kemasan: parseFloat(document.getElementById('pf-harga-jual-kemasan').value) || null,
       gambar_url: pendingProductPhotoUrl,
       min_qty_grosir: parseInt(document.getElementById('pf-min-grosir').value) || null,
       harga_modal: parseFloat(document.getElementById('pf-harga-modal').value) || 0,
