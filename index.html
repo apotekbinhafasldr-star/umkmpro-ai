@@ -537,7 +537,10 @@
           </div>
 
           <div id="kembalian-box" style="display:none; background:var(--surface-2); border-radius:9px; padding:10px 12px; margin-bottom:10px;">
-            <div class="field" style="margin-bottom:8px;"><label>Uang Diterima (Rp)</label><input type="number" id="cart-uang-diterima" placeholder="0" oninput="updateKembalian()"></div>
+            <div class="field" style="margin-bottom:8px;">
+              <label>Uang Diterima (Rp) — kosongkan kalau uang pas</label>
+              <input type="number" id="cart-uang-diterima" placeholder="Kosongkan jika pas" oninput="updateKembalian()">
+            </div>
             <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700;">
               <span>Kembalian</span><span class="num" id="kembalian-value" style="color:var(--brand);">Rp 0</span>
             </div>
@@ -1144,6 +1147,7 @@
           <option value="Vial">Vial</option>
           <option value="Amp">Amp (Ampul)</option>
           <option value="Sachet">Sachet</option>
+          <option value="Lusin">Lusin (Ls)</option>
         </select>
       </div>
     </div>
@@ -1604,6 +1608,9 @@
     <div id="scan-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Arahkan kamera ke barcode produk…</div>
     <div id="scan-confirm-box" style="display:none; background:var(--good-tint); border-radius:10px; padding:14px; margin-bottom:14px;">
       <div style="font-weight:700; font-size:13.5px; margin-bottom:10px;" id="scan-confirm-nama"></div>
+      <div id="scan-confirm-satuan-wrap" style="display:none; margin-bottom:10px;">
+        <select id="scan-confirm-satuan" onchange="updateScanConfirmHarga()" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line); font-size:12.5px;"></select>
+      </div>
       <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:12px;">
         <div class="qty-btn" onclick="scanChangeQty(-1)" style="width:34px; height:34px; font-size:18px;">−</div>
         <div id="scan-confirm-qty" style="font-size:18px; font-weight:700; min-width:24px; text-align:center;">1</div>
@@ -2508,15 +2515,17 @@
     document.getElementById('scan-modal').classList.remove('show');
   }
 
+  let sharedAudioCtx = null;
   function playBeepSound(){
     try{
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
+      if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+      const osc = sharedAudioCtx.createOscillator();
+      const gain = sharedAudioCtx.createGain();
+      osc.connect(gain); gain.connect(sharedAudioCtx.destination);
       osc.frequency.value = 1000; osc.type = 'sine';
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      osc.start(); osc.stop(ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.3, sharedAudioCtx.currentTime);
+      osc.start(); osc.stop(sharedAudioCtx.currentTime + 0.15);
     } catch(e){ /* browser tidak dukung, abaikan diam-diam */ }
     if (navigator.vibrate) navigator.vibrate(80);
   }
@@ -2547,11 +2556,29 @@
       scanConfirmQty = 1;
       document.getElementById('scan-status').textContent = '';
       document.getElementById('scan-confirm-box').style.display = 'block';
-      document.getElementById('scan-confirm-nama').textContent = `✓ Ditemukan: ${prod.nama} — Rp ${parseFloat(prod.harga).toLocaleString('id-ID')}`;
       document.getElementById('scan-confirm-qty').textContent = '1';
+
+      const hasKemasan = prod.satuan_kemasan && prod.isi_per_kemasan > 1;
+      const satuanWrap = document.getElementById('scan-confirm-satuan-wrap');
+      if (hasKemasan){
+        satuanWrap.style.display = 'block';
+        document.getElementById('scan-confirm-satuan').innerHTML = `
+          <option value="1">Per ${prod.satuan} — Rp ${parseFloat(prod.harga).toLocaleString('id-ID')}</option>
+          <option value="${prod.isi_per_kemasan}">Per ${prod.satuan_kemasan} (${prod.isi_per_kemasan} ${prod.satuan}) — Rp ${(parseFloat(prod.harga)*prod.isi_per_kemasan).toLocaleString('id-ID')}</option>`;
+      } else {
+        satuanWrap.style.display = 'none';
+      }
+      updateScanConfirmHarga();
     } else {
       document.getElementById('scan-status').innerHTML = `⚠️ Kode "${kode}" tidak ditemukan di produk kamu.`;
     }
+  }
+
+  function updateScanConfirmHarga(){
+    if (!scanFoundProduct) return;
+    const multiplier = parseInt(document.getElementById('scan-confirm-satuan')?.value) || 1;
+    const hargaPerUnit = parseFloat(scanFoundProduct.harga) * multiplier;
+    document.getElementById('scan-confirm-nama').textContent = `✓ Ditemukan: ${scanFoundProduct.nama} — Rp ${hargaPerUnit.toLocaleString('id-ID')}`;
   }
 
   function scanChangeQty(delta){
@@ -2561,7 +2588,26 @@
 
   function konfirmasiTambahScanKeKeranjang(){
     if (!scanFoundProduct) return;
-    for (let i = 0; i < scanConfirmQty; i++){ addToCart(scanFoundProduct.id); }
+    const multiplier = parseInt(document.getElementById('scan-confirm-satuan')?.value) || 1;
+    const isKemasan = multiplier > 1;
+    const cart = getActiveCart().items;
+    const existing = cart.find(c => c.id === scanFoundProduct.id && !!c.isKemasanItem === isKemasan);
+
+    if (existing){
+      existing.qty += scanConfirmQty;
+    } else {
+      cart.push({
+        id: scanFoundProduct.id,
+        name: scanFoundProduct.nama + (isKemasan ? ` (${scanFoundProduct.satuan_kemasan})` : ''),
+        price: parseFloat(scanFoundProduct.harga) * multiplier, tag: scanFoundProduct.kategori, qty: scanConfirmQty,
+        hargaEceran: parseFloat(scanFoundProduct.harga) * multiplier,
+        hargaGrosir: scanFoundProduct.harga_grosir ? parseFloat(scanFoundProduct.harga_grosir) * multiplier : null,
+        minGrosir: scanFoundProduct.min_qty_grosir || null, isRacikanItem: !!scanFoundProduct.is_racikan,
+        isKemasanItem: isKemasan, baseUnitQty: multiplier
+      });
+    }
+    applyGrosirPricing(cart);
+    renderCart();
     showToast(`✓ "${scanFoundProduct.nama}" x${scanConfirmQty} ditambahkan ke keranjang`);
     closeScanModal();
   }
@@ -2718,6 +2764,13 @@
   }
 
   // ================= KEMBALIAN =================
+  function isiUangPas(){
+    const totalText = document.getElementById('sum-total').textContent.replace(/[^\d]/g, '');
+    const total = parseInt(totalText) || 0;
+    document.getElementById('cart-uang-diterima').value = total;
+    updateKembalian();
+  }
+
   function updateKembalian(){
     const isSplit = document.getElementById('cart-split-payment')?.checked;
     const isTunai = selectedPaymentMethod === 'tunai';
@@ -2739,7 +2792,13 @@
 
     if (!isTunai){ box.style.display = 'none'; return; }
     box.style.display = 'block';
-    const diterima = parseFloat(document.getElementById('cart-uang-diterima').value) || 0;
+    const inputMentah = document.getElementById('cart-uang-diterima').value;
+    if (inputMentah === ''){
+      document.getElementById('kembalian-value').textContent = 'Rp 0 (uang pas)';
+      document.getElementById('kembalian-value').style.color = 'var(--brand)';
+      return;
+    }
+    const diterima = parseFloat(inputMentah) || 0;
     const kembalian = diterima - total;
     document.getElementById('kembalian-value').textContent = 'Rp ' + Math.max(0, kembalian).toLocaleString('id-ID');
     document.getElementById('kembalian-value').style.color = kembalian < 0 ? 'var(--danger)' : 'var(--brand)';
@@ -3067,9 +3126,15 @@
       metodeFinal = 'split';
       kembalian = (tunai + nonTunai) - total;
     } else if (selectedPaymentMethod === 'tunai'){
-      uangDiterima = parseFloat(document.getElementById('cart-uang-diterima').value) || 0;
-      if (uangDiterima < total){ showToast('Uang diterima kurang dari total belanja.', true); return; }
-      kembalian = uangDiterima - total;
+      const inputMentah = document.getElementById('cart-uang-diterima').value;
+      if (inputMentah === '' || inputMentah === null){
+        uangDiterima = total; // kosong = dianggap uang pas
+        kembalian = 0;
+      } else {
+        uangDiterima = parseFloat(inputMentah) || 0;
+        if (uangDiterima < total){ showToast('Uang diterima kurang dari total belanja.', true); return; }
+        kembalian = uangDiterima - total;
+      }
     }
 
     btn.disabled = true; btn.textContent = 'Menyimpan…';
