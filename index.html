@@ -519,6 +519,9 @@
               <input type="text" id="cart-wa-pelanggan" placeholder="08xxxxxxxxxx" onchange="getActiveCart().waPelanggan = this.value; checkPoinPelanggan();">
             </div>
           </div>
+          <div style="margin-bottom:10px;">
+            <button type="button" class="btn-secondary" style="width:100%; justify-content:center; font-size:11.5px;" onclick="openDaftarPelangganKasir()">+ Daftarkan Pelanggan Baru</button>
+          </div>
           <div class="field" style="margin-bottom:10px;">
             <label>Diskon (Rp)</label>
             <input type="number" id="cart-diskon" placeholder="0" value="0" oninput="updateDiskon(this.value)">
@@ -1095,6 +1098,7 @@
                 <div class="field"><label>Nama</label><input type="text" id="dm-nama" placeholder="Nama pelanggan"></div>
                 <div class="field"><label>No. WhatsApp</label><input type="text" id="dm-wa" placeholder="08xxxxxxxxxx"></div>
               </div>
+              <div class="field"><label>Alamat (opsional, biar mudah dibedakan kalau nama sama)</label><input type="text" id="dm-alamat" placeholder="Contoh: Jl. Merdeka No. 5"></div>
               <div class="field">
                 <label>Tipe Pelanggan</label>
                 <select id="dm-tipe">
@@ -1637,6 +1641,39 @@
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('tutup-kasir-modal')">Batal</button>
       <button class="btn-primary" id="tk-submit-btn" onclick="submitTutupKasir()">Tutup Kasir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DAFTAR PELANGGAN DARI KASIR -->
+<div class="modal-overlay" id="daftar-pelanggan-kasir-modal">
+  <div class="modal-card">
+    <div class="modal-title">Daftarkan Pelanggan Baru</div>
+    <div class="field">
+      <label>Nama</label>
+      <input type="text" id="dpk-nama" placeholder="Nama pelanggan">
+    </div>
+    <div class="field">
+      <label>No. WhatsApp</label>
+      <input type="text" id="dpk-wa" placeholder="08xxxxxxxxxx">
+    </div>
+    <div class="field">
+      <label>Alamat (opsional, biar mudah dibedakan kalau nama sama)</label>
+      <input type="text" id="dpk-alamat" placeholder="Contoh: Jl. Merdeka No. 5">
+    </div>
+    <div class="field">
+      <label>Tipe Pelanggan</label>
+      <select id="dpk-tipe">
+        <option value="umum">Member Biasa (dapat poin tiap belanja)</option>
+        <option value="dokter">Dokter (harga grosir otomatis)</option>
+        <option value="bidan">Bidan (harga grosir otomatis)</option>
+        <option value="perawat">Perawat (harga grosir otomatis)</option>
+        <option value="reseller">Reseller (harga grosir otomatis)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('daftar-pelanggan-kasir-modal')">Batal</button>
+      <button class="btn-primary" id="dpk-submit-btn" onclick="submitDaftarPelangganKasir()">Daftarkan</button>
     </div>
   </div>
 </div>
@@ -2481,20 +2518,57 @@
 
   let memberListCache = [];
 
+  // ================= DAFTAR PELANGGAN CEPAT DARI KASIR =================
+  function openDaftarPelangganKasir(){
+    document.getElementById('dpk-nama').value = document.getElementById('cart-nama-pelanggan').value !== 'Umum' ? document.getElementById('cart-nama-pelanggan').value : '';
+    document.getElementById('dpk-wa').value = document.getElementById('cart-wa-pelanggan').value || '';
+    document.getElementById('dpk-tipe').value = 'umum';
+    document.getElementById('daftar-pelanggan-kasir-modal').classList.add('show');
+  }
+
+  async function submitDaftarPelangganKasir(){
+    const nama = document.getElementById('dpk-nama').value.trim();
+    const wa = document.getElementById('dpk-wa').value.trim();
+    const alamat = document.getElementById('dpk-alamat').value.trim() || null;
+    const tipe = document.getElementById('dpk-tipe').value;
+    if (!nama || !wa){ showToast('Nama dan No. WA wajib diisi.', true); return; }
+
+    const { data: existing } = await sb.from('customer_points').select('id').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).maybeSingle();
+    if (existing){ showToast('No. WA ini sudah terdaftar sebelumnya.', true); return; }
+
+    const btn = document.getElementById('dpk-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    const { error } = await sb.from('customer_points').insert({ tenant_id: currentProfile.tenant_id, nama, whatsapp: wa, alamat, poin: 0, tipe_pelanggan: tipe });
+    btn.disabled = false; btn.textContent = 'Daftarkan';
+    if (error){ showToast('Gagal mendaftarkan: ' + error.message, true); return; }
+
+    showToast('✓ Pelanggan baru terdaftar!');
+    closeModal('daftar-pelanggan-kasir-modal');
+
+    // Langsung isi ke transaksi yang sedang berjalan, biar bisa langsung kepakai
+    document.getElementById('cart-nama-pelanggan').value = nama;
+    document.getElementById('cart-wa-pelanggan').value = wa;
+    getActiveCart().namaPelanggan = nama;
+    getActiveCart().waPelanggan = wa;
+    await checkPoinPelanggan();
+  }
+
   async function daftarMemberBaru(){
     const nama = document.getElementById('dm-nama').value.trim();
     const wa = document.getElementById('dm-wa').value.trim();
+    const alamat = document.getElementById('dm-alamat').value.trim() || null;
     const tipe = document.getElementById('dm-tipe').value;
     if (!nama || !wa){ showToast('Nama dan No. WA wajib diisi.', true); return; }
 
     const { data: existing } = await sb.from('customer_points').select('id').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).maybeSingle();
     if (existing){ showToast('No. WA ini sudah terdaftar.', true); return; }
 
-    const { error } = await sb.from('customer_points').insert({ tenant_id: currentProfile.tenant_id, nama, whatsapp: wa, poin: 0, tipe_pelanggan: tipe });
+    const { error } = await sb.from('customer_points').insert({ tenant_id: currentProfile.tenant_id, nama, whatsapp: wa, alamat, poin: 0, tipe_pelanggan: tipe });
     if (error){ showToast('Gagal mendaftarkan: ' + error.message, true); return; }
     showToast(tipe === 'umum' ? '✓ Member baru terdaftar, poin mulai dari 0' : '✓ Pelanggan khusus terdaftar, otomatis dapat harga grosir');
     document.getElementById('dm-nama').value = '';
     document.getElementById('dm-wa').value = '';
+    document.getElementById('dm-alamat').value = '';
     document.getElementById('dm-tipe').value = 'umum';
     await loadMemberList();
   }
@@ -2507,14 +2581,14 @@
 
   function renderMemberList(){
     const q = (document.getElementById('member-search-input')?.value || '').toLowerCase();
-    const filtered = memberListCache.filter(m => (m.nama||'').toLowerCase().includes(q) || (m.whatsapp||'').includes(q));
+    const filtered = memberListCache.filter(m => (m.nama||'').toLowerCase().includes(q) || (m.whatsapp||'').includes(q) || (m.alamat||'').toLowerCase().includes(q));
     const el = document.getElementById('member-list');
     if (filtered.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada member tercatat.</div>'; return; }
 
     const TIPE_LABEL = { dokter:'👨‍⚕️ Dokter', bidan:'🤰 Bidan', perawat:'👩‍⚕️ Perawat', reseller:'🏪 Reseller' };
     el.innerHTML = filtered.slice(0, 50).map(m => `
       <div class="row-item">
-        <div><div class="row-name">${m.nama || 'Tanpa nama'}${m.tipe_pelanggan && m.tipe_pelanggan !== 'umum' ? ' · ' + TIPE_LABEL[m.tipe_pelanggan] : ''}</div><div class="row-meta">${m.whatsapp} · ${m.poin || 0} poin</div></div>
+        <div><div class="row-name">${m.nama || 'Tanpa nama'}${m.tipe_pelanggan && m.tipe_pelanggan !== 'umum' ? ' · ' + TIPE_LABEL[m.tipe_pelanggan] : ''}</div><div class="row-meta">${m.whatsapp} · ${m.poin || 0} poin${m.alamat ? ' · ' + m.alamat : ''}</div></div>
         <div class="row-right">
           <div style="display:flex; gap:4px;">
             <button class="btn-secondary" style="font-size:10px; padding:3px 7px; background:var(--brand-tint); color:var(--brand);" onclick='bukaKartuDigital(${JSON.stringify({nama:m.nama,whatsapp:m.whatsapp,tipe:m.tipe_pelanggan||"umum"}).replace(/'/g,"&#39;")})'>🪪 Kartu Digital</button>
