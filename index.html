@@ -1808,7 +1808,13 @@
       </div>
       <div class="field-row">
         <div class="field"><label>Jumlah Stok (<span id="batch-new-satuan"></span>)</label><input type="number" id="batch-new-stok" placeholder="0"></div>
-        <div class="field"><label>Harga Modal per Unit (Rp)</label><input type="number" id="batch-new-harga-modal" placeholder="0"></div>
+        <div class="field">
+          <label>Harga Modal per <span id="batch-hm-satuan-label">Unit</span> (Rp)</label>
+          <input type="number" id="batch-new-harga-modal" placeholder="0" oninput="document.getElementById('batch-hm-kemasan-input').value=''">
+          <div id="batch-hm-kemasan-helper" style="display:none; font-size:10.5px; color:var(--brand); margin-top:5px;">
+            Atau isi harga per kemasan besar: <input type="number" id="batch-hm-kemasan-input" placeholder="0" style="width:70px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; font-size:11px;" oninput="hitungHargaModalDariKemasan()"> <span id="batch-hm-kemasan-satuan-label"></span>
+          </div>
+        </div>
       </div>
       <div class="field"><label>Foto Bukti Fisik (opsional, untuk transparansi)</label><input type="file" id="batch-new-foto" accept="image/*"></div>
       <button class="btn-primary" style="width:100%; justify-content:center;" onclick="addNewBatch()">+ Tambah Batch Ini</button>
@@ -2574,9 +2580,11 @@
       const satuanWrap = document.getElementById('scan-confirm-satuan-wrap');
       if (hasKemasan){
         satuanWrap.style.display = 'block';
+        const kemasanDapatGrosir = prod.harga_grosir && prod.min_qty_grosir && prod.isi_per_kemasan >= prod.min_qty_grosir;
+        const hargaPerKemasan = kemasanDapatGrosir ? parseFloat(prod.harga_grosir) * prod.isi_per_kemasan : parseFloat(prod.harga) * prod.isi_per_kemasan;
         document.getElementById('scan-confirm-satuan').innerHTML = `
           <option value="1">Per ${prod.satuan} — Rp ${parseFloat(prod.harga).toLocaleString('id-ID')}</option>
-          <option value="${prod.isi_per_kemasan}">Per ${prod.satuan_kemasan} (${prod.isi_per_kemasan} ${prod.satuan}) — Rp ${(parseFloat(prod.harga)*prod.isi_per_kemasan).toLocaleString('id-ID')}</option>`;
+          <option value="${prod.isi_per_kemasan}">Per ${prod.satuan_kemasan} (${prod.isi_per_kemasan} ${prod.satuan}) — Rp ${hargaPerKemasan.toLocaleString('id-ID')}${kemasanDapatGrosir ? ' (Harga Grosir)' : ''}</option>`;
       } else {
         satuanWrap.style.display = 'none';
       }
@@ -2605,17 +2613,23 @@
     const cart = getActiveCart().items;
     const existing = cart.find(c => c.id === scanFoundProduct.id && !!c.isKemasanItem === isKemasan);
 
+    const kemasanDapatGrosir = isKemasan && scanFoundProduct.harga_grosir && scanFoundProduct.min_qty_grosir && scanFoundProduct.isi_per_kemasan >= scanFoundProduct.min_qty_grosir;
+    const hargaKemasanFinal = kemasanDapatGrosir ? parseFloat(scanFoundProduct.harga_grosir) * multiplier : parseFloat(scanFoundProduct.harga) * multiplier;
+
     if (existing){
       existing.qty += scanConfirmQty;
     } else {
       cart.push({
         id: scanFoundProduct.id,
         name: scanFoundProduct.nama + (isKemasan ? ` (${scanFoundProduct.satuan_kemasan})` : ''),
-        price: parseFloat(scanFoundProduct.harga) * multiplier, tag: scanFoundProduct.kategori, qty: scanConfirmQty,
-        hargaEceran: parseFloat(scanFoundProduct.harga) * multiplier,
-        hargaGrosir: scanFoundProduct.harga_grosir ? parseFloat(scanFoundProduct.harga_grosir) * multiplier : null,
-        minGrosir: scanFoundProduct.min_qty_grosir || null, isRacikanItem: !!scanFoundProduct.is_racikan,
-        isKemasanItem: isKemasan, baseUnitQty: multiplier
+        price: isKemasan ? hargaKemasanFinal : parseFloat(scanFoundProduct.harga),
+        tag: scanFoundProduct.kategori, qty: scanConfirmQty,
+        hargaEceran: isKemasan ? hargaKemasanFinal : parseFloat(scanFoundProduct.harga),
+        hargaGrosir: isKemasan ? null : (scanFoundProduct.harga_grosir ? parseFloat(scanFoundProduct.harga_grosir) : null),
+        minGrosir: isKemasan ? null : (scanFoundProduct.min_qty_grosir || null),
+        isRacikanItem: !!scanFoundProduct.is_racikan,
+        isKemasanItem: isKemasan, baseUnitQty: multiplier,
+        isGrosir: isKemasan ? kemasanDapatGrosir : false
       });
     }
     applyGrosirPricing(cart);
@@ -2675,9 +2689,10 @@
     cart.forEach(item => {
       if (item.hargaGrosir && item.minGrosir && item.qty >= item.minGrosir){
         item.price = item.hargaGrosir; item.isGrosir = true;
-      } else {
+      } else if (item.hargaGrosir){
         item.price = item.hargaEceran; item.isGrosir = false;
       }
+      // Kalau hargaGrosir null (misal item kemasan/Box yang harganya sudah dihitung tetap sebelumnya), biarkan apa adanya
     });
   }
 
@@ -5674,6 +5689,7 @@
 
   // ================= KELOLA BATCH/LOT (FEFO) =================
   let currentBatchProductId = null;
+  let currentBatchProductData = null;
 
   // ================= PERBANDINGAN HARGA SUPPLIER =================
   let currentSupplierPriceProductId = null;
@@ -5768,16 +5784,32 @@
 
   async function openBatchModal(p){
     currentBatchProductId = p.id;
+    currentBatchProductData = p;
     document.getElementById('batch-nama-produk').textContent = p.nama;
     document.getElementById('batch-new-satuan').textContent = p.satuan || 'unit';
     document.getElementById('batch-new-nobatch').value = '';
     document.getElementById('batch-new-ed').value = '';
     document.getElementById('batch-new-stok').value = '';
     document.getElementById('batch-new-harga-modal').value = '';
+    document.getElementById('batch-hm-kemasan-input').value = '';
+    document.getElementById('batch-hm-satuan-label').textContent = p.satuan || 'Unit';
+    const hmKemasanHelper = document.getElementById('batch-hm-kemasan-helper');
+    if (p.satuan_kemasan && p.isi_per_kemasan > 1){
+      hmKemasanHelper.style.display = 'block';
+      document.getElementById('batch-hm-kemasan-satuan-label').textContent = `${p.satuan_kemasan} (isi ${p.isi_per_kemasan} ${p.satuan})`;
+    } else {
+      hmKemasanHelper.style.display = 'none';
+    }
     await loadSupplierOptionsForBatch();
     await loadOpenPOForProduct(p.id);
     await renderBatchList();
     document.getElementById('batch-modal').classList.add('show');
+  }
+
+  function hitungHargaModalDariKemasan(){
+    const hargaKemasan = parseFloat(document.getElementById('batch-hm-kemasan-input').value) || 0;
+    const isiPerKemasan = currentBatchProductData?.isi_per_kemasan || 1;
+    document.getElementById('batch-new-harga-modal').value = isiPerKemasan > 0 ? (hargaKemasan / isiPerKemasan).toFixed(2) : hargaKemasan;
   }
 
   async function loadOpenPOForProduct(productId){
