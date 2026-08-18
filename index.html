@@ -60,7 +60,7 @@
   #auth-screen{
     min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--brand-deep); padding:20px;
   }
-  .auth-card{ background:var(--surface); border-radius:18px; padding:34px 32px; width:100%; max-width:380px; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+  .auth-card{ background:var(--surface); border-radius:18px; padding:34px 32px; width:100%; max-width:380px; box-shadow:0 20px 50px rgba(0,0,0,.3); position:relative; }
   .auth-brand{ display:flex; align-items:center; gap:10px; margin-bottom:22px; }
   .brand-mark{ width:36px; height:36px; border-radius:10px; background:linear-gradient(155deg,#E4B15C 0%,var(--good) 65%); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:700; color:#132420; font-size:16px; }
   .auth-brand-name{ font-size:15px; font-weight:600; }
@@ -309,6 +309,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v18-2130</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
