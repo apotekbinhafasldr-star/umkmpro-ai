@@ -244,8 +244,8 @@
   .racikan-row .remove-row{ color:var(--danger); cursor:pointer; font-size:16px; flex-shrink:0; }
   .sub-page{ display:none; }
   .sub-page.active{ display:block; }
-  .pay-btn{ flex:1; border:1.5px solid var(--line); background:var(--surface-2); border-radius:9px; padding:9px 6px; font-size:11.5px; font-weight:700; color:var(--ink-soft); text-align:center; transition:all .12s ease; }
-  .pay-btn.active{ background:var(--brand-tint); border-color:var(--brand); color:var(--brand); box-shadow:0 1px 4px rgba(44,74,58,0.15); }
+  .pay-btn{ flex:1; border:1.5px solid var(--line); background:var(--surface-2); border-radius:13px; padding:12px 6px; font-size:12px; font-weight:700; color:var(--ink-soft); text-align:center; transition:all .12s ease; box-shadow:0 1px 2px rgba(26,46,35,0.04); }
+  .pay-btn.active{ background:linear-gradient(150deg, #F0E4C8 0%, var(--amber-tint) 100%); border-color:var(--gold); color:var(--gold-deep); box-shadow:0 2px 8px rgba(185,138,62,0.25); transform:translateY(-1px); }
 
   .modal-overlay{
     position:fixed; inset:0; background:rgba(10,35,30,0.45); z-index:80;
@@ -528,8 +528,8 @@
               <input type="text" id="cart-wa-pelanggan" placeholder="08xxxxxxxxxx" onchange="getActiveCart().waPelanggan = this.value; checkPoinPelanggan();">
             </div>
           </div>
-          <div style="margin-bottom:10px;">
-            <button type="button" class="btn-secondary" style="width:100%; justify-content:center; font-size:11.5px;" onclick="openDaftarPelangganKasir()">+ Daftarkan Pelanggan Baru</button>
+          <div style="margin-bottom:10px; display:flex; justify-content:center;">
+            <button type="button" class="btn-secondary" style="font-size:11.5px; background:var(--amber-tint); color:var(--gold-deep); border-color:var(--gold);" onclick="openDaftarPelangganKasir()">👤 Daftarkan Pelanggan Baru</button>
           </div>
           <div class="field" style="margin-bottom:10px;">
             <label>Diskon (Rp)</label>
