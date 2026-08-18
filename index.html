@@ -210,7 +210,7 @@
   .cart-summary{ padding:14px 20px; border-top:1px solid var(--surface-2); }
   .sum-row{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--ink-soft); margin-bottom:6px; }
   .sum-row.total{ font-size:16px; font-weight:700; color:var(--ink); margin-top:10px; }
-  .checkout-btn{ width:100%; background:linear-gradient(150deg, #4A6B45 0%, #2C4A3A 55%, #9B7A3E 100%); color:#fff; border:none; border-radius:16px; padding:16px; font-size:15px; font-weight:700; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 12px 28px rgba(26,46,35,0.25); display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; letter-spacing:0.02em; transition:transform .1s ease; }
+  .checkout-btn{ width:100%; background:linear-gradient(150deg, #3E6350 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:16px; padding:16px; font-size:15px; font-weight:700; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 12px 28px rgba(26,46,35,0.25); display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; letter-spacing:0.02em; transition:transform .1s ease; }
   .checkout-btn:active{ transform:translateY(1px); }
   .checkout-btn:disabled{ background:#C9C2B4; box-shadow:none; color:var(--ink-soft); cursor:not-allowed; }
   .checkout-note{ text-align:center; font-size:11px; color:var(--danger); margin-top:8px; font-weight:600; display:none; }
@@ -227,13 +227,13 @@
 
   .loading-note{ font-size:12.5px; color:var(--ink-soft); padding:20px; text-align:center; }
 
-  .btn-primary{ background:linear-gradient(150deg, #4A6B45 0%, #2C4A3A 55%, #9B7A3E 100%); color:#fff; border:none; border-radius:14px; padding:12px 20px; font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 6px 16px rgba(26,46,35,0.28); letter-spacing:0.015em; transition:transform .1s ease, box-shadow .1s ease; }
+  .btn-primary{ background:linear-gradient(150deg, #3E6350 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:14px; padding:12px 20px; font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px; box-shadow:0 3px 0 rgba(0,0,0,0.18), 0 6px 16px rgba(26,46,35,0.28); letter-spacing:0.015em; transition:transform .1s ease, box-shadow .1s ease; }
   .btn-primary:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.18), 0 2px 6px rgba(26,46,35,0.2); }
   .btn-secondary{ background:var(--surface); color:var(--ink); border:1.5px solid var(--line); border-radius:13px; padding:9px 15px; font-size:12.5px; font-weight:700; box-shadow:0 2px 0 rgba(26,46,35,0.05), 0 2px 6px rgba(26,46,35,0.06); transition:transform .1s ease, border-color .1s ease; }
   .btn-secondary:active{ background:var(--surface-2); transform:translateY(1px); box-shadow:0 1px 2px rgba(26,46,35,0.06); }
   .tabs{ display:flex; gap:6px; margin-bottom:16px; }
   .tab{ font-size:12.5px; font-weight:700; padding:9px 16px; border-radius:24px; background:var(--surface); border:1.5px solid var(--line); color:var(--ink-soft); cursor:pointer; transition:all .12s ease; }
-  .tab.active{ background:linear-gradient(150deg, #4A6B45 0%, #2C4A3A 55%, #9B7A3E 100%); border-color:var(--brand-deep); color:#fff; box-shadow:0 3px 10px rgba(26,46,35,0.3); }
+  .tab.active{ background:linear-gradient(150deg, #3E6350 0%, var(--brand-deep) 100%); border-color:var(--brand-deep); color:#fff; box-shadow:0 3px 10px rgba(26,46,35,0.3); }
   .calc-row{ display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:11.5px; }
   .calc-label{ color:var(--ink-soft); }
   .calc-label.main{ color:var(--ink); font-weight:600; }
@@ -245,7 +245,7 @@
   .sub-page{ display:none; }
   .sub-page.active{ display:block; }
   .pay-btn{ flex:1; border:1.5px solid var(--line); background:var(--surface-2); border-radius:13px; padding:12px 6px; font-size:12px; font-weight:700; color:var(--ink-soft); text-align:center; transition:all .12s ease; box-shadow:0 1px 2px rgba(26,46,35,0.04); }
-  .pay-btn.active{ background:linear-gradient(150deg, #F0E4C8 0%, var(--amber-tint) 100%); border-color:var(--gold); color:var(--gold-deep); box-shadow:0 2px 8px rgba(185,138,62,0.25); transform:translateY(-1px); }
+  .pay-btn.active{ background:var(--brand); border-color:var(--brand-deep); color:#fff; box-shadow:0 3px 10px rgba(44,74,58,0.35); transform:translateY(-1px); }
 
   .modal-overlay{
     position:fixed; inset:0; background:rgba(10,35,30,0.45); z-index:80;
@@ -529,7 +529,7 @@
             </div>
           </div>
           <div style="margin-bottom:10px; display:flex; justify-content:center;">
-            <button type="button" class="btn-secondary" style="font-size:11.5px; background:var(--amber-tint); color:var(--gold-deep); border-color:var(--gold);" onclick="openDaftarPelangganKasir()">👤 Daftarkan Pelanggan Baru</button>
+            <button type="button" class="btn-secondary" style="font-size:11.5px; background:var(--brand); color:#fff; border-color:var(--brand-deep);" onclick="openDaftarPelangganKasir()">👤 Daftarkan Pelanggan Baru</button>
           </div>
           <div class="field" style="margin-bottom:10px;">
             <label>Diskon (Rp)</label>
