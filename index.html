@@ -161,9 +161,10 @@
   .pos-topbar{ grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; padding:14px 24px; background:var(--brand-deep); color:#E9F0EC; }
   .pos-tb-title{ font-size:14.5px; font-weight:600; }
   .pos-tb-sub{ font-size:11px; color:#9FB3A9; }
-  .catalog{ padding:20px 22px 30px; }
-  .cat-search{ display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 15px; box-shadow:var(--shadow); margin-bottom:16px; }
-  .cat-search input{ border:none; outline:none; font-size:14px; flex:1; background:transparent; color:var(--ink); }
+  .catalog{ padding:16px 18px 12px; }
+  .cat-search{ display:flex; align-items:center; gap:10px; background:var(--surface); border:1.5px solid var(--line); border-radius:16px; padding:16px 18px; box-shadow:0 2px 0 rgba(26,46,35,0.05), var(--shadow); margin-bottom:6px; }
+  .cat-search input{ border:none; outline:none; font-size:16px; font-weight:700; flex:1; background:transparent; color:var(--ink); }
+  .cat-search svg{ width:20px; height:20px; flex-shrink:0; }
   .prod-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   .prod-card{ background:var(--surface); border:1.5px solid var(--line); border-radius:16px; padding:14px; box-shadow:0 2px 0 rgba(26,46,35,0.04), var(--shadow); position:relative; cursor:pointer; transition:transform .1s ease, box-shadow .1s ease; }
   .prod-card:active{ transform:translateY(1px) scale(0.98); box-shadow:0 1px 4px rgba(26,46,35,0.1); }
@@ -2311,12 +2312,7 @@
     const q = (document.getElementById('pos-search')?.value || '').toLowerCase();
 
     if (!q){
-      grid.innerHTML = `
-        <div style="grid-column:1/-1; text-align:center; padding:50px 20px; color:var(--ink-soft);">
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="opacity:.4; margin-bottom:10px;"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <div style="font-size:13px; font-weight:700;">Ketik nama produk untuk mulai</div>
-          <div style="font-size:11.5px; margin-top:4px;">Atau pakai tombol Scan buat baca barcode langsung</div>
-        </div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:10px 4px 4px; font-size:11.5px; color:var(--ink-soft);">Ketik nama produk atau pakai tombol Scan/Barcode di atas</div>`;
       return;
     }
 
