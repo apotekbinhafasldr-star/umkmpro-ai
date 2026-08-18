@@ -1602,6 +1602,16 @@
       <div style="position:absolute; inset:0; border:3px solid rgba(255,255,255,0.5); margin:20%; border-radius:8px; pointer-events:none;"></div>
     </div>
     <div id="scan-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Arahkan kamera ke barcode produk…</div>
+    <div id="scan-confirm-box" style="display:none; background:var(--good-tint); border-radius:10px; padding:14px; margin-bottom:14px;">
+      <div style="font-weight:700; font-size:13.5px; margin-bottom:10px;" id="scan-confirm-nama"></div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:12px;">
+        <div class="qty-btn" onclick="scanChangeQty(-1)" style="width:34px; height:34px; font-size:18px;">−</div>
+        <div id="scan-confirm-qty" style="font-size:18px; font-weight:700; min-width:24px; text-align:center;">1</div>
+        <div class="qty-btn" onclick="scanChangeQty(1)" style="width:34px; height:34px; font-size:18px;">+</div>
+      </div>
+      <button class="btn-primary" style="width:100%; justify-content:center;" onclick="konfirmasiTambahScanKeKeranjang()">+ Tambah ke Keranjang</button>
+      <button class="btn-secondary" style="width:100%; justify-content:center; margin-top:8px;" onclick="batalKonfirmasiScan()">Bukan Ini, Scan Ulang</button>
+    </div>
     <div class="field">
       <label>Atau ketik Kode Produk (SKU) manual</label>
       <input type="text" id="scan-manual-input" placeholder="Ketik kode lalu tekan Enter" onkeydown="if(event.key==='Enter') searchByBarcode(this.value)">
@@ -2456,6 +2466,8 @@
 
   async function openScanModal(targetInputId){
     scanTargetInputId = targetInputId || null;
+    scanFoundProduct = null;
+    document.getElementById('scan-confirm-box').style.display = 'none';
     document.getElementById('scan-manual-input').value = '';
     document.getElementById('scan-status').textContent = 'Membuka kamera…';
     document.querySelector('#scan-modal .modal-title').textContent = scanTargetInputId ? 'Scan Barcode untuk Isi Kode Produk' : 'Scan Barcode Produk';
@@ -2489,8 +2501,10 @@
 
   function closeScanModal(){
     if (scanDetectorInterval) clearInterval(scanDetectorInterval);
+    scanDetectorInterval = null;
     if (scanStream) scanStream.getTracks().forEach(t => t.stop());
     scanStream = null;
+    scanFoundProduct = null;
     document.getElementById('scan-modal').classList.remove('show');
   }
 
@@ -2507,12 +2521,16 @@
     if (navigator.vibrate) navigator.vibrate(80);
   }
 
+  let scanFoundProduct = null;
+  let scanConfirmQty = 1;
+
   function searchByBarcode(kode){
-    if (!kode) return;
+    if (!kode || scanFoundProduct) return; // sudah ada produk terkonfirmasi, jangan proses scan baru dulu
 
     // Mode isi field (misal dipanggil dari form Tambah Produk)
     if (scanTargetInputId){
       playBeepSound();
+      if (scanDetectorInterval) clearInterval(scanDetectorInterval);
       document.getElementById(scanTargetInputId).value = kode;
       document.getElementById('scan-status').innerHTML = `✓ Kode terbaca: <b>${kode}</b>`;
       showToast('✓ Kode produk terisi dari scan');
@@ -2520,15 +2538,48 @@
       return;
     }
 
-    // Mode cari produk (dipanggil dari Kasir)
+    // Mode cari produk (dipanggil dari Kasir) — berhenti scan, tampilkan konfirmasi dulu
     const prod = products.find(p => p.kode_produk && p.kode_produk.toLowerCase() === kode.trim().toLowerCase());
     if (prod){
       playBeepSound();
-      addToCart(prod.id);
-      document.getElementById('scan-status').innerHTML = `✓ Ditemukan: <b>${prod.nama}</b> — ditambahkan ke keranjang!`;
-      showToast(`✓ "${prod.nama}" ditambahkan lewat scan`);
+      if (scanDetectorInterval) clearInterval(scanDetectorInterval); // hentikan scan sementara
+      scanFoundProduct = prod;
+      scanConfirmQty = 1;
+      document.getElementById('scan-status').textContent = '';
+      document.getElementById('scan-confirm-box').style.display = 'block';
+      document.getElementById('scan-confirm-nama').textContent = `✓ Ditemukan: ${prod.nama} — Rp ${parseFloat(prod.harga).toLocaleString('id-ID')}`;
+      document.getElementById('scan-confirm-qty').textContent = '1';
     } else {
       document.getElementById('scan-status').innerHTML = `⚠️ Kode "${kode}" tidak ditemukan di produk kamu.`;
+    }
+  }
+
+  function scanChangeQty(delta){
+    scanConfirmQty = Math.max(1, scanConfirmQty + delta);
+    document.getElementById('scan-confirm-qty').textContent = scanConfirmQty;
+  }
+
+  function konfirmasiTambahScanKeKeranjang(){
+    if (!scanFoundProduct) return;
+    for (let i = 0; i < scanConfirmQty; i++){ addToCart(scanFoundProduct.id); }
+    showToast(`✓ "${scanFoundProduct.nama}" x${scanConfirmQty} ditambahkan ke keranjang`);
+    closeScanModal();
+  }
+
+  function batalKonfirmasiScan(){
+    scanFoundProduct = null;
+    document.getElementById('scan-confirm-box').style.display = 'none';
+    document.getElementById('scan-status').textContent = 'Arahkan kamera ke barcode produk…';
+    // Lanjutkan scan lagi
+    if (('BarcodeDetector' in window) && !scanDetectorInterval){
+      const video = document.getElementById('scan-video');
+      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e'] });
+      scanDetectorInterval = setInterval(async () => {
+        try{
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0) searchByBarcode(barcodes[0].rawValue);
+        } catch(e){}
+      }, 500);
     }
   }
 
