@@ -316,7 +316,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v36-0615</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v38-0730</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -912,7 +912,7 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
               Tambah Karyawan
             </button>
-            <button class="btn-secondary owner-only" onclick="closeHrMoreMenu(); openInviteModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px; background:var(--brand-tint); color:var(--brand); border-color:var(--brand);">Undang Karyawan (Akun Login)</button>
+            <button class="btn-secondary owner-only" onclick="closeHrMoreMenu(); openInviteModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px; background:var(--brand-tint); color:var(--brand); border-color:var(--brand);">Buat Akun Login Karyawan</button>
             <div style="border-top:1px solid var(--line); margin:6px 0;"></div>
             <button class="btn-secondary owner-only" onclick="closeHrMoreMenu(); openAttendanceManualModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px;">Absen Manual (Owner)</button>
             <button class="btn-secondary" onclick="closeHrMoreMenu(); openShiftModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px;">Atur Jadwal</button>
@@ -959,6 +959,34 @@
         <div class="panel-body" id="kontrak-list"><div class="loading-note">Memuat…</div></div>
       </div>
 
+      <div class="panel owner-only">
+        <div class="panel-head"><div class="panel-title">🪪 Cetak ID Card Karyawan</div></div>
+        <div class="panel-body">
+          <div class="field">
+            <label>Karyawan</label>
+            <select id="idc-employee"></select>
+          </div>
+          <div class="field"><label>Foto Karyawan (opsional, setengah badan/latar polos)</label><input type="file" id="idc-foto" accept="image/*"></div>
+          <div class="field"><label>Aturan &amp; Tata Tertib (tampil di belakang kartu, satu baris satu poin)</label><textarea id="idc-aturan" rows="4" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12.5px; font-family:inherit;">Wajib berpakaian rapi &amp; memakai ID card selama jam kerja
+Wajib hadir tepat waktu sesuai jadwal shift
+Menjaga kerahasiaan data pelanggan &amp; apotek
+Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
+          <button class="btn-primary" style="width:100%; justify-content:center;" onclick="cetakIdCard()">🪪 Buat ID Card</button>
+        </div>
+      </div>
+
+      <div class="panel owner-only">
+        <div class="panel-head"><div class="panel-title">📃 Surat Kontrak Kerja</div></div>
+        <div class="panel-body">
+          <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:10px;">Diambil otomatis dari data "Kontrak Karyawan" di atas — pastikan kontraknya sudah dibuat dulu.</div>
+          <div class="field">
+            <label>Karyawan</label>
+            <select id="sk-employee"></select>
+          </div>
+          <button class="btn-primary" style="width:100%; justify-content:center;" onclick="cetakSuratKontrak()">📃 Buat Surat Kontrak</button>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-head"><div class="panel-title">🔄 Tukar Shift</div><button class="btn-secondary" onclick="openShiftSwapModal()">+ Ajukan Tukar</button></div>
         <div class="panel-body" id="shift-swap-list"><div class="loading-note">Memuat…</div></div>
@@ -982,8 +1010,8 @@
             <div class="panel-head"><div class="panel-title">Daftar Karyawan</div></div>
             <div class="panel-body" id="hr-employee-list"><div class="loading-note">Memuat data…</div></div>
           </div>
-          <div class="panel owner-only">
-            <div class="panel-head"><div class="panel-title">Undangan Akun Login</div></div>
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">👤 Karyawan Terdaftar (Akun Login Aktif)</div></div>
             <div class="panel-body" id="hr-invitation-list"><div class="loading-note">Memuat data…</div></div>
           </div>
           <div class="panel">
@@ -1616,10 +1644,18 @@
 <!-- MODAL UNDANG KARYAWAN (AKUN LOGIN) -->
 <div class="modal-overlay" id="invite-modal">
   <div class="modal-card">
-    <div class="modal-title">Undang Karyawan Buat Akun Login</div>
+    <div class="modal-title">Buat Akun Login Karyawan</div>
     <div id="invite-form-wrap">
-      <div class="field"><label>Email Karyawan</label><input type="email" id="inv-email" placeholder="email@karyawan.com"></div>
-      <div class="field"><label>No. WhatsApp Karyawan (buat kirim link otomatis)</label><input type="text" id="inv-wa" placeholder="08xxxxxxxxxx"></div>
+      <div class="field">
+        <label>Sambungkan ke Karyawan (opsional)</label>
+        <select id="inv-karyawan-existing" onchange="isiFormDariKaryawan()">
+          <option value="">— Buat akun baru tanpa sambungan —</option>
+        </select>
+      </div>
+      <div class="field"><label>Nama</label><input type="text" id="inv-nama" placeholder="Nama karyawan"></div>
+      <div class="field"><label>Email (buat login)</label><input type="email" id="inv-email" placeholder="email@karyawan.com"></div>
+      <div class="field"><label>Password Awal</label><input type="text" id="inv-password" placeholder="Minimal 6 karakter"></div>
+      <div class="field"><label>No. WhatsApp Karyawan (buat kirim info login)</label><input type="text" id="inv-wa" placeholder="08xxxxxxxxxx"></div>
       <div class="field">
         <label>Peran / Hak Akses</label>
         <select id="inv-role">
@@ -1631,16 +1667,16 @@
         </select>
       </div>
       <div class="auth-note" style="margin-top:6px;">
-        💡 Tidak ada email otomatis terkirim — setelah kamu kirim undangan di sini, kamu perlu kirim link daftar ke karyawan sendiri (bisa lewat tombol WA yang muncul setelah ini).
+        ✅ Akun langsung aktif — karyawan tidak perlu Daftar sendiri. Tinggal kasih tahu email &amp; password ini, mereka bisa langsung tap "Masuk".
       </div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal('invite-modal')">Batal</button>
-        <button class="btn-primary" id="inv-submit-btn" onclick="submitInvitation()">Kirim Undangan</button>
+        <button class="btn-primary" id="inv-submit-btn" onclick="submitInvitation()">Buat Akun</button>
       </div>
     </div>
     <div id="invite-success-wrap" style="display:none;">
-      <div style="background:var(--good-tint); border-radius:10px; padding:14px; margin-bottom:14px; font-size:13px; color:var(--good); font-weight:600;">✓ Undangan tersimpan di sistem — sekarang kirim link daftarnya ke karyawan:</div>
-      <a id="invite-wa-link" href="#" target="_blank" class="btn-primary" style="width:100%; justify-content:center; text-decoration:none; margin-bottom:8px;">📤 Kirim Link Daftar via WhatsApp</a>
+      <div style="background:var(--good-tint); border-radius:10px; padding:14px; margin-bottom:14px; font-size:13px; color:var(--good); font-weight:600;">✓ Akun berhasil dibuat &amp; langsung aktif — kirim info login ini ke karyawan:</div>
+      <a id="invite-wa-link" href="#" target="_blank" class="btn-primary" style="width:100%; justify-content:center; text-decoration:none; margin-bottom:8px;">📤 Kirim Info Login via WhatsApp</a>
       <button class="btn-secondary" style="width:100%; justify-content:center;" onclick="closeModal('invite-modal')">Selesai</button>
     </div>
   </div>
@@ -4372,6 +4408,7 @@
     await loadLeaderboardKasir();
     await loadKontrakList();
     await loadShiftSwapList();
+    await isiDropdownEmployeeUmum();
   }
 
   async function loadLeaveRequests(){
@@ -6005,49 +6042,79 @@
   }
 
   // ================= UNDANGAN KARYAWAN =================
-  function openInviteModal(){
+  async function openInviteModal(){
     document.getElementById('invite-form-wrap').style.display = 'block';
     document.getElementById('invite-success-wrap').style.display = 'none';
+    document.getElementById('inv-nama').value = '';
     document.getElementById('inv-email').value = '';
+    document.getElementById('inv-password').value = '';
     document.getElementById('inv-wa').value = '';
     document.getElementById('inv-role').value = 'kasir';
+
+    // Isi dropdown karyawan yang belum punya akun login
+    const { data: emps } = await sb.from('employees').select('id, nama, email, no_hp').eq('tenant_id', currentProfile.tenant_id).eq('status','aktif').is('profile_id', null);
+    const sel = document.getElementById('inv-karyawan-existing');
+    sel.innerHTML = '<option value="">— Buat akun baru tanpa sambungan —</option>' + (emps||[]).map(e => `<option value="${e.id}" data-nama="${e.nama}" data-email="${e.email||''}" data-wa="${e.no_hp||''}">${e.nama}</option>`).join('');
+
     document.getElementById('invite-modal').classList.add('show');
   }
+
+  function isiFormDariKaryawan(){
+    const sel = document.getElementById('inv-karyawan-existing');
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt.value) return;
+    document.getElementById('inv-nama').value = opt.dataset.nama || '';
+    document.getElementById('inv-email').value = opt.dataset.email || '';
+    document.getElementById('inv-wa').value = opt.dataset.wa || '';
+  }
+
   async function submitInvitation(){
     const email = document.getElementById('inv-email').value.trim();
-    if (!email){ showToast('Email wajib diisi.', true); return; }
-    const btn = document.getElementById('inv-submit-btn');
-    btn.disabled = true; btn.textContent = 'Mengirim…';
+    const password = document.getElementById('inv-password').value;
+    const nama = document.getElementById('inv-nama').value.trim();
     const role = document.getElementById('inv-role').value;
-    const { error } = await sb.from('invitations').insert({
-      tenant_id: currentProfile.tenant_id, email,
-      role, dibuat_oleh: currentProfile.id
-    });
-    btn.disabled = false; btn.textContent = 'Kirim Undangan';
-    if (error){ showToast('Gagal mengundang: ' + error.message, true); return; }
+    if (!email || !password){ showToast('Email dan password wajib diisi.', true); return; }
+    if (password.length < 6){ showToast('Password minimal 6 karakter.', true); return; }
 
-    const linkApp = window.location.origin + window.location.pathname;
-    const namaUsaha = document.getElementById('sidebar-tenant')?.textContent || 'apotek kami';
-    const pesan = encodeURIComponent(`Halo! Kamu diundang gabung aplikasi kasir ${namaUsaha} sebagai ${JABATAN_LABEL[role] || role}.\n\nCara daftar:\n1. Buka: ${linkApp}\n2. Tap "Daftar"\n3. Pakai email: ${email}\n4. Buat password sendiri\n\nSetelah daftar, akun kamu otomatis aktif dengan akses ${JABATAN_LABEL[role] || role}. 🙏`);
-    const waInput = document.getElementById('inv-wa').value.trim();
-    const nomorWA = waInput ? waInput.replace(/^0/,'62').replace(/\D/g,'') : '';
-    document.getElementById('invite-wa-link').href = nomorWA ? `https://wa.me/${nomorWA}?text=${pesan}` : `https://wa.me/?text=${pesan}`;
+    const btn = document.getElementById('inv-submit-btn');
+    btn.disabled = true; btn.textContent = 'Membuat akun…';
 
-    document.getElementById('invite-form-wrap').style.display = 'none';
-    document.getElementById('invite-success-wrap').style.display = 'block';
-    await loadInvitations();
+    const employeeId = document.getElementById('inv-karyawan-existing').value || null;
+    const { data: sessionData } = await sb.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/buat-akun-karyawan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ email, password, role, nama, employee_id: employeeId }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Gagal membuat akun.');
+
+      const linkApp = window.location.origin + window.location.pathname;
+      const namaUsaha = document.getElementById('sidebar-tenant')?.textContent || 'apotek kami';
+      const pesan = encodeURIComponent(`Halo ${nama || ''}! Akun kamu di aplikasi kasir ${namaUsaha} sudah dibuatkan sebagai ${JABATAN_LABEL[role] || role}.\n\nCara login:\n1. Buka: ${linkApp}\n2. Email: ${email}\n3. Password: ${password}\n\nLangsung tap "Masuk" ya, tidak perlu daftar lagi. 🙏`);
+      const waInput = document.getElementById('inv-wa').value.trim();
+      const nomorWA = waInput ? waInput.replace(/^0/,'62').replace(/\D/g,'') : '';
+      document.getElementById('invite-wa-link').href = nomorWA ? `https://wa.me/${nomorWA}?text=${pesan}` : `https://wa.me/?text=${pesan}`;
+
+      document.getElementById('invite-form-wrap').style.display = 'none';
+      document.getElementById('invite-success-wrap').style.display = 'block';
+      await loadHrPage();
+    } catch (err) {
+      showToast('Gagal: ' + err.message, true);
+    }
+    btn.disabled = false; btn.textContent = 'Buat Akun';
   }
   async function loadInvitations(){
     const el = document.getElementById('hr-invitation-list');
     if (!el) return;
-    const { data } = await sb.from('invitations').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', {ascending:false});
-    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada undangan dikirim.</div>'; return; }
-    el.innerHTML = data.map(i => `
-      <div class="row-item">
-        <div class="emp-dot">${i.email.substring(0,2).toUpperCase()}</div>
-        <div><div class="row-name">${i.email}</div><div class="row-meta">${JABATAN_LABEL[i.role] || i.role}</div></div>
-        <div class="row-right"><span class="pill ${i.digunakan ? 'ok' : 'warn'}">${i.digunakan ? 'Sudah gabung' : 'Menunggu'}</span></div>
-      </div>`).join('');
+    const { data } = await sb.from('employees').select('nama, jabatan, created_at').eq('tenant_id', currentProfile.tenant_id).not('profile_id','is',null).order('created_at', {ascending:false});
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada karyawan dengan akun login aktif.</div>'; return; }
+    el.innerHTML = `<table><thead><tr><th>Nama</th><th>Posisi/Divisi</th><th>Tgl Aktif</th></tr></thead><tbody>` +
+      data.map(k => `<tr><td>${k.nama}</td><td>${JABATAN_LABEL[k.jabatan] || k.jabatan}</td><td>${new Date(k.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'2-digit'})}</td></tr>`).join('') +
+      `</tbody></table>`;
   }
 
   // ================= HAK AKSES PER PERAN (tampilan) =================
@@ -8060,7 +8127,7 @@
 
 **Laporan Keuangan**: pilih periode (Hari Ini/Minggu/Bulan/Tahun). Ada grafik tren Omzet vs Laba, Laporan Laba Rugi lengkap, Arus Kas, PPN Keluaran (kalau status PKP diaktifkan di menu Pajak), dan Neraca (estimasi posisi Aset/Kewajiban/Modal). Tombol "+ Catat Biaya" buat catat biaya operasional (sewa, listrik, gaji, dll) per kategori. Tombol "Ekspor Excel" buat unduh laporan. Panel "Setor/Tarik Modal Owner" buat catat kalau Owner masukin uang pribadi ke usaha (Setor Modal) atau ambil uang usaha buat pribadi (Tarik Modal).
 
-**Karyawan & Shift**: kelola data karyawan (tap baris karyawan buat edit datanya), jadwal shift, pengajuan cuti, lembur, evaluasi kinerja. Tombol aksi sekarang rapi: "Absen Sekarang" tampil langsung, sisanya (Tambah Karyawan, Undang Karyawan, Absen Manual, Atur Jadwal, Ajukan Cuti, Catat Lembur, Catat Gaji/Kasbon, Slip Gaji dari Kontrak, Catat Evaluasi) ada di dropdown "⋯ Aksi Lain" di pojok kanan atas. Absen sekarang pakai **selfie wajib + GPS** (anti titip-absen) — karyawan foto diri sendiri, lokasi otomatis dicek terhadap titik apotek yang diatur Owner (geofencing, radius bisa diatur). Owner bisa catat absen manual buat karyawan tanpa akun login. Ada **Papan Pengumuman** (broadcast ke semua karyawan), **Leaderboard Kasir** (ranking omzet mingguan per kasir), **Kontrak Karyawan** (gaji pokok + daftar tunjangan + target bonus opsional berdasarkan omzet/jumlah transaksi/kehadiran — diatur Owner per karyawan), **Tukar Shift** (karyawan ajukan, Owner approve/tolak), dan **Slip Gaji dari Kontrak** (tombol khusus Owner — otomatis hitung gaji pokok + tunjangan + cek apakah target bonus tercapai + potongan BPJS/PPh21 otomatis, langsung terbit slip gaji digital). Owner bisa undang karyawan buat punya akun login sendiri dengan peran (role) tertentu: Owner, Apoteker, Kasir, Admin Gudang, HR, Marketing — tiap peran cuma lihat menu sesuai tugasnya.
+**Karyawan & Shift**: kelola data karyawan (tap baris karyawan buat edit datanya), jadwal shift, pengajuan cuti, lembur, evaluasi kinerja. Tombol aksi sekarang rapi: "Absen Sekarang" tampil langsung, sisanya (Tambah Karyawan, Undang Karyawan, Absen Manual, Atur Jadwal, Ajukan Cuti, Catat Lembur, Catat Gaji/Kasbon, Slip Gaji dari Kontrak, Catat Evaluasi) ada di dropdown "⋯ Aksi Lain" di pojok kanan atas. Absen sekarang pakai **selfie wajib + GPS** (anti titip-absen) — karyawan foto diri sendiri, lokasi otomatis dicek terhadap titik apotek yang diatur Owner (geofencing, radius bisa diatur). Owner bisa catat absen manual buat karyawan tanpa akun login. Ada **Papan Pengumuman** (broadcast ke semua karyawan), **Leaderboard Kasir** (ranking omzet mingguan per kasir), **Kontrak Karyawan** (gaji pokok + daftar tunjangan + target bonus opsional berdasarkan omzet/jumlah transaksi/kehadiran — diatur Owner per karyawan), **Tukar Shift** (karyawan ajukan, Owner approve/tolak), dan **Slip Gaji dari Kontrak** (tombol khusus Owner — otomatis hitung gaji pokok + tunjangan + cek apakah target bonus tercapai + potongan BPJS/PPh21 otomatis, langsung terbit slip gaji digital). Owner bisa **langsung buat akun login karyawan** (tombol "Buat Akun Login Karyawan" di dropdown ⋯ Aksi Lain) — Owner isi email, password awal, dan peran (role): Owner, Apoteker, Kasir, Admin Gudang, HR, Marketing. Akun langsung aktif, tidak perlu proses Daftar sendiri oleh karyawan — tinggal kasih tahu email & password itu (bisa lewat tombol kirim WA otomatis yang muncul), karyawan langsung bisa tap "Masuk" pakai itu. Tiap peran cuma lihat menu sesuai tugasnya. Ada juga tabel "Karyawan Terdaftar (Akun Login Aktif)" yang rapi, **Cetak ID Card Karyawan** (depan+belakang, No. ID otomatis sesuai divisi, aturan tata tertib di belakang kartu), dan **Surat Kontrak Kerja (PKWT)** otomatis dari data Kontrak Karyawan (gaji, tunjangan, target bonus, masa kerja) — tinggal pilih karyawan & cetak.
 
 **Pelanggan & Piutang**: catat piutang pelanggan (ada tanggal jatuh tempo + tombol ingatkan WA), retur barang, poin loyalitas pelanggan, pesanan online (toko online), tab "Buat Promosi" (AI generate 3 variasi teks promosi otomatis dari produk+jenis promo pilihan, lalu bisa dikirim ke target pelanggan tertentu — semua/belum belanja 30 hari/member — tinggal tap "Kirim" per pelanggan, WA terbuka dengan teks sudah terisi), daftar tunggu barang kosong, dan pelanggan khusus/reseller.
 
@@ -8116,6 +8183,149 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const { data: { session } } = await sb.auth.getSession();
     if (session){ await initApp(); }
   })();
+
+  // ================= ISI DROPDOWN KARYAWAN UNTUK ID CARD & SURAT KONTRAK =================
+  async function isiDropdownEmployeeUmum(){
+    const idcSel = document.getElementById('idc-employee');
+    const skSel = document.getElementById('sk-employee');
+    if (!idcSel && !skSel) return;
+    const { data: emps } = await sb.from('employees').select('id, nama, jabatan').eq('tenant_id', currentProfile.tenant_id).eq('status','aktif').order('nama');
+    const opsi = (emps||[]).map(e => `<option value="${e.id}">${e.nama} — ${JABATAN_LABEL[e.jabatan] || e.jabatan}</option>`).join('') || '<option value="">Belum ada karyawan</option>';
+    if (idcSel) idcSel.innerHTML = opsi;
+    if (skSel) skSel.innerHTML = opsi;
+  }
+
+  // ================= CETAK ID CARD KARYAWAN =================
+  async function cetakIdCard(){
+    const employeeId = document.getElementById('idc-employee').value;
+    if (!employeeId){ showToast('Pilih karyawan dulu.', true); return; }
+
+    const [{ data: emp }, { data: tenantData }, { data: semuaKaryawanDivisi }] = await Promise.all([
+      sb.from('employees').select('*').eq('id', employeeId).single(),
+      sb.from('tenants').select('nama_usaha, alamat, no_whatsapp').eq('id', currentProfile.tenant_id).single(),
+      sb.from('employees').select('id, jabatan, created_at').eq('tenant_id', currentProfile.tenant_id).order('created_at'),
+    ]);
+    if (!emp){ showToast('Data karyawan tidak ditemukan.', true); return; }
+
+    // Nomor ID otomatis: PREFIX-DIVISI + urutan pendaftaran di divisi yang sama
+    const prefixUsaha = (tenantData?.nama_usaha || 'TOKO').replace(/[^A-Za-z]/g,'').substring(0,4).toUpperCase() || 'TOKO';
+    const PREFIX_DIVISI = { owner:'OWN', apoteker:'APT', kasir:'KSR', admin_gudang:'GDG', hr:'HRD', marketing:'MKT' };
+    const samaDivisi = (semuaKaryawanDivisi||[]).filter(k => k.jabatan === emp.jabatan).sort((a,b)=> new Date(a.created_at)-new Date(b.created_at));
+    const urutan = samaDivisi.findIndex(k => k.id === emp.id) + 1;
+    const noId = `${prefixUsaha}${PREFIX_DIVISI[emp.jabatan] || 'STF'}-${String(urutan).padStart(3,'0')}`;
+
+    const fotoFile = document.getElementById('idc-foto').files[0];
+    let fotoDataUrl = '';
+    if (fotoFile){
+      fotoDataUrl = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result); r.readAsDataURL(fotoFile); });
+    }
+
+    const aturanList = document.getElementById('idc-aturan').value.split('\n').map(a => a.trim()).filter(a => a);
+    const namaUsaha = tenantData?.nama_usaha || 'Usaha';
+
+    const win = window.open('', '_blank', 'width=400,height=680');
+    if (!win){ showToast('Popup diblokir browser — izinkan popup untuk cetak ID Card.', true); return; }
+    win.document.write(`
+      <html><head><title>ID Card - ${emp.nama}</title>
+      <style>
+        body{ font-family:'IBM Plex Sans',sans-serif; margin:0; background:#f0f0f0; padding:16px; }
+        .card{ width:320px; height:200px; border-radius:14px; background:linear-gradient(135deg,#2C4A3A,#1a2e23); color:#fff; padding:16px; box-sizing:border-box; margin:0 auto 12px; box-shadow:0 4px 12px rgba(0,0,0,.2); position:relative; overflow:hidden; }
+        .card-back{ background:#fff; color:#222; border:1.5px solid #ddd; }
+        .top-row{ display:flex; justify-content:space-between; align-items:flex-start; }
+        .brand{ font-size:13px; font-weight:800; }
+        .id-no{ font-size:10px; opacity:.8; font-family:monospace; }
+        .foto{ width:64px; height:64px; border-radius:10px; background:#fff2 center/cover; margin-top:10px; border:1.5px solid rgba(255,255,255,.4); }
+        .nama{ font-size:16px; font-weight:800; margin-top:10px; }
+        .jabatan{ font-size:11px; opacity:.85; text-transform:uppercase; letter-spacing:.05em; }
+        .back-title{ font-size:11px; font-weight:800; margin-bottom:6px; }
+        .back-item{ font-size:9.5px; padding:3px 0; border-bottom:1px dashed #eee; }
+        .back-foot{ font-size:8.5px; color:#666; margin-top:8px; }
+        .no-print{ text-align:center; margin-top:10px; }
+        @media print{ .no-print{ display:none; } body{ background:#fff; } }
+      </style></head>
+      <body>
+        <div class="card">
+          <div class="top-row"><div class="brand">${namaUsaha}</div><div class="id-no">${noId}</div></div>
+          <div class="foto" style="${fotoDataUrl ? `background-image:url(${fotoDataUrl});` : ''}"></div>
+          <div class="nama">${emp.nama}</div>
+          <div class="jabatan">${JABATAN_LABEL[emp.jabatan] || emp.jabatan}</div>
+        </div>
+        <div class="card card-back">
+          <div class="back-title">ATURAN &amp; TATA TERTIB</div>
+          ${aturanList.map(a => `<div class="back-item">• ${a}</div>`).join('')}
+          <div class="back-foot">${tenantData?.alamat || ''}${tenantData?.no_whatsapp ? ' · ' + tenantData.no_whatsapp : ''}</div>
+        </div>
+        <div class="no-print"><button onclick="window.print()" style="padding:8px 18px; font-size:12px;">Cetak</button></div>
+      </body></html>`);
+    win.document.close();
+  }
+
+  // ================= CETAK SURAT KONTRAK KERJA =================
+  async function cetakSuratKontrak(){
+    const employeeId = document.getElementById('sk-employee').value;
+    if (!employeeId){ showToast('Pilih karyawan dulu.', true); return; }
+
+    const [{ data: kontrak }, { data: tenantData }] = await Promise.all([
+      sb.from('kontrak_karyawan').select('*, employees(nama)').eq('employee_id', employeeId).eq('tenant_id', currentProfile.tenant_id).eq('status','aktif').order('created_at',{ascending:false}).limit(1).maybeSingle(),
+      sb.from('tenants').select('nama_usaha, alamat').eq('id', currentProfile.tenant_id).single(),
+    ]);
+    if (!kontrak){ showToast('Karyawan ini belum punya kontrak aktif. Buat kontraknya dulu di atas.', true); return; }
+
+    const totalTunjangan = (kontrak.tunjangan||[]).reduce((s,t)=>s+parseFloat(t.jumlah||0),0);
+    const namaUsaha = tenantData?.nama_usaha || 'Usaha';
+    const tglMulai = new Date(kontrak.tanggal_mulai).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+    const tglBerakhir = kontrak.tanggal_berakhir ? new Date(kontrak.tanggal_berakhir).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}) : 'tidak ditentukan (sampai diberhentikan salah satu pihak)';
+
+    const win = window.open('', '_blank', 'width=420,height=700');
+    if (!win){ showToast('Popup diblokir browser — izinkan popup untuk cetak surat.', true); return; }
+    win.document.write(`
+      <html><head><title>Surat Kontrak Kerja - ${kontrak.employees?.nama}</title>
+      <style>
+        body{ font-family:'Times New Roman',serif; font-size:13px; line-height:1.7; max-width:640px; margin:24px auto; color:#111; padding:0 20px; }
+        h2{ text-align:center; margin-bottom:2px; text-decoration:underline; }
+        .center{ text-align:center; margin-bottom:20px; font-size:12px; }
+        table{ width:100%; margin:14px 0; border-collapse:collapse; }
+        td{ padding:3px 6px; vertical-align:top; font-size:12.5px; }
+        .no-print{ text-align:center; margin-top:20px; }
+        @media print{ .no-print{ display:none; } }
+      </style></head>
+      <body>
+        <h2>SURAT PERJANJIAN KERJA WAKTU TERTENTU (PKWT)</h2>
+        <div class="center">${namaUsaha}${tenantData?.alamat ? ' — ' + tenantData.alamat : ''}</div>
+        <p>Pada hari ini, yang bertanda tangan di bawah ini:</p>
+        <p><b>PIHAK PERTAMA</b> (Pemberi Kerja): ${namaUsaha}</p>
+        <p><b>PIHAK KEDUA</b> (Pekerja): <b>${kontrak.employees?.nama}</b>, selanjutnya disebut sebagai Karyawan.</p>
+        <p>Kedua belah pihak sepakat mengikatkan diri dalam Perjanjian Kerja Waktu Tertentu dengan ketentuan sebagai berikut:</p>
+
+        <p><b>Pasal 1 — Posisi &amp; Masa Kerja</b><br>
+        Karyawan bekerja pada posisi <b>${DIVISI_LABEL[kontrak.divisi]}</b>, terhitung sejak <b>${tglMulai}</b> sampai dengan <b>${tglBerakhir}</b>.</p>
+
+        <p><b>Pasal 2 — Tugas &amp; Tanggung Jawab</b><br>
+        ${kontrak.sop_ringkas || 'Melaksanakan tugas sesuai posisi yang ditentukan dan mematuhi seluruh SOP yang berlaku di tempat kerja.'}</p>
+
+        <p><b>Pasal 3 — Kompensasi</b></p>
+        <table>
+          <tr><td>Gaji Pokok</td><td>: Rp ${Math.round(kontrak.gaji_pokok).toLocaleString('id-ID')} / bulan</td></tr>
+          ${(kontrak.tunjangan||[]).map(t => `<tr><td>${t.nama}</td><td>: Rp ${Math.round(t.jumlah).toLocaleString('id-ID')} / bulan</td></tr>`).join('')}
+          <tr><td><b>Total Tetap</b></td><td>: <b>Rp ${Math.round(parseFloat(kontrak.gaji_pokok) + totalTunjangan).toLocaleString('id-ID')} / bulan</b></td></tr>
+        </table>
+        ${kontrak.target_bonus_jenis ? `<p><b>Pasal 4 — Bonus Kinerja</b><br>Karyawan berhak atas bonus sebesar <b>Rp ${Math.round(kontrak.bonus_nominal).toLocaleString('id-ID')}</b> apabila mencapai target ${TARGET_BONUS_LABEL[kontrak.target_bonus_jenis]} sebesar <b>${kontrak.target_bonus_nilai.toLocaleString('id-ID')}</b> dalam satu bulan berjalan.</p>` : ''}
+
+        <p><b>Pasal ${kontrak.target_bonus_jenis ? '5' : '4'} — Ketentuan Lain</b><br>
+        Hal-hal yang belum diatur dalam perjanjian ini akan diatur kemudian berdasarkan kesepakatan kedua belah pihak dan peraturan ketenagakerjaan yang berlaku.</p>
+
+        <table style="margin-top:50px;">
+          <tr>
+            <td style="text-align:center; width:50%;">Pihak Pertama,<br><br><br><br>( ${namaUsaha} )</td>
+            <td style="text-align:center; width:50%;">Pihak Kedua,<br><br><br><br>( ${kontrak.employees?.nama} )</td>
+          </tr>
+        </table>
+
+        <div style="font-size:9.5px; color:#777; margin-top:24px;">*Ini template dasar PKWT yang dibuat otomatis dari data kontrak di sistem — untuk kasus khusus, tetap disarankan dicek ke yang paham hukum ketenagakerjaan sebelum dipakai resmi.</div>
+        <div class="no-print"><button onclick="window.print()" style="padding:8px 18px; font-size:12px;">Cetak</button></div>
+      </body></html>`);
+    win.document.close();
+  }
 
   // ================= DROPDOWN "AKSI LAIN" DI HALAMAN HR =================
   function toggleHrMoreMenu(){
