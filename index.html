@@ -339,9 +339,30 @@
 <body>
 
 <!-- ============ AUTH SCREEN ============ -->
+<!-- HALAMAN TES SELEKSI KANDIDAT (publik, tanpa login) -->
+<div id="tes-seleksi-screen" style="display:none; min-height:100vh; background:var(--bg); padding:20px 16px;">
+  <div style="max-width:480px; margin:0 auto;">
+    <div id="tes-loading" style="text-align:center; padding:60px 20px; color:var(--ink-soft);">Memuat soal tes…</div>
+    <div id="tes-error" style="display:none; background:var(--danger-tint); color:var(--danger); border-radius:12px; padding:20px; text-align:center; font-size:13px; font-weight:600;"></div>
+    <div id="tes-content" style="display:none;">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-family:'Fraunces',serif; font-size:20px; font-weight:700;" id="tes-nama-usaha">—</div>
+        <div style="font-size:12.5px; color:var(--ink-soft); margin-top:4px;">Tes Seleksi Karyawan — <span id="tes-nama-kandidat">—</span></div>
+      </div>
+      <div id="tes-soal-list"></div>
+      <button class="btn-primary" id="tes-submit-btn" style="width:100%; justify-content:center; margin-top:16px;" onclick="submitHasilTes()">Kirim Jawaban</button>
+    </div>
+    <div id="tes-hasil" style="display:none; text-align:center; padding:40px 20px;">
+      <div style="font-size:40px; margin-bottom:10px;">✅</div>
+      <div style="font-family:'Fraunces',serif; font-size:20px; font-weight:700;">Tes Selesai!</div>
+      <div style="font-size:13px; color:var(--ink-soft); margin-top:8px;">Terima kasih sudah mengerjakan tes. Hasilnya akan diberitahukan oleh pemberi kerja.</div>
+    </div>
+  </div>
+</div>
+
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v43-1000</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v48-1400</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -414,9 +435,10 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18M3 9v10a2 2 0 002 2h4M21 9v10a2 2 0 01-2 2h-4"/></svg>
             Laporan Keuangan
           </button>
-          <button class="nav-item" data-page="hr" onclick="goPage('hr', this)">
+          <button class="nav-item" data-page="hr" onclick="goPage('hr', this)" style="position:relative;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-            Karyawan &amp; Shift
+            HR
+            <span id="hr-notif-badge" style="display:none; position:absolute; top:6px; right:10px; background:var(--danger); color:#fff; font-size:9px; font-weight:800; min-width:16px; height:16px; border-radius:8px; align-items:center; justify-content:center; padding:0 4px;"></span>
           </button>
           <button class="nav-item" data-page="profilsaya" onclick="goPage('profilsaya', this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -462,6 +484,11 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
           Absen Sekarang
         </button>
+      </div>
+
+      <div class="panel owner-only" id="slip-gaji-otomatis-panel" style="display:none;">
+        <div class="panel-head"><div class="panel-title">🧾 Slip Gaji Otomatis Siap Dikirim</div></div>
+        <div class="panel-body" id="slip-gaji-otomatis-list"></div>
       </div>
 
       <div class="panel owner-only" id="saran-tugas-panel" style="display:none;">
@@ -935,8 +962,8 @@
     <main>
       <div class="topbar" style="position:relative;">
         <div>
-          <div class="greeting-eyebrow">Karyawan &amp; Shift</div>
-          <h1 class="greeting" id="hr-title">Tim Kerja</h1>
+          <div class="greeting-eyebrow">HR (Human Resource)</div>
+          <h1 class="greeting" id="hr-title">Karyawan &amp; Shift</h1>
         </div>
         <div style="display:flex; gap:8px; align-items:flex-start; position:relative;">
           <button class="btn-primary" onclick="openAttendanceModal()">
@@ -1017,6 +1044,31 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div class="panel-body" id="shift-swap-list"><div class="loading-note">Memuat…</div></div>
       </div>
 
+      <div class="panel owner-only">
+        <div class="panel-head"><div class="panel-title">⚠️ Riwayat Peringatan (SP)</div><button class="btn-secondary" onclick="openPeringatanModal()">+ Catat Peringatan</button></div>
+        <div class="panel-body" id="peringatan-list"><div class="loading-note">Memuat…</div></div>
+      </div>
+
+      <div class="panel owner-only">
+        <div class="panel-head"><div class="panel-title">✅ Onboarding Karyawan Baru</div><button class="btn-secondary" onclick="openOnboardingModal()">+ Buat Checklist</button></div>
+        <div class="panel-body" id="onboarding-owner-list"><div class="loading-note">Memuat…</div></div>
+      </div>
+
+      <div class="panel owner-only">
+        <div class="panel-head"><div class="panel-title">💬 Komplain Gaji</div></div>
+        <div class="panel-body" id="komplain-gaji-owner-list"><div class="loading-note">Memuat…</div></div>
+      </div>
+
+      <div class="panel owner-only">
+        <div class="panel-head"><div class="panel-title">📝 Bank Soal Seleksi</div><button class="btn-secondary" onclick="openSoalModal()">+ Tambah Soal</button></div>
+        <div class="panel-body" id="soal-seleksi-list"><div class="loading-note">Memuat…</div></div>
+      </div>
+
+      <div class="panel owner-only">
+        <div class="panel-head"><div class="panel-title">🎯 Kandidat &amp; Hasil Tes</div><button class="btn-secondary" onclick="openKandidatModal()">+ Tambah Kandidat</button></div>
+        <div class="panel-body" id="kandidat-list"><div class="loading-note">Memuat…</div></div>
+      </div>
+
       <div class="panel">
         <div class="panel-head"><div class="panel-title">Analitik HR — Bulan Ini</div></div>
         <div class="panel-body">
@@ -1088,11 +1140,30 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div class="kpi-row">
           <div class="kpi-card"><div class="kpi-label">Jabatan</div><div class="kpi-value" id="ps-jabatan" style="font-size:16px;">—</div></div>
           <div class="kpi-card"><div class="kpi-label">Kehadiran Bulan Ini</div><div class="kpi-value num" id="ps-kehadiran">0</div></div>
-          <div class="kpi-card"><div class="kpi-label">Cuti Tersisa Diajukan</div><div class="kpi-value num" id="ps-cuti">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">Sisa Kuota Cuti</div><div class="kpi-value num" id="ps-cuti">0</div></div>
+        </div>
+        <div class="panel" id="ps-onboarding-panel" style="display:none;">
+          <div class="panel-head"><div class="panel-title">✅ Checklist Onboarding</div></div>
+          <div class="panel-body" id="ps-onboarding-list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Dokumen Saya</div>
+            <button class="btn-secondary" onclick="cetakSuratKeteranganKerja()">📄 Surat Keterangan Kerja</button>
+          </div>
+          <div class="panel-body" style="font-size:11.5px; color:var(--ink-soft); padding:14px 18px;">Tap tombol di atas buat unduh/cetak surat keterangan kerja terbaru, misalnya buat keperluan pinjaman bank.</div>
+        </div>
+        <div class="panel" id="ps-peringatan-panel" style="display:none;">
+          <div class="panel-head"><div class="panel-title">Riwayat Peringatan</div></div>
+          <div class="panel-body" id="ps-peringatan-list"></div>
         </div>
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Riwayat Gaji &amp; Slip</div></div>
           <div class="panel-body" id="ps-payroll-list"><div class="loading-note">Memuat data…</div></div>
+        </div>
+        <div class="panel" id="ps-komplain-panel" style="display:none;">
+          <div class="panel-head"><div class="panel-title">💬 Komplain Gaji Saya</div></div>
+          <div class="panel-body" id="ps-komplain-list"></div>
         </div>
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Riwayat Absensi</div></div>
@@ -1659,6 +1730,17 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <option value="K/3">K/3 — Menikah, 3 tanggungan</option>
       </select>
     </div>
+    <div class="field" style="background:var(--amber-tint); border-radius:10px; padding:12px 14px;">
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:#7A4B1C; cursor:pointer;">
+        <input type="checkbox" id="ef-keluarga" style="width:16px; height:16px;" onchange="toggleEfKeluargaFields()">
+        Karyawan ini punya hubungan keluarga dengan Owner/karyawan lain
+      </label>
+      <div id="ef-keluarga-fields" style="display:none;">
+        <div class="field"><label style="font-size:11px;">Keluarga dari siapa</label><input type="text" id="ef-keluarga-siapa" placeholder="Nama Owner/karyawan"></div>
+        <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Hubungan apa</label><input type="text" id="ef-keluarga-jenis" placeholder="Contoh: anak, adik, sepupu"></div>
+      </div>
+      <div style="font-size:10.5px; color:#7A4B1C; margin-top:4px;">Dicatat transparan buat catatan internal.</div>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('employee-modal')">Batal</button>
       <button class="btn-primary" id="ef-submit-btn" onclick="submitNewEmployee()">Simpan Karyawan</button>
@@ -1741,7 +1823,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     </div>
     <div class="field">
       <label>Jenis</label>
-      <select id="lf-jenis">
+      <select id="lf-jenis" onchange="toggleLeaveBuktiField()">
         <option value="sakit">Izin Sakit</option>
         <option value="cuti_tahunan">Cuti Tahunan</option>
         <option value="izin">Izin Lainnya</option>
@@ -1752,6 +1834,13 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       <div class="field"><label>Tanggal Selesai</label><input type="date" id="lf-selesai"></div>
     </div>
     <div class="field"><label>Keterangan</label><input type="text" id="lf-keterangan" placeholder="Opsional"></div>
+    <div class="field" id="lf-bukti-wrap" style="display:none;">
+      <label>Upload Surat Keterangan Dokter / Resep Obat</label>
+      <input type="file" id="lf-bukti" accept="image/*,.pdf">
+    </div>
+    <div class="auth-note" id="lf-catatan-sakit" style="display:none; margin-top:6px;">
+      ⚠️ Izin sakit tetap dihitung sebagai ketidakhadiran dan memotong gaji pokok — surat dokter cuma jadi bukti resmi, bukan pembebas potongan.
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('leave-modal')">Batal</button>
       <button class="btn-primary" id="lf-submit-btn" onclick="submitLeaveRequest()">Ajukan</button>
@@ -1903,6 +1992,148 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('shift-swap-modal')">Batal</button>
       <button class="btn-primary" id="ss-submit-btn" onclick="submitShiftSwap()">Ajukan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CATAT PERINGATAN -->
+<div class="modal-overlay" id="peringatan-modal">
+  <div class="modal-card">
+    <div class="modal-title">Catat Peringatan</div>
+    <div class="field">
+      <label>Karyawan</label>
+      <select id="pk-employee"></select>
+    </div>
+    <div class="field">
+      <label>Jenis</label>
+      <select id="pk-jenis">
+        <option value="teguran_lisan">Teguran Lisan</option>
+        <option value="sp1">Surat Peringatan 1 (SP1)</option>
+        <option value="sp2">Surat Peringatan 2 (SP2)</option>
+        <option value="sp3">Surat Peringatan 3 (SP3)</option>
+      </select>
+    </div>
+    <div class="field"><label>Alasan</label><textarea id="pk-alasan" rows="3" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit;" placeholder="Jelaskan pelanggaran/alasan peringatan"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('peringatan-modal')">Batal</button>
+      <button class="btn-primary" id="pk-submit-btn" onclick="submitPeringatan()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ONBOARDING CHECKLIST -->
+<div class="modal-overlay" id="onboarding-modal">
+  <div class="modal-card">
+    <div class="modal-title">Buat Checklist Onboarding</div>
+    <div class="field">
+      <label>Karyawan Baru</label>
+      <select id="ob-employee"></select>
+    </div>
+    <div class="field">
+      <label>Daftar Tugas Orientasi (satu baris satu tugas)</label>
+      <textarea id="ob-items" rows="6" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12.5px; font-family:inherit;">Kenalan dengan seluruh tim
+Training penggunaan sistem kasir
+Training SOP pelayanan pelanggan
+Terima seragam & ID Card
+Kenalan lokasi gudang & tata letak produk
+Baca & tanda tangan kontrak kerja</textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('onboarding-modal')">Batal</button>
+      <button class="btn-primary" id="ob-submit-btn" onclick="submitOnboarding()">Buat Checklist</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH SOAL SELEKSI -->
+<div class="modal-overlay" id="soal-modal">
+  <div class="modal-card">
+    <div class="modal-title">Tambah Soal Seleksi</div>
+    <div class="field">
+      <label>Untuk Posisi/Divisi</label>
+      <select id="sl-divisi">
+        <option value="kasir">Kasir</option>
+        <option value="apoteker">Apoteker</option>
+        <option value="admin_gudang">Admin Gudang</option>
+        <option value="hr">HR</option>
+        <option value="marketing">Marketing</option>
+        <option value="umum">Umum (semua posisi)</option>
+      </select>
+    </div>
+    <div class="field"><label>Pertanyaan</label><textarea id="sl-pertanyaan" rows="2" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit;" placeholder="Tulis pertanyaan…"></textarea></div>
+    <div class="field"><label>Pilihan A</label><input type="text" id="sl-a" placeholder="Jawaban A"></div>
+    <div class="field"><label>Pilihan B</label><input type="text" id="sl-b" placeholder="Jawaban B"></div>
+    <div class="field"><label>Pilihan C</label><input type="text" id="sl-c" placeholder="Jawaban C"></div>
+    <div class="field"><label>Pilihan D</label><input type="text" id="sl-d" placeholder="Jawaban D"></div>
+    <div class="field">
+      <label>Jawaban Benar</label>
+      <select id="sl-benar">
+        <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('soal-modal')">Batal</button>
+      <button class="btn-primary" id="sl-submit-btn" onclick="submitSoal()">Simpan Soal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH KANDIDAT -->
+<div class="modal-overlay" id="kandidat-modal">
+  <div class="modal-card">
+    <div class="modal-title">Tambah Kandidat</div>
+    <div class="field"><label>Nama Kandidat</label><input type="text" id="kd-nama" placeholder="Nama lengkap"></div>
+    <div class="field"><label>No. WhatsApp</label><input type="text" id="kd-wa" placeholder="08xxxxxxxxxx"></div>
+    <div class="field">
+      <label>Melamar Posisi</label>
+      <select id="kd-divisi">
+        <option value="kasir">Kasir</option>
+        <option value="apoteker">Apoteker</option>
+        <option value="admin_gudang">Admin Gudang</option>
+        <option value="hr">HR</option>
+        <option value="marketing">Marketing</option>
+      </select>
+    </div>
+    <div class="field" style="background:var(--amber-tint); border-radius:10px; padding:12px 14px;">
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:#7A4B1C; cursor:pointer;">
+        <input type="checkbox" id="kd-keluarga" style="width:16px; height:16px;" onchange="toggleKandidatKeluargaFields()">
+        Kandidat ini punya hubungan keluarga dengan Owner/karyawan lain
+      </label>
+      <div id="kd-keluarga-fields" style="display:none;">
+        <div class="field"><label style="font-size:11px;">Keluarga dari siapa</label><input type="text" id="kd-keluarga-siapa" placeholder="Nama Owner/karyawan"></div>
+        <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Hubungan apa</label><input type="text" id="kd-keluarga-jenis" placeholder="Contoh: anak, adik, sepupu"></div>
+      </div>
+      <div style="font-size:10.5px; color:#7A4B1C; margin-top:4px;">Dicatat transparan buat catatan — bukan berarti otomatis ditolak.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('kandidat-modal')">Batal</button>
+      <button class="btn-primary" id="kd-submit-btn" onclick="submitKandidat()">Simpan &amp; Buat Link Tes</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KOMPLAIN GAJI -->
+<div class="modal-overlay" id="komplain-gaji-modal">
+  <div class="modal-card">
+    <div class="modal-title">Komplain / Tanya Slip Gaji</div>
+    <div style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;" id="kg-periode-label"></div>
+    <div class="field"><label>Pesan ke HR/Owner</label><textarea id="kg-pesan" rows="4" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit;" placeholder="Jelaskan apa yang mau ditanyakan/dikonfirmasi soal slip gaji ini…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('komplain-gaji-modal')">Batal</button>
+      <button class="btn-primary" id="kg-submit-btn" onclick="submitKomplainGaji()">Kirim</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BALAS KOMPLAIN GAJI (OWNER) -->
+<div class="modal-overlay" id="balas-komplain-modal">
+  <div class="modal-card">
+    <div class="modal-title">Balas Komplain Gaji</div>
+    <div style="background:var(--surface-2); border-radius:10px; padding:12px; margin-bottom:12px; font-size:12.5px;" id="bk-pesan-asli"></div>
+    <div class="field"><label>Balasan</label><textarea id="bk-balasan" rows="4" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit;" placeholder="Jelaskan jawabannya…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('balas-komplain-modal')">Batal</button>
+      <button class="btn-primary" id="bk-submit-btn" onclick="submitBalasKomplain()">Kirim Balasan</button>
     </div>
   </div>
 </div>
@@ -2682,6 +2913,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
 
       await loadDashboard();
       await loadProducts();
+      if (profile.role === 'owner') cekNotifikasiHrOwner();
     } catch(err){
       console.error('initApp error:', err);
       showToast('Gagal memuat aplikasi: ' + (err.message || 'kesalahan tidak diketahui'), true);
@@ -2695,6 +2927,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
 
     loadTugasHarian();
     if (currentProfile.role === 'owner') loadSaranTugasOtomatis();
+    if (currentProfile.role === 'owner') loadSlipGajiOtomatis();
 
     const { data: todayTx } = await sb.from('transactions')
       .select('total').eq('tenant_id', tenantId).gte('created_at', todayStart.toISOString());
@@ -4389,7 +4622,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
 
   async function loadHrPage(){
     const tenantId = currentProfile.tenant_id;
-    document.getElementById('hr-title').textContent = (document.getElementById('sidebar-tenant').textContent || 'Usaha') + ' — Tim Kerja';
+    document.getElementById('hr-title').textContent = (document.getElementById('sidebar-tenant').textContent || 'Usaha') + ' — Karyawan & Shift';
 
     const { data: employees } = await sb.from('employees').select('*').eq('tenant_id', tenantId).eq('status','aktif').order('nama');
     const empList = employees || [];
@@ -4399,7 +4632,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     empListEl.innerHTML = empList.length ? empList.map(e => `
       <div class="row-item" style="cursor:pointer;" onclick="openEditEmployeeModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
         <div class="emp-dot">${e.nama.substring(0,2).toUpperCase()}</div>
-        <div><div class="row-name">${e.nama}</div><div class="row-meta">${JABATAN_LABEL[e.jabatan] || e.jabatan} · ${e.no_hp || '—'}</div></div>
+        <div><div class="row-name">${e.nama}${e.punya_hubungan_keluarga ? ` <span class="pill warn" style="font-size:9px;" title="${e.jenis_hubungan||''} dari ${e.hubungan_dengan_siapa||''}">👪 Keluarga</span>` : ''}</div><div class="row-meta">${JABATAN_LABEL[e.jabatan] || e.jabatan} · ${e.no_hp || '—'}</div></div>
         <div class="row-right owner-only" onclick="event.stopPropagation();"><button class="btn-secondary" style="font-size:10px; padding:3px 8px; color:var(--danger);" onclick="nonaktifkanKaryawan('${e.id}')">Nonaktifkan</button></div>
       </div>`).join('') : '<div class="loading-note">Belum ada karyawan.</div>';
 
@@ -4438,6 +4671,11 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     await loadKontrakList();
     await loadShiftSwapList();
     await isiDropdownEmployeeUmum();
+    await loadPeringatanList();
+    await loadOnboardingOwnerList();
+    await loadSoalList();
+    await loadKandidatList();
+    await loadKomplainGajiOwner();
   }
 
   async function loadLeaveRequests(){
@@ -4484,6 +4722,10 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     document.getElementById('ef-hp').value = '';
     document.getElementById('ef-email').value = '';
     document.getElementById('ef-ptkp').value = 'TK/0';
+    document.getElementById('ef-keluarga').checked = false;
+    document.getElementById('ef-keluarga-siapa').value = '';
+    document.getElementById('ef-keluarga-jenis').value = '';
+    document.getElementById('ef-keluarga-fields').style.display = 'none';
     document.getElementById('employee-modal').classList.add('show');
   }
   function openEditEmployeeModal(emp){
@@ -4495,18 +4737,29 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     document.getElementById('ef-hp').value = emp.no_hp || '';
     document.getElementById('ef-email').value = emp.email || '';
     document.getElementById('ef-ptkp').value = emp.status_ptkp || 'TK/0';
+    document.getElementById('ef-keluarga').checked = !!emp.punya_hubungan_keluarga;
+    document.getElementById('ef-keluarga-siapa').value = emp.hubungan_dengan_siapa || '';
+    document.getElementById('ef-keluarga-jenis').value = emp.jenis_hubungan || '';
+    toggleEfKeluargaFields();
     document.getElementById('employee-modal').classList.add('show');
+  }
+  function toggleEfKeluargaFields(){
+    document.getElementById('ef-keluarga-fields').style.display = document.getElementById('ef-keluarga').checked ? 'block' : 'none';
   }
   async function submitNewEmployee(){
     const nama = document.getElementById('ef-nama').value.trim();
     if (!nama){ showToast('Nama karyawan wajib diisi.', true); return; }
     const btn = document.getElementById('ef-submit-btn');
     btn.disabled = true; btn.textContent = 'Menyimpan…';
+    const punyaKeluarga = document.getElementById('ef-keluarga').checked;
     const payload = {
       nama, jabatan: document.getElementById('ef-jabatan').value,
       no_hp: document.getElementById('ef-hp').value.trim() || null,
       email: document.getElementById('ef-email').value.trim() || null,
       status_ptkp: document.getElementById('ef-ptkp').value,
+      punya_hubungan_keluarga: punyaKeluarga,
+      hubungan_dengan_siapa: punyaKeluarga ? (document.getElementById('ef-keluarga-siapa').value.trim() || null) : null,
+      jenis_hubungan: punyaKeluarga ? (document.getElementById('ef-keluarga-jenis').value.trim() || null) : null,
     };
     let error;
     if (editingEmployeeId){
@@ -4561,7 +4814,14 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     document.getElementById('lf-mulai').value = '';
     document.getElementById('lf-selesai').value = '';
     document.getElementById('lf-keterangan').value = '';
+    document.getElementById('lf-bukti').value = '';
+    toggleLeaveBuktiField();
     document.getElementById('leave-modal').classList.add('show');
+  }
+  function toggleLeaveBuktiField(){
+    const isSakit = document.getElementById('lf-jenis').value === 'sakit';
+    document.getElementById('lf-bukti-wrap').style.display = isSakit ? 'block' : 'none';
+    document.getElementById('lf-catatan-sakit').style.display = isSakit ? 'block' : 'none';
   }
   async function submitLeaveRequest(){
     const employeeId = document.getElementById('lf-employee').value;
@@ -4570,11 +4830,21 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     if (!employeeId || !mulai || !selesai){ showToast('Lengkapi karyawan & tanggal dulu.', true); return; }
     const btn = document.getElementById('lf-submit-btn');
     btn.disabled = true; btn.textContent = 'Mengajukan…';
+
+    let buktiUrl = null;
+    const buktiFile = document.getElementById('lf-bukti').files[0];
+    if (buktiFile){
+      const namaFile = `bukti-sakit-${currentProfile.tenant_id}-${Date.now()}-${buktiFile.name}`;
+      const { error: uploadErr } = await sb.storage.from('foto-absensi').upload(namaFile, buktiFile);
+      if (!uploadErr){ buktiUrl = sb.storage.from('foto-absensi').getPublicUrl(namaFile).data.publicUrl; }
+    }
+
     const { error } = await sb.from('leave_requests').insert({
       tenant_id: currentProfile.tenant_id, employee_id: employeeId,
       jenis: document.getElementById('lf-jenis').value,
       tanggal_mulai: mulai, tanggal_selesai: selesai,
       keterangan: document.getElementById('lf-keterangan').value.trim() || null,
+      bukti_url: buktiUrl,
       status: 'menunggu'
     });
     btn.disabled = false; btn.textContent = 'Ajukan';
@@ -6775,6 +7045,9 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     document.getElementById('ps-not-linked').style.display = 'none';
     document.getElementById('ps-content').style.display = 'block';
     document.getElementById('ps-jabatan').textContent = JABATAN_LABEL[emp.jabatan] || emp.jabatan;
+    window.__psEmployeeId = emp.id;
+    loadOnboardingKaryawanSendiri(emp.id);
+    loadPeringatanKaryawanSendiri(emp.id);
 
     const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
 
@@ -6786,8 +7059,11 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div class="row-right"><span class="pill ${a.status==='tepat_waktu'?'ok':'warn'}">${a.status==='tepat_waktu'?'Tepat waktu':'Telat'}</span></div>
       </div>`).join('') : '<div class="loading-note">Belum ada absensi bulan ini.</div>';
 
-    const { data: leaves } = await sb.from('leave_requests').select('*').eq('employee_id', emp.id).eq('status','menunggu');
-    document.getElementById('ps-cuti').textContent = (leaves || []).length;
+    const tahunIni = new Date().getFullYear();
+    const { data: leavesDisetujui } = await sb.from('leave_requests').select('tanggal_mulai, tanggal_selesai').eq('employee_id', emp.id).eq('status','disetujui').eq('jenis','cuti_tahunan').gte('tanggal_mulai', `${tahunIni}-01-01`);
+    const hariTerpakai = (leavesDisetujui||[]).reduce((s,l) => s + (Math.round((new Date(l.tanggal_selesai)-new Date(l.tanggal_mulai))/86400000)+1), 0);
+    const sisaKuota = (emp.kuota_cuti_tahunan ?? 12) - hariTerpakai;
+    document.getElementById('ps-cuti').textContent = `${sisaKuota}/${emp.kuota_cuti_tahunan ?? 12} hari`;
 
     const { data: payroll } = await sb.from('payroll_notes').select('*').eq('employee_id', emp.id).order('created_at', {ascending:false}).limit(10);
     const JENIS_GAJI_PS = { gaji_pokok:'Gaji Pokok', bonus:'Bonus', potongan:'Potongan', kasbon:'Kasbon' };
@@ -6796,9 +7072,14 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div><div class="row-name">${JENIS_GAJI_PS[p.jenis] || p.jenis}</div><div class="row-meta">${p.periode || new Date(p.created_at).toLocaleDateString('id-ID')}</div></div>
         <div class="row-right">
           <div class="num" style="font-size:13px;">Rp ${parseFloat(p.jenis==='gaji_pokok' && p.gaji_bersih ? p.gaji_bersih : p.jumlah).toLocaleString('id-ID')}</div>
-          ${p.jenis === 'gaji_pokok' ? `<button class="btn-secondary" style="margin-top:5px; font-size:10.5px; padding:4px 8px;" onclick='printSlipGaji({namaKaryawan:"${emp.nama.replace(/"/g,"")}", jabatan:"${JABATAN_LABEL[emp.jabatan]||""}", periode:"${p.periode||""}", gajiBruto:${p.jumlah}, potonganPph21:${p.potongan_pph21||0}, potonganBpjs:${p.potongan_bpjs||0}, gajiBersih:${p.gaji_bersih||p.jumlah}})'>Lihat Slip</button>` : ''}
+          <div style="display:flex; gap:6px; margin-top:5px;">
+            ${p.jenis === 'gaji_pokok' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 8px;" onclick='printSlipGaji({namaKaryawan:"${emp.nama.replace(/"/g,"")}", jabatan:"${JABATAN_LABEL[emp.jabatan]||""}", periode:"${p.periode||""}", gajiBruto:${p.jumlah}, potonganPph21:${p.potongan_pph21||0}, potonganBpjs:${p.potongan_bpjs||0}, gajiBersih:${p.gaji_bersih||p.jumlah}})'>Lihat Slip</button>` : ''}
+            ${p.jenis === 'gaji_pokok' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 8px; color:var(--amber);" onclick="openKomplainGajiModal('${p.id}','${(p.periode||'').replace(/'/g,"")}')">💬 Komplain</button>` : ''}
+          </div>
         </div>
       </div>`).join('') : '<div class="loading-note">Belum ada riwayat gaji.</div>';
+
+    loadKomplainGajiSendiri(emp.id);
   }
 
   function toggleNavMenu(){
@@ -8190,7 +8471,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
   // ================= WIDGET BANTUAN AI (asisten cara pakai aplikasi) =================
   const PANDUAN_APLIKASI = `Kamu adalah asisten bantuan untuk aplikasi kasir & manajemen usaha "UMKMpro AI" (khusus apotek). Jawab singkat, jelas, langkah demi langkah, dalam Bahasa Indonesia santai tapi sopan. Kalau pertanyaan di luar topik aplikasi ini, arahkan balik dengan ramah. Berikut panduan tiap menu di aplikasi:
 
-**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada panel **"🤖 Saran Tugas Otomatis"** (khusus Owner) — sistem otomatis deteksi masalah (stok menipis, obat mendekati kedaluwarsa, utang/piutang segera jatuh tempo) dan sarankan tugas ke role yang tepat (Admin Gudang, Apoteker, Kasir), Owner tinggal tap "✓ Setujui & Kirim", tidak perlu ngetik manual. Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas manual ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama.
+**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada panel **"🤖 Saran Tugas Otomatis"** (khusus Owner) — sistem otomatis deteksi masalah (stok menipis, obat mendekati kedaluwarsa, utang/piutang segera jatuh tempo) dan sarankan tugas ke role yang tepat (Admin Gudang, Apoteker, Kasir), Owner tinggal tap "✓ Setujui & Kirim", tidak perlu ngetik manual. Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas manual ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama. Fitur HR tambahan: **Kuota Cuti Otomatis**, **Riwayat Peringatan/SP**, **Onboarding Checklist**, **Surat Keterangan Kerja** otomatis. Ada juga **Seleksi Karyawan**: Owner bikin **Bank Soal** pilihan ganda per posisi, lalu **Tambah Kandidat** — sistem otomatis buat link tes unik yang bisa dikerjakan kandidat tanpa perlu akun/login, hasil dan skornya otomatis dihitung di server (anti-contek), Owner tinggal lihat skor dan tap Terima/Tolak. Ada juga **fitur anti-nepotisme**: form Tambah Karyawan & Tambah Kandidat punya kolom deklarasi transparan "punya hubungan keluarga dengan Owner/karyawan lain" — kalau diisi, muncul tag "👪 Keluarga" di daftar karyawan/kandidat. **Gaji pokok otomatis dipotong sesuai persentase kehadiran** — pola kerja standar **6 hari kerja/1 hari libur per minggu** (pakai data jadwal shift kalau Owner sudah isi, kalau belum diasumsikan otomatis). **Cuti Tahunan** dikecualikan dari potongan, tapi **Sakit/Izin tetap dihitung sebagai ketidakhadiran yang memotong gaji** meskipun ada surat dokter (surat dokter cuma bukti resmi, bukan pembebas potongan) — saat ajukan sakit, karyawan bisa upload foto surat dokter/resep obat. **Alpa (tidak hadir tanpa keterangan sama sekali) terdeteksi otomatis oleh sistem tiap malam** dan langsung dicatat sebagai peringatan progresif: alpa ke-1 = Teguran Lisan, ke-2 = SP1, ke-3 = SP2, ke-4 dst = SP3 — tanpa Owner perlu input manual. **Slip gaji juga dihitung otomatis tiap tanggal 1**, muncul di Dashboard panel "🧾 Slip Gaji Otomatis Siap Dikirim", Owner tinggal tap "Kirim WA" per karyawan. Menu di sidebar sekarang bernama **"HR"** (Human Resource) — isinya sub-fitur Karyawan & Shift lengkap. Kalau ada komplain gaji baru yang belum dibalas, muncul **badge angka merah** di menu HR (tanpa perlu buka menunya dulu buat tahu). Karyawan yang kurang puas sama slip gajinya bisa tap **"💬 Komplain"** di riwayat gaji-nya (Profil Saya), Owner/HR lihat & balas di menu HR panel "💬 Komplain Gaji".
 
 **Kasir/POS**: ketik nama obat di bar pencarian atau pakai tombol Scan (kamera) / Scan Kartu pelanggan. Tap produk: kalau produk sederhana langsung masuk keranjang; kalau produk punya satuan kemasan (Box dll) akan muncul popup pilih jumlah & satuan. Atur qty pakai tombol +/− di keranjang. Pilih metode bayar (Tunai/QRIS/Debit-Kredit), bisa split bayar campur. Setelah checkout bisa cetak struk (print biasa, kirim WA, atau cetak langsung ke printer Bluetooth thermal kalau sudah di-pairing).
 
@@ -8250,10 +8531,445 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     box.scrollTop = box.scrollHeight;
   }
 
+  // ================= HALAMAN TES SELEKSI (PUBLIK, TANPA LOGIN) =================
+  let kodeTesAktif = null, soalTesAktif = [];
+  async function muatSoalTes(kodeTes){
+    kodeTesAktif = kodeTes;
+    try{
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ambil-soal-tes`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kode_tes: kodeTes }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Gagal memuat soal.');
+      soalTesAktif = result.soal;
+      document.getElementById('tes-loading').style.display = 'none';
+      document.getElementById('tes-content').style.display = 'block';
+      document.getElementById('tes-nama-usaha').textContent = result.nama_usaha;
+      document.getElementById('tes-nama-kandidat').textContent = result.nama_kandidat;
+      document.getElementById('tes-soal-list').innerHTML = result.soal.map((s, idx) => `
+        <div style="background:var(--surface); border:1.5px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px;">
+          <div style="font-weight:700; font-size:13.5px; margin-bottom:12px;">${idx+1}. ${s.pertanyaan}</div>
+          ${['a','b','c','d'].map(opt => `
+            <label style="display:flex; align-items:center; gap:10px; padding:9px 0; cursor:pointer; font-size:13px;">
+              <input type="radio" name="soal-${s.id}" value="${opt}" style="width:17px; height:17px;">
+              <span>${opt.toUpperCase()}. ${s['pilihan_'+opt]}</span>
+            </label>`).join('')}
+        </div>`).join('');
+    } catch(err){
+      document.getElementById('tes-loading').style.display = 'none';
+      document.getElementById('tes-error').style.display = 'block';
+      document.getElementById('tes-error').textContent = '⚠️ ' + err.message;
+    }
+  }
+  async function submitHasilTes(){
+    const jawaban = {};
+    let semuaTerjawab = true;
+    soalTesAktif.forEach(s => {
+      const dipilih = document.querySelector(`input[name="soal-${s.id}"]:checked`);
+      if (!dipilih) semuaTerjawab = false; else jawaban[s.id] = dipilih.value;
+    });
+    if (!semuaTerjawab){ showToast('Jawab semua soal dulu ya sebelum kirim.', true); return; }
+    const btn = document.getElementById('tes-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+    try{
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-hasil-tes`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kode_tes: kodeTesAktif, jawaban }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Gagal mengirim jawaban.');
+      document.getElementById('tes-content').style.display = 'none';
+      document.getElementById('tes-hasil').style.display = 'block';
+    } catch(err){
+      showToast(err.message, true);
+      btn.disabled = false; btn.textContent = 'Kirim Jawaban';
+    }
+  }
+
+  // ================= BANK SOAL SELEKSI (OWNER) =================
+  function openSoalModal(){
+    ['sl-pertanyaan','sl-a','sl-b','sl-c','sl-d'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('sl-divisi').value = 'kasir';
+    document.getElementById('sl-benar').value = 'a';
+    document.getElementById('soal-modal').classList.add('show');
+  }
+  async function submitSoal(){
+    const pertanyaan = document.getElementById('sl-pertanyaan').value.trim();
+    const a = document.getElementById('sl-a').value.trim(), b = document.getElementById('sl-b').value.trim(), c = document.getElementById('sl-c').value.trim(), d = document.getElementById('sl-d').value.trim();
+    if (!pertanyaan || !a || !b || !c || !d){ showToast('Semua field wajib diisi.', true); return; }
+    const btn = document.getElementById('sl-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    const { error } = await sb.from('soal_seleksi').insert({
+      tenant_id: currentProfile.tenant_id, divisi: document.getElementById('sl-divisi').value,
+      pertanyaan, pilihan_a: a, pilihan_b: b, pilihan_c: c, pilihan_d: d,
+      jawaban_benar: document.getElementById('sl-benar').value, dibuat_oleh: currentProfile.id,
+    });
+    btn.disabled = false; btn.textContent = 'Simpan Soal';
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Soal tersimpan');
+    closeModal('soal-modal');
+    await loadSoalList();
+  }
+  async function loadSoalList(){
+    const el = document.getElementById('soal-seleksi-list');
+    if (!el) return;
+    const { data } = await sb.from('soal_seleksi').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false });
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada soal. Tambahkan minimal beberapa soal per posisi sebelum buat kandidat.</div>'; return; }
+    const grup = {};
+    data.forEach(s => { grup[s.divisi] = (grup[s.divisi]||0) + 1; });
+    el.innerHTML = Object.entries(grup).map(([divisi, jumlah]) => `
+      <div class="row-item">
+        <div class="emp-dot">📝</div>
+        <div><div class="row-name">${JABATAN_LABEL[divisi] || divisi}</div><div class="row-meta">${jumlah} soal tersimpan</div></div>
+      </div>`).join('');
+  }
+
+  // ================= KANDIDAT & HASIL TES =================
+  function toggleKandidatKeluargaFields(){
+    document.getElementById('kd-keluarga-fields').style.display = document.getElementById('kd-keluarga').checked ? 'block' : 'none';
+  }
+  function openKandidatModal(){
+    ['kd-nama','kd-wa','kd-keluarga-siapa','kd-keluarga-jenis'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('kd-divisi').value = 'kasir';
+    document.getElementById('kd-keluarga').checked = false;
+    document.getElementById('kd-keluarga-fields').style.display = 'none';
+    document.getElementById('kandidat-modal').classList.add('show');
+  }
+  async function submitKandidat(){
+    const nama = document.getElementById('kd-nama').value.trim();
+    if (!nama){ showToast('Nama kandidat wajib diisi.', true); return; }
+    const divisi = document.getElementById('kd-divisi').value;
+    const { data: cekSoal } = await sb.from('soal_seleksi').select('id').eq('tenant_id', currentProfile.tenant_id).eq('divisi', divisi).limit(1);
+    if (!cekSoal || cekSoal.length === 0){ showToast(`Belum ada soal untuk posisi ${JABATAN_LABEL[divisi]}. Tambah soal dulu di Bank Soal Seleksi.`, true); return; }
+
+    const btn = document.getElementById('kd-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    const punyaKeluarga = document.getElementById('kd-keluarga').checked;
+    const { data: kandidat, error } = await sb.from('kandidat').insert({
+      tenant_id: currentProfile.tenant_id, nama, whatsapp: document.getElementById('kd-wa').value.trim() || null,
+      divisi_dilamar: divisi, punya_hubungan_keluarga: punyaKeluarga,
+      hubungan_dengan_siapa: punyaKeluarga ? (document.getElementById('kd-keluarga-siapa').value.trim() || null) : null,
+      jenis_hubungan: punyaKeluarga ? (document.getElementById('kd-keluarga-jenis').value.trim() || null) : null,
+      dibuat_oleh: currentProfile.id,
+    }).select().single();
+    btn.disabled = false; btn.textContent = 'Simpan & Buat Link Tes';
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+
+    const linkTes = `${window.location.origin}${window.location.pathname}?tes=${kandidat.kode_tes}`;
+    const wa = document.getElementById('kd-wa').value.trim();
+    if (wa){
+      const pesan = encodeURIComponent(`Halo ${nama}! Sebelum lanjut proses lamaran di ${document.getElementById('sidebar-tenant')?.textContent||'kami'}, mohon kerjakan tes seleksi singkat ini dulu ya:\n${linkTes}\n\nTerima kasih 🙏`);
+      window.open(`https://wa.me/${wa.replace(/^0/,'62').replace(/\D/g,'')}?text=${pesan}`, '_blank');
+    }
+    showToast('✓ Kandidat tersimpan, link tes dibuat');
+    closeModal('kandidat-modal');
+    await loadKandidatList();
+  }
+  async function loadKandidatList(){
+    const el = document.getElementById('kandidat-list');
+    if (!el) return;
+    const { data } = await sb.from('kandidat').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(20);
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada kandidat.</div>'; return; }
+    const STATUS_LABEL = { menunggu_tes:'Menunggu Tes', sudah_tes:'Sudah Tes', diterima:'Diterima', ditolak:'Ditolak' };
+    const STATUS_WARNA = { menunggu_tes:'warn', sudah_tes:'ok', diterima:'ok', ditolak:'crit' };
+    el.innerHTML = data.map(k => {
+      const linkTes = `${window.location.origin}${window.location.pathname}?tes=${k.kode_tes}`;
+      return `<div class="row-item">
+        <div class="emp-dot">${k.nama.substring(0,2).toUpperCase()}</div>
+        <div><div class="row-name">${k.nama}${k.punya_hubungan_keluarga ? ' <span class="pill warn" style="font-size:9px;">👪 Keluarga</span>' : ''}</div>
+          <div class="row-meta">Lamar: ${JABATAN_LABEL[k.divisi_dilamar]||k.divisi_dilamar}${k.skor!=null ? ` · Skor: ${k.skor} (${k.jumlah_benar}/${k.jumlah_soal} benar)` : ''}</div></div>
+        <div class="row-right">
+          <span class="pill ${STATUS_WARNA[k.status]}">${STATUS_LABEL[k.status]}</span>
+          ${k.status === 'menunggu_tes' ? `<a href="${linkTes}" target="_blank" style="font-size:10px; font-weight:700; color:var(--brand); display:block; margin-top:4px;">Buka Link Tes</a>` : ''}
+          ${k.status === 'sudah_tes' ? `<div style="display:flex; gap:6px; margin-top:4px;"><button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--good);" onclick="updateStatusKandidat('${k.id}','diterima')">Terima</button><button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="updateStatusKandidat('${k.id}','ditolak')">Tolak</button></div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  async function updateStatusKandidat(id, status){
+    await sb.from('kandidat').update({ status }).eq('id', id);
+    showToast(status === 'diterima' ? '✓ Kandidat diterima — jangan lupa buat akun login & kontraknya' : 'Kandidat ditolak');
+    await loadKandidatList();
+  }
+
+  // ================= SLIP GAJI OTOMATIS (dihitung sistem tiap tanggal 1, tinggal kirim WA) =================
+  async function loadSlipGajiOtomatis(){
+    const panel = document.getElementById('slip-gaji-otomatis-panel');
+    const el = document.getElementById('slip-gaji-otomatis-list');
+    if (!panel || !el) return;
+    const { data } = await sb.from('payroll_notes').select('*, employees(nama, jabatan, no_hp)').eq('tenant_id', currentProfile.tenant_id).eq('dihitung_otomatis', true).eq('sudah_dikirim_wa', false).order('created_at', { ascending: false });
+    if (!data || data.length === 0){ panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    window.__slipGajiOtomatisData = data;
+    el.innerHTML = data.map((p, idx) => `
+      <div class="row-item">
+        <div class="emp-dot">${(p.employees?.nama||'?').substring(0,2).toUpperCase()}</div>
+        <div><div class="row-name">${p.employees?.nama || '—'}</div><div class="row-meta">${p.periode} · Kehadiran ${p.persen_kehadiran ?? '—'}% · Bersih Rp${Math.round(p.gaji_bersih).toLocaleString('id-ID')}</div></div>
+        <div class="row-right"><button class="btn-secondary" style="font-size:10.5px; padding:5px 10px;" onclick="kirimWaSlipGaji(${idx})">📤 Kirim WA</button></div>
+      </div>`).join('');
+  }
+  async function kirimWaSlipGaji(idx){
+    const p = window.__slipGajiOtomatisData?.[idx];
+    if (!p) return;
+    const nama = p.employees?.nama || 'Karyawan';
+    const namaUsaha = document.getElementById('sidebar-tenant')?.textContent || 'toko kami';
+    const pesan = encodeURIComponent(`Halo ${nama}! Slip gaji periode ${p.periode} dari ${namaUsaha}:\n\nGaji Bruto: Rp${Math.round(p.jumlah).toLocaleString('id-ID')}\nPotongan BPJS: Rp${Math.round(p.potongan_bpjs).toLocaleString('id-ID')}\nPotongan PPh21: Rp${Math.round(p.potongan_pph21).toLocaleString('id-ID')}\n*Gaji Bersih: Rp${Math.round(p.gaji_bersih).toLocaleString('id-ID')}*\n\nKehadiran bulan ini: ${p.persen_kehadiran ?? '—'}%\n${p.catatan || ''}\n\nTerima kasih atas kerja kerasnya 🙏`);
+    const wa = p.employees?.no_hp;
+    if (wa){ window.open(`https://wa.me/${wa.replace(/^0/,'62').replace(/\D/g,'')}?text=${pesan}`, '_blank'); }
+    else { window.open(`https://wa.me/?text=${pesan}`, '_blank'); showToast('Nomor WA karyawan belum ada di data — pilih kontak manual.', true); }
+    await sb.from('payroll_notes').update({ sudah_dikirim_wa: true }).eq('id', p.id);
+    await loadSlipGajiOtomatis();
+  }
+
+  // ================= KOMPLAIN GAJI =================
+  let komplainPayrollIdAktif = null;
+  function openKomplainGajiModal(payrollNoteId, periode){
+    komplainPayrollIdAktif = payrollNoteId;
+    document.getElementById('kg-periode-label').textContent = `Periode: ${periode}`;
+    document.getElementById('kg-pesan').value = '';
+    document.getElementById('komplain-gaji-modal').classList.add('show');
+  }
+  async function submitKomplainGaji(){
+    const pesan = document.getElementById('kg-pesan').value.trim();
+    if (!pesan){ showToast('Tulis pesannya dulu.', true); return; }
+    const btn = document.getElementById('kg-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+    const { data: emp } = await sb.from('employees').select('id').eq('profile_id', currentProfile.id).eq('tenant_id', currentProfile.tenant_id).maybeSingle();
+    if (!emp){ showToast('Data karyawan tidak ditemukan.', true); btn.disabled = false; btn.textContent = 'Kirim'; return; }
+    const { error } = await sb.from('gaji_komplain').insert({
+      tenant_id: currentProfile.tenant_id, employee_id: emp.id, payroll_note_id: komplainPayrollIdAktif, pesan,
+    });
+    btn.disabled = false; btn.textContent = 'Kirim';
+    if (error){ showToast('Gagal mengirim: ' + error.message, true); return; }
+    showToast('✓ Komplain terkirim ke HR/Owner');
+    closeModal('komplain-gaji-modal');
+    await loadKomplainGajiSendiri(emp.id);
+  }
+  async function loadKomplainGajiSendiri(employeeId){
+    const panel = document.getElementById('ps-komplain-panel');
+    const el = document.getElementById('ps-komplain-list');
+    if (!panel || !el) return;
+    const { data } = await sb.from('gaji_komplain').select('*').eq('employee_id', employeeId).order('created_at', { ascending: false });
+    if (!data || data.length === 0){ panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    el.innerHTML = data.map(k => `
+      <div style="padding:10px 0; border-bottom:1px solid var(--line);">
+        <div style="font-size:12.5px;">${k.pesan}</div>
+        <span class="pill ${k.status==='dibalas'?'ok':'warn'}" style="margin-top:6px; display:inline-block;">${k.status==='dibalas'?'Sudah Dibalas':'Menunggu Balasan'}</span>
+        ${k.balasan ? `<div style="background:var(--good-tint); border-radius:8px; padding:8px 10px; margin-top:6px; font-size:12px; color:var(--good);">Balasan: ${k.balasan}</div>` : ''}
+      </div>`).join('');
+  }
+  async function loadKomplainGajiOwner(){
+    const el = document.getElementById('komplain-gaji-owner-list');
+    if (!el) return;
+    const { data } = await sb.from('gaji_komplain').select('*, employees(nama)').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(15);
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada komplain gaji.</div>'; return; }
+    window.__komplainGajiData = data;
+    el.innerHTML = data.map((k, idx) => `
+      <div class="row-item">
+        <div class="emp-dot" style="background:${k.status==='dibalas'?'var(--good-tint)':'var(--amber-tint)'}; color:${k.status==='dibalas'?'var(--good)':'var(--amber)'};">💬</div>
+        <div><div class="row-name">${k.employees?.nama || '—'}</div><div class="row-meta">${k.pesan}</div></div>
+        <div class="row-right">
+          <span class="pill ${k.status==='dibalas'?'ok':'warn'}">${k.status==='dibalas'?'Dibalas':'Menunggu'}</span>
+          ${k.status==='menunggu' ? `<button class="btn-secondary" style="font-size:10px; padding:3px 8px; margin-top:4px;" onclick="openBalasKomplainModal(${idx})">Balas</button>` : ''}
+        </div>
+      </div>`).join('');
+  }
+  function openBalasKomplainModal(idx){
+    const k = window.__komplainGajiData?.[idx];
+    if (!k) return;
+    window.__komplainAktifId = k.id;
+    document.getElementById('bk-pesan-asli').textContent = `${k.employees?.nama}: ${k.pesan}`;
+    document.getElementById('bk-balasan').value = '';
+    document.getElementById('balas-komplain-modal').classList.add('show');
+  }
+  async function submitBalasKomplain(){
+    const balasan = document.getElementById('bk-balasan').value.trim();
+    if (!balasan){ showToast('Tulis balasannya dulu.', true); return; }
+    const btn = document.getElementById('bk-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+    const { error } = await sb.from('gaji_komplain').update({ balasan, status: 'dibalas', dibalas_pada: new Date().toISOString() }).eq('id', window.__komplainAktifId);
+    btn.disabled = false; btn.textContent = 'Kirim Balasan';
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    showToast('✓ Balasan terkirim');
+    closeModal('balas-komplain-modal');
+    await loadKomplainGajiOwner();
+    await cekNotifikasiHrOwner();
+  }
+
+  // ================= NOTIFIKASI HR (BADGE) — biar Owner tidak perlu buka menu buat tahu ada komplain baru =================
+  async function cekNotifikasiHrOwner(){
+    const badge = document.getElementById('hr-notif-badge');
+    if (!badge) return;
+    const { count } = await sb.from('gaji_komplain').select('id', { count: 'exact', head: true }).eq('tenant_id', currentProfile.tenant_id).eq('status', 'menunggu');
+    if (count && count > 0){
+      badge.textContent = count > 9 ? '9+' : count;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
   (async () => {
+    const kodeTes = new URLSearchParams(window.location.search).get('tes');
+    if (kodeTes){
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('tes-seleksi-screen').style.display = 'block';
+      await muatSoalTes(kodeTes);
+      return;
+    }
     const { data: { session } } = await sb.auth.getSession();
     if (session){ await initApp(); }
   })();
+
+  // ================= RIWAYAT PERINGATAN (SP) =================
+  const JENIS_PERINGATAN_LABEL = { teguran_lisan:'Teguran Lisan', sp1:'SP 1', sp2:'SP 2', sp3:'SP 3' };
+
+  async function openPeringatanModal(){
+    const emps = await getActiveEmployeesForSelect();
+    document.getElementById('pk-employee').innerHTML = emps.map(e => `<option value="${e.id}">${e.nama}</option>`).join('') || '<option value="">Belum ada karyawan</option>';
+    document.getElementById('pk-alasan').value = '';
+    document.getElementById('peringatan-modal').classList.add('show');
+  }
+  async function submitPeringatan(){
+    const employeeId = document.getElementById('pk-employee').value;
+    const alasan = document.getElementById('pk-alasan').value.trim();
+    if (!employeeId || !alasan){ showToast('Karyawan dan alasan wajib diisi.', true); return; }
+    const btn = document.getElementById('pk-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    const { error } = await sb.from('peringatan_karyawan').insert({
+      tenant_id: currentProfile.tenant_id, employee_id: employeeId,
+      jenis: document.getElementById('pk-jenis').value, alasan, dibuat_oleh: currentProfile.id,
+    });
+    btn.disabled = false; btn.textContent = 'Simpan';
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Peringatan tercatat');
+    closeModal('peringatan-modal');
+    await loadPeringatanList();
+  }
+  async function loadPeringatanList(){
+    const el = document.getElementById('peringatan-list');
+    if (!el) return;
+    const { data } = await sb.from('peringatan_karyawan').select('*, employees(nama)').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(15);
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada peringatan tercatat.</div>'; return; }
+    const WARNA = { teguran_lisan:'var(--ink-soft)', sp1:'var(--amber)', sp2:'var(--danger)', sp3:'var(--danger)' };
+    el.innerHTML = data.map(p => `
+      <div class="row-item">
+        <div class="emp-dot" style="background:${WARNA[p.jenis]}22; color:${WARNA[p.jenis]};">${JENIS_PERINGATAN_LABEL[p.jenis].replace('SP ','')[0]==='T'?'T':JENIS_PERINGATAN_LABEL[p.jenis].slice(-1)}</div>
+        <div><div class="row-name">${p.employees?.nama || '—'} — ${JENIS_PERINGATAN_LABEL[p.jenis]}${p.otomatis ? ' <span class="pill warn" style="font-size:9px;">🤖 Otomatis</span>' : ''}</div><div class="row-meta">${p.alasan} · ${new Date(p.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div></div>
+      </div>`).join('');
+  }
+  async function loadPeringatanKaryawanSendiri(employeeId){
+    const panel = document.getElementById('ps-peringatan-panel');
+    const el = document.getElementById('ps-peringatan-list');
+    if (!panel || !el) return;
+    const { data } = await sb.from('peringatan_karyawan').select('*').eq('employee_id', employeeId).order('created_at', { ascending: false });
+    if (!data || data.length === 0){ panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    el.innerHTML = data.map(p => `
+      <div class="row-item">
+        <div><div class="row-name">${JENIS_PERINGATAN_LABEL[p.jenis]}</div><div class="row-meta">${p.alasan} · ${new Date(p.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div></div>
+      </div>`).join('');
+  }
+
+  // ================= ONBOARDING CHECKLIST =================
+  async function openOnboardingModal(){
+    const emps = await getActiveEmployeesForSelect();
+    document.getElementById('ob-employee').innerHTML = emps.map(e => `<option value="${e.id}">${e.nama}</option>`).join('') || '<option value="">Belum ada karyawan</option>';
+    document.getElementById('onboarding-modal').classList.add('show');
+  }
+  async function submitOnboarding(){
+    const employeeId = document.getElementById('ob-employee').value;
+    if (!employeeId){ showToast('Pilih karyawan dulu.', true); return; }
+    const items = document.getElementById('ob-items').value.split('\n').map(a => a.trim()).filter(a => a);
+    if (items.length === 0){ showToast('Isi minimal satu tugas.', true); return; }
+    const btn = document.getElementById('ob-submit-btn');
+    btn.disabled = true; btn.textContent = 'Membuat…';
+    const rows = items.map((item, urutan) => ({ tenant_id: currentProfile.tenant_id, employee_id: employeeId, item, urutan }));
+    const { error } = await sb.from('onboarding_checklist').insert(rows);
+    btn.disabled = false; btn.textContent = 'Buat Checklist';
+    if (error){ showToast('Gagal membuat: ' + error.message, true); return; }
+    showToast('✓ Checklist onboarding dibuat');
+    closeModal('onboarding-modal');
+    await loadOnboardingOwnerList();
+  }
+  async function loadOnboardingOwnerList(){
+    const el = document.getElementById('onboarding-owner-list');
+    if (!el) return;
+    const { data } = await sb.from('onboarding_checklist').select('*, employees(nama)').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false });
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada checklist onboarding.</div>'; return; }
+    const grup = {};
+    data.forEach(item => { const k = item.employee_id; grup[k] = grup[k] || { nama: item.employees?.nama || '—', items: [] }; grup[k].items.push(item); });
+    el.innerHTML = Object.values(grup).map(g => {
+      const selesai = g.items.filter(i => i.selesai).length;
+      return `<div class="tugas-card">
+        <div class="tugas-body">
+          <div class="tugas-judul">${g.nama}</div>
+          <div class="tugas-meta">${selesai}/${g.items.length} langkah selesai</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  async function loadOnboardingKaryawanSendiri(employeeId){
+    const panel = document.getElementById('ps-onboarding-panel');
+    const el = document.getElementById('ps-onboarding-list');
+    if (!panel || !el) return;
+    const { data } = await sb.from('onboarding_checklist').select('*').eq('employee_id', employeeId).order('urutan');
+    if (!data || data.length === 0){ panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    const selesaiCount = data.filter(i => i.selesai).length;
+    const persen = Math.round((selesaiCount / data.length) * 100);
+    el.innerHTML = `<div class="tugas-progress-wrap">
+        <div class="tugas-progress-track"><div class="tugas-progress-fill" style="width:${persen}%;"></div></div>
+        <div class="tugas-progress-label">${selesaiCount}/${data.length}</div>
+      </div>` + data.map(item => `
+      <div class="tugas-card">
+        <div class="tugas-check ${item.selesai?'done':''}" ${item.selesai?'':`onclick="toggleOnboardingItem('${item.id}')"`}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <div class="tugas-body"><div class="tugas-judul ${item.selesai?'done':''}">${item.item}</div></div>
+      </div>`).join('');
+  }
+  async function toggleOnboardingItem(id){
+    await sb.from('onboarding_checklist').update({ selesai: true }).eq('id', id);
+    await loadOnboardingKaryawanSendiri(window.__psEmployeeId);
+  }
+
+  // ================= SURAT KETERANGAN KERJA =================
+  async function cetakSuratKeteranganKerja(){
+    const { data: emp } = await sb.from('employees').select('*').eq('profile_id', currentProfile.id).eq('tenant_id', currentProfile.tenant_id).maybeSingle();
+    if (!emp){ showToast('Data karyawan tidak ditemukan.', true); return; }
+    const { data: tenantData } = await sb.from('tenants').select('nama_usaha, alamat').eq('id', currentProfile.tenant_id).single();
+    const { data: kontrak } = await sb.from('kontrak_karyawan').select('tanggal_mulai').eq('employee_id', emp.id).eq('tenant_id', currentProfile.tenant_id).order('created_at',{ascending:true}).limit(1).maybeSingle();
+
+    const namaUsaha = tenantData?.nama_usaha || 'Usaha';
+    const tglMulai = kontrak?.tanggal_mulai ? new Date(kontrak.tanggal_mulai) : new Date(emp.created_at);
+    const tglSekarang = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+    const lamaKerjaBulan = Math.max(1, Math.round((new Date() - tglMulai) / (1000*60*60*24*30)));
+
+    const win = window.open('', '_blank', 'width=420,height=650');
+    if (!win){ showToast('Popup diblokir browser — izinkan popup untuk cetak surat.', true); return; }
+    win.document.write(`
+      <html><head><title>Surat Keterangan Kerja - ${emp.nama}</title>
+      <style>
+        body{ font-family:'Times New Roman',serif; font-size:13px; line-height:1.8; max-width:640px; margin:24px auto; color:#111; padding:0 20px; }
+        h2{ text-align:center; margin-bottom:2px; text-decoration:underline; }
+        .center{ text-align:center; margin-bottom:20px; font-size:12px; }
+        .no-print{ text-align:center; margin-top:20px; }
+        @media print{ .no-print{ display:none; } }
+      </style></head>
+      <body>
+        <h2>SURAT KETERANGAN KERJA</h2>
+        <div class="center">${namaUsaha}${tenantData?.alamat ? ' — ' + tenantData.alamat : ''}</div>
+        <p>Yang bertanda tangan di bawah ini, pihak manajemen <b>${namaUsaha}</b>, dengan ini menerangkan bahwa:</p>
+        <p>Nama&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <b>${emp.nama}</b><br>
+        Jabatan&nbsp;: <b>${JABATAN_LABEL[emp.jabatan] || emp.jabatan}</b><br>
+        Status&nbsp;&nbsp;&nbsp;: Aktif bekerja sejak ${tglMulai.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} hingga surat ini diterbitkan (± ${lamaKerjaBulan} bulan).</p>
+        <p>Yang bersangkutan benar merupakan karyawan aktif di ${namaUsaha} dan menjalankan tugasnya dengan baik selama masa kerja tersebut.</p>
+        <p>Demikian surat keterangan ini dibuat untuk digunakan sebagaimana mestinya.</p>
+        <p style="margin-top:40px;">${namaUsaha}, ${tglSekarang}</p>
+        <div style="text-align:center; margin-top:60px;">( _________________________ )<br>Pihak Manajemen</div>
+        <div class="no-print"><button onclick="window.print()" style="padding:8px 18px; font-size:12px; margin-top:20px;">Cetak</button></div>
+      </body></html>`);
+    win.document.close();
+  }
 
   // ================= SARAN TUGAS OTOMATIS (deteksi masalah → sarankan tugas ke role yang tepat) =================
   async function loadSaranTugasOtomatis(){
@@ -8519,14 +9235,41 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const bonusTercapai = kontrak.target_bonus_jenis ? capaian >= kontrak.target_bonus_nilai : false;
     const bonus = bonusTercapai ? parseFloat(kontrak.bonus_nominal || 0) : 0;
     const totalTunjangan = (kontrak.tunjangan||[]).reduce((s,t)=>s+parseFloat(t.jumlah||0),0);
-    const gajiBruto = parseFloat(kontrak.gaji_pokok) + totalTunjangan + bonus;
 
-    window.__skkData = { kontrak, gajiBruto, totalTunjangan, bonus, bonusTercapai, capaianLabel };
+    // Hitung persentase kehadiran bulan berjalan (dipakai buat potong gaji pokok kalau sering absen)
+    // Aturan: cuti tahunan TIDAK mengurangi hari wajib kerja (dikecualikan). Sakit/izin TETAP dihitung sebagai
+    // ketidakhadiran yang memotong gaji (walau ada surat dokter), sesuai kebijakan usaha.
+    const hariBerjalan = new Date().getDate();
+    const [{ data: absensiBulanIni }, { data: cutiTahunanDisetujui }, { data: shiftBulanIni }] = await Promise.all([
+      sb.from('attendance').select('tanggal').eq('tenant_id', currentProfile.tenant_id).eq('employee_id', employeeId).gte('tanggal', monthStart.toISOString().slice(0,10)),
+      sb.from('leave_requests').select('tanggal_mulai, tanggal_selesai').eq('employee_id', employeeId).eq('status','disetujui').eq('jenis','cuti_tahunan').gte('tanggal_selesai', monthStart.toISOString().slice(0,10)),
+      sb.from('shifts').select('jenis_shift').eq('tenant_id', currentProfile.tenant_id).eq('employee_id', employeeId).gte('tanggal', monthStart.toISOString().slice(0,10)),
+    ]);
+    const hariCutiTahunan = (cutiTahunanDisetujui||[]).reduce((s,c) => {
+      const mulai = new Date(Math.max(new Date(c.tanggal_mulai), monthStart));
+      const selesai = new Date(Math.min(new Date(c.tanggal_selesai), new Date()));
+      return s + Math.max(0, Math.round((selesai-mulai)/86400000)+1);
+    }, 0);
+    // Kalau ada data jadwal shift bulan ini, pakai jumlah hari "libur" beneran dari situ.
+    // Kalau belum diisi Owner, asumsikan pola standar 6 hari kerja / 1 hari libur per minggu.
+    const hariLiburTerjadwal = (shiftBulanIni && shiftBulanIni.length > 0)
+      ? shiftBulanIni.filter(s => s.jenis_shift === 'libur').length
+      : Math.floor(hariBerjalan / 7);
+    const hariWajibKerja = Math.max(1, hariBerjalan - hariLiburTerjadwal - hariCutiTahunan);
+    const hariHadir = (absensiBulanIni||[]).length;
+    const persenKehadiran = Math.min(100, Math.round((hariHadir / hariWajibKerja) * 100));
+    const gajiPokokProrated = Math.round(parseFloat(kontrak.gaji_pokok) * (persenKehadiran/100));
+
+    const gajiBruto = gajiPokokProrated + totalTunjangan + bonus;
+
+    window.__skkData = { kontrak, gajiBruto, totalTunjangan, bonus, bonusTercapai, capaianLabel, persenKehadiran, gajiPokokProrated };
 
     preview.style.display = 'block';
     preview.innerHTML = `
       <div style="font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px;">Rincian dari Kontrak</div>
-      <div class="calc-row"><span class="calc-label">Gaji Pokok</span><span class="num">Rp ${Math.round(kontrak.gaji_pokok).toLocaleString('id-ID')}</span></div>
+      <div style="font-size:11px; color:var(--ink-soft); margin-bottom:6px;">Kehadiran bulan berjalan: ${hariHadir}/${hariWajibKerja} hari (${persenKehadiran}%)</div>
+      <div class="calc-row"><span class="calc-label">Gaji Pokok (${persenKehadiran}% kehadiran)</span><span class="num">Rp ${Math.round(gajiPokokProrated).toLocaleString('id-ID')}</span></div>
+      ${persenKehadiran < 100 ? `<div class="calc-row"><span class="calc-label" style="color:var(--danger);">Potongan kehadiran</span><span class="num" style="color:var(--danger);">− Rp ${Math.round(parseFloat(kontrak.gaji_pokok) - gajiPokokProrated).toLocaleString('id-ID')}</span></div>` : ''}
       ${(kontrak.tunjangan||[]).map(t => `<div class="calc-row"><span class="calc-label">${t.nama}</span><span class="num">Rp ${Math.round(t.jumlah).toLocaleString('id-ID')}</span></div>`).join('')}
       ${kontrak.target_bonus_jenis ? `<div style="font-size:11px; color:var(--ink-soft); margin:6px 0;">${capaianLabel}</div><div class="calc-row"><span class="calc-label">Bonus (${bonusTercapai ? 'Target Tercapai ✓' : 'Belum Tercapai'})</span><span class="num" style="color:${bonusTercapai?'var(--good)':'var(--ink-soft)'};">Rp ${Math.round(bonus).toLocaleString('id-ID')}</span></div>` : ''}
       <div class="calc-row total"><span class="calc-label main">Gaji Bruto</span><span class="num">Rp ${Math.round(gajiBruto).toLocaleString('id-ID')}</span></div>`;
@@ -8549,7 +9292,8 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       tenant_id: currentProfile.tenant_id, employee_id: d.kontrak.employee_id,
       jenis: 'gaji_pokok', jumlah: d.gajiBruto,
       potongan_pph21: pph21, potongan_bpjs: bpjsTK + bpjsKes, gaji_bersih: gajiBersih, periode,
-      catatan: `Dari kontrak — tunjangan Rp${Math.round(d.totalTunjangan).toLocaleString('id-ID')}${d.kontrak.target_bonus_jenis ? `, bonus ${d.bonusTercapai?'tercapai':'tidak tercapai'} Rp${Math.round(d.bonus).toLocaleString('id-ID')}` : ''}${potonganLain ? `, potongan lain Rp${potonganLain.toLocaleString('id-ID')}` : ''}`,
+      persen_kehadiran: d.persenKehadiran,
+      catatan: `Dari kontrak — kehadiran ${d.persenKehadiran}%, tunjangan Rp${Math.round(d.totalTunjangan).toLocaleString('id-ID')}${d.kontrak.target_bonus_jenis ? `, bonus ${d.bonusTercapai?'tercapai':'tidak tercapai'} Rp${Math.round(d.bonus).toLocaleString('id-ID')}` : ''}${potonganLain ? `, potongan lain Rp${potonganLain.toLocaleString('id-ID')}` : ''}`,
     });
     btn.disabled = false; btn.textContent = 'Terbitkan Slip';
     if (error){ showToast('Gagal menerbitkan: ' + error.message, true); return; }
@@ -8559,7 +9303,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       namaKaryawan: d.kontrak.employees?.nama || '-', jabatan: JABATAN_LABEL[d.kontrak.employees?.jabatan] || d.kontrak.employees?.jabatan || '-',
       periode, gajiBruto: d.gajiBruto, potonganPph21: pph21, potonganBpjs: bpjsTK + bpjsKes, gajiBersih,
       rincianTambahan: [
-        { label: 'Gaji Pokok', nilai: parseFloat(d.kontrak.gaji_pokok) },
+        { label: `Gaji Pokok (Kehadiran ${d.persenKehadiran}%)`, nilai: d.gajiPokokProrated },
         ...(d.kontrak.tunjangan||[]).map(t => ({ label: t.nama, nilai: parseFloat(t.jumlah) })),
         ...(d.kontrak.target_bonus_jenis ? [{ label: `Bonus (${d.bonusTercapai?'Tercapai':'Tidak Tercapai'})`, nilai: d.bonus }] : []),
         ...(potonganLain ? [{ label: 'Potongan Lain', nilai: -potonganLain, minus: true }] : []),
