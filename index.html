@@ -316,7 +316,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v33-0430</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v34-0530</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -903,10 +903,12 @@
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;" id="hr-action-buttons">
           <button class="btn-secondary" onclick="openAttendanceModal()">Absen Sekarang</button>
+          <button class="btn-secondary owner-only" onclick="openAttendanceManualModal()">Absen Manual (Owner)</button>
           <button class="btn-secondary" onclick="openShiftModal()">Atur Jadwal</button>
           <button class="btn-secondary" onclick="openLeaveModal()">Ajukan Cuti</button>
           <button class="btn-secondary" onclick="openOvertimeModal()">Catat Lembur</button>
           <button class="btn-secondary owner-only" onclick="openPayrollModal()">Catat Gaji/Kasbon</button>
+          <button class="btn-primary owner-only" onclick="openSlipKontrakModal()" style="background:var(--brand-deep);">🧾 Slip Gaji dari Kontrak</button>
           <button class="btn-secondary" onclick="openEvaluationModal()">Catat Evaluasi</button>
           <button class="btn-primary" onclick="openEmployeeModal()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
@@ -919,10 +921,43 @@
         </div>
       </div>
 
+      <div class="panel owner-only">
+        <div class="panel-head"><div class="panel-title">📍 Lokasi Absen (Geofencing)</div></div>
+        <div class="panel-body" style="padding:16px 18px;">
+          <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:10px;">Karyawan cuma bisa absen kalau HP-nya ada di sekitar titik ini.</div>
+          <button class="btn-secondary" onclick="ambilLokasiApotekSekarang()">📍 Gunakan Lokasi Saya Sekarang (harus di apotek)</button>
+          <div id="lokasi-apotek-status" style="font-size:11.5px; margin-top:8px; color:var(--ink-soft);"></div>
+          <div class="field" style="margin-top:10px;">
+            <label>Radius Toleransi (meter)</label>
+            <input type="number" id="radius-absen-input" placeholder="150" onchange="updateRadiusAbsen(this.value)">
+          </div>
+        </div>
+      </div>
+
       <div class="kpi-row">
         <div class="kpi-card"><div class="kpi-label">Karyawan aktif</div><div class="kpi-value num" id="hr-total-karyawan">0</div></div>
         <div class="kpi-card"><div class="kpi-label">Hadir hari ini</div><div class="kpi-value num" id="hr-hadir">0/0</div></div>
         <div class="kpi-card"><div class="kpi-label">Cuti menunggu persetujuan</div><div class="kpi-value num" id="hr-cuti-pending">0</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">📢 Papan Pengumuman</div><button class="btn-secondary owner-only" onclick="openPengumumanModal()">+ Pengumuman</button></div>
+        <div class="panel-body" id="pengumuman-list"><div class="loading-note">Memuat…</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">🏆 Leaderboard Kasir — Minggu Ini</div></div>
+        <div class="panel-body" id="leaderboard-list"><div class="loading-note">Memuat…</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">📄 Kontrak Karyawan</div><button class="btn-secondary owner-only" onclick="openKontrakModal()">+ Buat Kontrak</button></div>
+        <div class="panel-body" id="kontrak-list"><div class="loading-note">Memuat…</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">🔄 Tukar Shift</div><button class="btn-secondary" onclick="openShiftSwapModal()">+ Ajukan Tukar</button></div>
+        <div class="panel-body" id="shift-swap-list"><div class="loading-note">Memuat…</div></div>
       </div>
 
       <div class="panel">
@@ -1654,21 +1689,146 @@
 <div class="modal-overlay" id="attendance-modal">
   <div class="modal-card">
     <div class="modal-title">Absen Sekarang</div>
-    <div class="field">
-      <label>Karyawan</label>
-      <select id="af-employee"></select>
+    <div id="af-employee-info" style="font-size:12.5px; color:var(--ink-soft); margin-bottom:10px;"></div>
+    <div id="af-camera-wrap" style="position:relative; width:100%; aspect-ratio:1; background:#000; border-radius:12px; overflow:hidden; margin-bottom:10px;">
+      <video id="af-video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
+      <canvas id="af-canvas" style="display:none;"></canvas>
+      <img id="af-preview" style="display:none; width:100%; height:100%; object-fit:cover;">
     </div>
+    <button class="btn-secondary" id="af-shot-btn" style="width:100%; justify-content:center; margin-bottom:10px;" onclick="ambilFotoAbsen()">📸 Ambil Foto Selfie</button>
+    <div id="af-lokasi-status" style="font-size:11.5px; color:var(--ink-soft); margin-bottom:10px;">📍 Mendeteksi lokasi…</div>
     <div class="field">
       <label>Metode</label>
       <select id="af-metode">
+        <option value="face">Face ID / Selfie</option>
         <option value="fingerprint">Fingerprint</option>
-        <option value="face">Face ID</option>
         <option value="manual">Manual</option>
       </select>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('attendance-modal')">Batal</button>
-      <button class="btn-primary" id="af-submit-btn" onclick="submitAttendance()">Catat Kehadiran</button>
+      <button class="btn-primary" id="af-submit-btn" onclick="submitAttendance()" disabled>Catat Kehadiran</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ABSEN MANUAL (khusus Owner, buat karyawan tanpa akun login) -->
+<div class="modal-overlay" id="attendance-manual-modal">
+  <div class="modal-card">
+    <div class="modal-title">Catat Kehadiran Manual (Owner)</div>
+    <div class="field">
+      <label>Karyawan</label>
+      <select id="afm-employee"></select>
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <select id="afm-status">
+        <option value="tepat_waktu">Tepat Waktu</option>
+        <option value="telat">Telat</option>
+        <option value="izin">Izin</option>
+        <option value="sakit">Sakit</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('attendance-manual-modal')">Batal</button>
+      <button class="btn-primary" id="afm-submit-btn" onclick="submitAttendanceManual()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SLIP GAJI DARI KONTRAK -->
+<div class="modal-overlay" id="slip-kontrak-modal">
+  <div class="modal-card" style="max-width:460px;">
+    <div class="modal-title">Terbitkan Slip Gaji dari Kontrak</div>
+    <div class="field">
+      <label>Karyawan</label>
+      <select id="skk-employee" onchange="hitungSlipDariKontrak()"></select>
+    </div>
+    <div id="skk-preview" style="display:none; background:var(--surface-2); border-radius:10px; padding:12px 14px; margin-bottom:13px;"></div>
+    <div class="field"><label>Potongan Kasbon/Lain (Rp, opsional)</label><input type="number" id="skk-potongan" placeholder="0" oninput="hitungSlipDariKontrak()"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('slip-kontrak-modal')">Batal</button>
+      <button class="btn-primary" id="skk-submit-btn" onclick="terbitkanSlipDariKontrak()" disabled>Terbitkan Slip</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PENGUMUMAN -->
+<div class="modal-overlay" id="pengumuman-modal">
+  <div class="modal-card">
+    <div class="modal-title">Buat Pengumuman</div>
+    <div class="field"><label>Judul</label><input type="text" id="pg-judul" placeholder="Contoh: Jam Kerja Berubah Mulai Senin"></div>
+    <div class="field"><label>Isi Pengumuman</label><textarea id="pg-isi" rows="4" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit;" placeholder="Tulis pengumuman untuk semua karyawan…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('pengumuman-modal')">Batal</button>
+      <button class="btn-primary" id="pg-submit-btn" onclick="submitPengumuman()">Umumkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KONTRAK KARYAWAN -->
+<div class="modal-overlay" id="kontrak-modal">
+  <div class="modal-card">
+    <div class="modal-title">Buat Kontrak Karyawan</div>
+    <div class="field">
+      <label>Karyawan</label>
+      <select id="kk-employee"></select>
+    </div>
+    <div class="field">
+      <label>Divisi</label>
+      <select id="kk-divisi">
+        <option value="kasir">Kasir</option>
+        <option value="apoteker">Apoteker</option>
+        <option value="admin_gudang">Admin Gudang</option>
+        <option value="hr">HR</option>
+        <option value="marketing">Marketing</option>
+        <option value="lainnya">Lainnya</option>
+      </select>
+    </div>
+    <div class="field"><label>SOP Ringkas / Tugas Utama</label><textarea id="kk-sop" rows="3" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit;" placeholder="Contoh: Melayani transaksi kasir, jaga kebersihan area kasir, laporan tutup shift tepat waktu"></textarea></div>
+    <div class="field"><label>Gaji Pokok (Rp)</label><input type="number" id="kk-gaji-pokok" placeholder="0"></div>
+    <div class="field">
+      <label>Tunjangan</label>
+      <div id="kk-tunjangan-list"></div>
+      <button type="button" class="btn-secondary" style="margin-top:6px; font-size:11px; padding:5px 10px;" onclick="tambahBarisTunjangan()">+ Tambah Tunjangan</button>
+    </div>
+    <div class="field">
+      <label>Target Bonus (opsional)</label>
+      <select id="kk-target-jenis">
+        <option value="">Tidak ada target bonus</option>
+        <option value="omzet_kasir">Omzet Kasir per Bulan</option>
+        <option value="jumlah_transaksi">Jumlah Transaksi per Bulan</option>
+        <option value="kehadiran_persen">Persentase Kehadiran</option>
+      </select>
+    </div>
+    <div class="field-row" id="kk-target-nilai-wrap" style="display:none;">
+      <div class="field"><label>Target Angka</label><input type="number" id="kk-target-nilai" placeholder="Contoh: 20000000"></div>
+      <div class="field"><label>Bonus Kalau Tercapai (Rp)</label><input type="number" id="kk-bonus-nominal" placeholder="0"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Tanggal Mulai</label><input type="date" id="kk-tgl-mulai"></div>
+      <div class="field"><label>Tanggal Berakhir (opsional)</label><input type="date" id="kk-tgl-berakhir"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('kontrak-modal')">Batal</button>
+      <button class="btn-primary" id="kk-submit-btn" onclick="submitKontrak()">Simpan Kontrak</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TUKAR SHIFT -->
+<div class="modal-overlay" id="shift-swap-modal">
+  <div class="modal-card">
+    <div class="modal-title">Ajukan Tukar Shift</div>
+    <div class="field">
+      <label>Tukar dengan Siapa</label>
+      <select id="ss-ke-employee"></select>
+    </div>
+    <div class="field"><label>Tanggal Shift yang Ditukar</label><input type="date" id="ss-tanggal"></div>
+    <div class="field"><label>Alasan (opsional)</label><input type="text" id="ss-alasan" placeholder="Contoh: ada acara keluarga"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('shift-swap-modal')">Batal</button>
+      <button class="btn-primary" id="ss-submit-btn" onclick="submitShiftSwap()">Ajukan</button>
     </div>
   </div>
 </div>
@@ -4194,6 +4354,11 @@
     await loadLeaveRequests();
     await loadHrExtras();
     if (currentProfile.role === 'owner') await loadInvitations();
+    await loadLokasiAbsenSettings();
+    await loadPengumuman();
+    await loadLeaderboardKasir();
+    await loadKontrakList();
+    await loadShiftSwapList();
   }
 
   async function loadLeaveRequests(){
@@ -4314,28 +4479,138 @@
   }
 
   // ---- Absen Sekarang ----
+  // ================= ABSEN SELFIE + GPS + GEOFENCING =================
+  let afStream = null, afFotoDataUrl = null, afLokasi = null;
+
   async function openAttendanceModal(){
-    const emps = await getActiveEmployeesForSelect();
-    document.getElementById('af-employee').innerHTML = emps.map(e => `<option value="${e.id}">${e.nama}</option>`).join('') || '<option value="">Belum ada karyawan</option>';
+    afFotoDataUrl = null; afLokasi = null;
+    document.getElementById('af-submit-btn').disabled = true;
+    document.getElementById('af-preview').style.display = 'none';
+    document.getElementById('af-video').style.display = 'block';
+    document.getElementById('af-shot-btn').textContent = '📸 Ambil Foto Selfie';
+    document.getElementById('af-lokasi-status').textContent = '📍 Mendeteksi lokasi…';
+
+    // Cari data karyawan yang cocok dengan akun yang sedang login
+    const { data: emp } = await sb.from('employees').select('id, nama, jabatan').eq('profile_id', currentProfile.id).eq('tenant_id', currentProfile.tenant_id).maybeSingle();
+    if (!emp){
+      document.getElementById('af-employee-info').innerHTML = '<span style="color:var(--danger);">Akun kamu belum terhubung ke data karyawan. Minta Owner hubungkan dulu.</span>';
+      document.getElementById('attendance-modal').classList.add('show');
+      return;
+    }
+    window.__afEmployeeId = emp.id;
+    document.getElementById('af-employee-info').textContent = `Absen sebagai: ${emp.nama} (${JABATAN_LABEL[emp.jabatan] || emp.jabatan})`;
     document.getElementById('attendance-modal').classList.add('show');
+
+    // Nyalakan kamera depan
+    try{
+      afStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      document.getElementById('af-video').srcObject = afStream;
+    } catch(err){
+      document.getElementById('af-camera-wrap').innerHTML = '<div style="color:#fff; padding:20px; text-align:center; font-size:12px;">Tidak bisa akses kamera. Izinkan kamera di pengaturan browser.</div>';
+    }
+
+    // Deteksi lokasi & hitung jarak ke apotek (geofencing)
+    if (navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        afLokasi = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const { data: tenantData } = await sb.from('tenants').select('lokasi_lat, lokasi_lng, radius_absen_meter').eq('id', currentProfile.tenant_id).single();
+        const statusEl = document.getElementById('af-lokasi-status');
+        if (!tenantData?.lokasi_lat){
+          statusEl.innerHTML = '📍 Lokasi terdeteksi (Owner belum atur titik lokasi apotek, jadi belum bisa dicek radiusnya)';
+          window.__afDalamRadius = null; window.__afJarak = null;
+        } else {
+          const jarak = hitungJarakMeter(afLokasi.lat, afLokasi.lng, tenantData.lokasi_lat, tenantData.lokasi_lng);
+          const dalamRadius = jarak <= tenantData.radius_absen_meter;
+          window.__afDalamRadius = dalamRadius; window.__afJarak = jarak;
+          statusEl.innerHTML = dalamRadius
+            ? `<span style="color:var(--good);">📍 Lokasi terverifikasi — ${Math.round(jarak)}m dari apotek</span>`
+            : `<span style="color:var(--danger);">⚠️ Lokasi ${Math.round(jarak)}m dari apotek (di luar radius ${tenantData.radius_absen_meter}m) — tetap bisa absen, tapi akan ditandai</span>`;
+        }
+        cekSiapAbsen();
+      }, () => {
+        document.getElementById('af-lokasi-status').innerHTML = '<span style="color:var(--danger);">Gagal deteksi lokasi — izinkan akses lokasi di browser.</span>';
+      });
+    }
   }
+
+  function hitungJarakMeter(lat1, lng1, lat2, lng2){
+    const R = 6371000;
+    const dLat = (lat2-lat1) * Math.PI/180, dLng = (lng2-lng1) * Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function ambilFotoAbsen(){
+    const video = document.getElementById('af-video');
+    const canvas = document.getElementById('af-canvas');
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    afFotoDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    document.getElementById('af-preview').src = afFotoDataUrl;
+    document.getElementById('af-preview').style.display = 'block';
+    document.getElementById('af-video').style.display = 'none';
+    document.getElementById('af-shot-btn').textContent = '🔄 Ambil Ulang';
+    if (afStream){ afStream.getTracks().forEach(t => t.stop()); }
+    cekSiapAbsen();
+  }
+
+  function cekSiapAbsen(){
+    document.getElementById('af-submit-btn').disabled = !(afFotoDataUrl && afLokasi);
+  }
+
   async function submitAttendance(){
-    const employeeId = document.getElementById('af-employee').value;
-    if (!employeeId){ showToast('Pilih karyawan dulu.', true); return; }
+    if (!window.__afEmployeeId){ showToast('Data karyawan tidak ditemukan.', true); return; }
     const btn = document.getElementById('af-submit-btn');
     btn.disabled = true; btn.textContent = 'Menyimpan…';
+
+    // Upload foto selfie ke Storage
+    let fotoUrl = null;
+    try{
+      const blob = await (await fetch(afFotoDataUrl)).blob();
+      const namaFile = `absen-${currentProfile.tenant_id}-${Date.now()}.jpg`;
+      const { error: uploadErr } = await sb.storage.from('foto-absensi').upload(namaFile, blob, { contentType: 'image/jpeg' });
+      if (!uploadErr){ fotoUrl = sb.storage.from('foto-absensi').getPublicUrl(namaFile).data.publicUrl; }
+    } catch(e){ /* kalau upload gagal, tetap lanjut catat absen tanpa foto */ }
+
     const now = new Date();
     const jamMasukBatas = new Date(); jamMasukBatas.setHours(8,0,0,0);
     const status = now > jamMasukBatas ? 'telat' : 'tepat_waktu';
+
     const { error } = await sb.from('attendance').insert({
-      tenant_id: currentProfile.tenant_id, employee_id: employeeId,
+      tenant_id: currentProfile.tenant_id, employee_id: window.__afEmployeeId,
       tanggal: now.toISOString().split('T')[0], waktu_absen: now.toISOString(),
-      metode: document.getElementById('af-metode').value, status
+      metode: document.getElementById('af-metode').value, status,
+      foto_url: fotoUrl, lokasi_lat: afLokasi?.lat, lokasi_lng: afLokasi?.lng,
+      jarak_meter: window.__afJarak, dalam_radius: window.__afDalamRadius,
     });
     btn.disabled = false; btn.textContent = 'Catat Kehadiran';
     if (error){ showToast('Gagal mencatat: ' + error.message, true); return; }
-    showToast('✓ Kehadiran tercatat');
+    showToast(window.__afDalamRadius === false ? '⚠️ Kehadiran tercatat (di luar radius lokasi apotek)' : '✓ Kehadiran tercatat');
     closeModal('attendance-modal');
+    await loadHrPage();
+  }
+
+  // Absen manual — cuma buat Owner, buat karyawan yang belum punya akun login sendiri
+  async function openAttendanceManualModal(){
+    const emps = await getActiveEmployeesForSelect();
+    document.getElementById('afm-employee').innerHTML = emps.map(e => `<option value="${e.id}">${e.nama}</option>`).join('') || '<option value="">Belum ada karyawan</option>';
+    document.getElementById('attendance-manual-modal').classList.add('show');
+  }
+  async function submitAttendanceManual(){
+    const employeeId = document.getElementById('afm-employee').value;
+    if (!employeeId){ showToast('Pilih karyawan dulu.', true); return; }
+    const btn = document.getElementById('afm-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    const now = new Date();
+    const { error } = await sb.from('attendance').insert({
+      tenant_id: currentProfile.tenant_id, employee_id: employeeId,
+      tanggal: now.toISOString().split('T')[0], waktu_absen: now.toISOString(),
+      metode: 'manual', status: document.getElementById('afm-status').value,
+    });
+    btn.disabled = false; btn.textContent = 'Simpan';
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Kehadiran tercatat manual');
+    closeModal('attendance-manual-modal');
     await loadHrPage();
   }
 
@@ -5198,6 +5473,7 @@
         </table>
         <hr>
         <table>
+          ${d.rincianTambahan ? d.rincianTambahan.map(r => `<tr><td>${r.label}</td><td style="text-align:right;" class="${r.minus?'neg':''}">${r.minus?'− ':''}Rp ${Math.abs(Math.round(r.nilai)).toLocaleString('id-ID')}</td></tr>`).join('') + '<tr><td colspan="2"><hr></td></tr>' : ''}
           <tr><td>Gaji Bruto</td><td style="text-align:right;">Rp ${d.gajiBruto.toLocaleString('id-ID')}</td></tr>
           <tr><td class="neg">Potongan BPJS</td><td style="text-align:right;" class="neg">− Rp ${d.potonganBpjs.toLocaleString('id-ID')}</td></tr>
           <tr><td class="neg">Potongan PPh 21 (estimasi)</td><td style="text-align:right;" class="neg">− Rp ${d.potonganPph21.toLocaleString('id-ID')}</td></tr>
@@ -7733,7 +8009,7 @@
 
 **Laporan Keuangan**: pilih periode (Hari Ini/Minggu/Bulan/Tahun). Ada grafik tren Omzet vs Laba, Laporan Laba Rugi lengkap, Arus Kas, PPN Keluaran (kalau status PKP diaktifkan di menu Pajak), dan Neraca (estimasi posisi Aset/Kewajiban/Modal). Tombol "+ Catat Biaya" buat catat biaya operasional (sewa, listrik, gaji, dll) per kategori. Tombol "Ekspor Excel" buat unduh laporan. Panel "Setor/Tarik Modal Owner" buat catat kalau Owner masukin uang pribadi ke usaha (Setor Modal) atau ambil uang usaha buat pribadi (Tarik Modal).
 
-**Karyawan & Shift**: kelola data karyawan, absen, jadwal shift, pengajuan cuti, lembur, gaji/kasbon, evaluasi kinerja. Owner bisa undang karyawan buat punya akun login sendiri dengan peran (role) tertentu: Owner (akses penuh), Apoteker, Kasir, Admin Gudang, HR, Marketing — tiap peran cuma lihat menu sesuai tugasnya.
+**Karyawan & Shift**: kelola data karyawan, jadwal shift, pengajuan cuti, lembur, evaluasi kinerja. Absen sekarang pakai **selfie wajib + GPS** (anti titip-absen) — karyawan foto diri sendiri, lokasi otomatis dicek terhadap titik apotek yang diatur Owner (geofencing, radius bisa diatur). Owner bisa catat absen manual buat karyawan tanpa akun login. Ada **Papan Pengumuman** (broadcast ke semua karyawan), **Leaderboard Kasir** (ranking omzet mingguan per kasir), **Kontrak Karyawan** (gaji pokok + daftar tunjangan + target bonus opsional berdasarkan omzet/jumlah transaksi/kehadiran — diatur Owner per karyawan), **Tukar Shift** (karyawan ajukan, Owner approve/tolak), dan **Slip Gaji dari Kontrak** (tombol khusus Owner — otomatis hitung gaji pokok + tunjangan + cek apakah target bonus tercapai + potongan BPJS/PPh21 otomatis, langsung terbit slip gaji digital). Owner bisa undang karyawan buat punya akun login sendiri dengan peran (role) tertentu: Owner, Apoteker, Kasir, Admin Gudang, HR, Marketing — tiap peran cuma lihat menu sesuai tugasnya.
 
 **Pelanggan & Piutang**: catat piutang pelanggan (ada tanggal jatuh tempo + tombol ingatkan WA), retur barang, poin loyalitas pelanggan, pesanan online (toko online), tab "Buat Promosi" (AI generate 3 variasi teks promosi otomatis dari produk+jenis promo pilihan, lalu bisa dikirim ke target pelanggan tertentu — semua/belum belanja 30 hari/member — tinggal tap "Kirim" per pelanggan, WA terbuka dengan teks sudah terisi), daftar tunggu barang kosong, dan pelanggan khusus/reseller.
 
@@ -7789,6 +8065,311 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const { data: { session } } = await sb.auth.getSession();
     if (session){ await initApp(); }
   })();
+
+  // ================= SLIP GAJI OTOMATIS DARI KONTRAK =================
+  let kontrakAktifTerpilih = null;
+
+  async function openSlipKontrakModal(){
+    const { data: emps } = await sb.from('kontrak_karyawan').select('employee_id, employees(nama)').eq('tenant_id', currentProfile.tenant_id).eq('status','aktif');
+    const unik = {}; (emps||[]).forEach(e => unik[e.employee_id] = e.employees?.nama || '—');
+    const opsi = Object.entries(unik).map(([id, nama]) => `<option value="${id}">${nama}</option>`).join('');
+    document.getElementById('skk-employee').innerHTML = opsi || '<option value="">Belum ada karyawan dengan kontrak aktif</option>';
+    document.getElementById('skk-preview').style.display = 'none';
+    document.getElementById('skk-potongan').value = '';
+    document.getElementById('skk-submit-btn').disabled = true;
+    document.getElementById('slip-kontrak-modal').classList.add('show');
+    if (opsi) hitungSlipDariKontrak();
+  }
+
+  async function hitungSlipDariKontrak(){
+    const employeeId = document.getElementById('skk-employee').value;
+    const preview = document.getElementById('skk-preview');
+    if (!employeeId){ preview.style.display = 'none'; document.getElementById('skk-submit-btn').disabled = true; return; }
+
+    const { data: kontrak } = await sb.from('kontrak_karyawan').select('*, employees(nama, jabatan, profile_id, status_ptkp)').eq('employee_id', employeeId).eq('tenant_id', currentProfile.tenant_id).eq('status','aktif').order('created_at',{ascending:false}).limit(1).maybeSingle();
+    if (!kontrak){ preview.innerHTML = '<div style="color:var(--danger); font-size:12px;">Karyawan ini belum punya kontrak aktif.</div>'; preview.style.display='block'; return; }
+
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+    let capaian = 0, capaianLabel = '—';
+    if (kontrak.target_bonus_jenis === 'omzet_kasir' && kontrak.employees?.profile_id){
+      const { data: tx } = await sb.from('transactions').select('total').eq('tenant_id', currentProfile.tenant_id).eq('kasir_id', kontrak.employees.profile_id).neq('status_transaksi','dibatalkan').gte('created_at', monthStart.toISOString());
+      capaian = (tx||[]).reduce((s,t)=>s+parseFloat(t.total),0);
+      capaianLabel = `Omzet bulan ini: Rp ${Math.round(capaian).toLocaleString('id-ID')} (target Rp ${kontrak.target_bonus_nilai.toLocaleString('id-ID')})`;
+    } else if (kontrak.target_bonus_jenis === 'jumlah_transaksi' && kontrak.employees?.profile_id){
+      const { data: tx } = await sb.from('transactions').select('id').eq('tenant_id', currentProfile.tenant_id).eq('kasir_id', kontrak.employees.profile_id).neq('status_transaksi','dibatalkan').gte('created_at', monthStart.toISOString());
+      capaian = (tx||[]).length;
+      capaianLabel = `Transaksi bulan ini: ${capaian} (target ${kontrak.target_bonus_nilai})`;
+    } else if (kontrak.target_bonus_jenis === 'kehadiran_persen'){
+      const { data: att } = await sb.from('attendance').select('id').eq('tenant_id', currentProfile.tenant_id).eq('employee_id', employeeId).gte('tanggal', monthStart.toISOString().slice(0,10));
+      const hariBerjalan = new Date().getDate();
+      capaian = hariBerjalan > 0 ? Math.round(((att||[]).length / hariBerjalan) * 100) : 0;
+      capaianLabel = `Kehadiran: ${capaian}% (target ${kontrak.target_bonus_nilai}%)`;
+    }
+    const bonusTercapai = kontrak.target_bonus_jenis ? capaian >= kontrak.target_bonus_nilai : false;
+    const bonus = bonusTercapai ? parseFloat(kontrak.bonus_nominal || 0) : 0;
+    const totalTunjangan = (kontrak.tunjangan||[]).reduce((s,t)=>s+parseFloat(t.jumlah||0),0);
+    const gajiBruto = parseFloat(kontrak.gaji_pokok) + totalTunjangan + bonus;
+
+    window.__skkData = { kontrak, gajiBruto, totalTunjangan, bonus, bonusTercapai, capaianLabel };
+
+    preview.style.display = 'block';
+    preview.innerHTML = `
+      <div style="font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px;">Rincian dari Kontrak</div>
+      <div class="calc-row"><span class="calc-label">Gaji Pokok</span><span class="num">Rp ${Math.round(kontrak.gaji_pokok).toLocaleString('id-ID')}</span></div>
+      ${(kontrak.tunjangan||[]).map(t => `<div class="calc-row"><span class="calc-label">${t.nama}</span><span class="num">Rp ${Math.round(t.jumlah).toLocaleString('id-ID')}</span></div>`).join('')}
+      ${kontrak.target_bonus_jenis ? `<div style="font-size:11px; color:var(--ink-soft); margin:6px 0;">${capaianLabel}</div><div class="calc-row"><span class="calc-label">Bonus (${bonusTercapai ? 'Target Tercapai ✓' : 'Belum Tercapai'})</span><span class="num" style="color:${bonusTercapai?'var(--good)':'var(--ink-soft)'};">Rp ${Math.round(bonus).toLocaleString('id-ID')}</span></div>` : ''}
+      <div class="calc-row total"><span class="calc-label main">Gaji Bruto</span><span class="num">Rp ${Math.round(gajiBruto).toLocaleString('id-ID')}</span></div>`;
+    document.getElementById('skk-submit-btn').disabled = false;
+  }
+
+  async function terbitkanSlipDariKontrak(){
+    const d = window.__skkData;
+    if (!d){ showToast('Data belum siap.', true); return; }
+    const btn = document.getElementById('skk-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menerbitkan…';
+
+    const potonganLain = parseFloat(document.getElementById('skk-potongan').value) || 0;
+    const { bpjsTK, bpjsKes } = hitungBPJS(d.gajiBruto);
+    const pph21 = hitungPPh21Bulanan(d.gajiBruto - bpjsTK - bpjsKes, d.kontrak.employees?.status_ptkp || 'TK/0');
+    const gajiBersih = d.gajiBruto - bpjsTK - bpjsKes - pph21 - potonganLain;
+    const periode = new Date().toLocaleDateString('id-ID', { month:'long', year:'numeric' });
+
+    const { error } = await sb.from('payroll_notes').insert({
+      tenant_id: currentProfile.tenant_id, employee_id: d.kontrak.employee_id,
+      jenis: 'gaji_pokok', jumlah: d.gajiBruto,
+      potongan_pph21: pph21, potongan_bpjs: bpjsTK + bpjsKes, gaji_bersih: gajiBersih, periode,
+      catatan: `Dari kontrak — tunjangan Rp${Math.round(d.totalTunjangan).toLocaleString('id-ID')}${d.kontrak.target_bonus_jenis ? `, bonus ${d.bonusTercapai?'tercapai':'tidak tercapai'} Rp${Math.round(d.bonus).toLocaleString('id-ID')}` : ''}${potonganLain ? `, potongan lain Rp${potonganLain.toLocaleString('id-ID')}` : ''}`,
+    });
+    btn.disabled = false; btn.textContent = 'Terbitkan Slip';
+    if (error){ showToast('Gagal menerbitkan: ' + error.message, true); return; }
+    showToast('✓ Slip gaji diterbitkan');
+    closeModal('slip-kontrak-modal');
+    printSlipGaji({
+      namaKaryawan: d.kontrak.employees?.nama || '-', jabatan: JABATAN_LABEL[d.kontrak.employees?.jabatan] || d.kontrak.employees?.jabatan || '-',
+      periode, gajiBruto: d.gajiBruto, potonganPph21: pph21, potonganBpjs: bpjsTK + bpjsKes, gajiBersih,
+      rincianTambahan: [
+        { label: 'Gaji Pokok', nilai: parseFloat(d.kontrak.gaji_pokok) },
+        ...(d.kontrak.tunjangan||[]).map(t => ({ label: t.nama, nilai: parseFloat(t.jumlah) })),
+        ...(d.kontrak.target_bonus_jenis ? [{ label: `Bonus (${d.bonusTercapai?'Tercapai':'Tidak Tercapai'})`, nilai: d.bonus }] : []),
+        ...(potonganLain ? [{ label: 'Potongan Lain', nilai: -potonganLain, minus: true }] : []),
+      ],
+    });
+    await loadHrExtras();
+  }
+
+  // ================= PENGATURAN LOKASI ABSEN (GEOFENCING) =================
+  async function loadLokasiAbsenSettings(){
+    const statusEl = document.getElementById('lokasi-apotek-status');
+    if (!statusEl) return;
+    const { data } = await sb.from('tenants').select('lokasi_lat, lokasi_lng, radius_absen_meter').eq('id', currentProfile.tenant_id).single();
+    document.getElementById('radius-absen-input').value = data?.radius_absen_meter ?? 150;
+    statusEl.textContent = data?.lokasi_lat ? `✓ Lokasi sudah diatur (${data.lokasi_lat.toFixed(5)}, ${data.lokasi_lng.toFixed(5)})` : 'Lokasi belum diatur — karyawan bisa absen dari mana saja.';
+  }
+  function ambilLokasiApotekSekarang(){
+    if (!navigator.geolocation){ showToast('Browser tidak mendukung GPS.', true); return; }
+    document.getElementById('lokasi-apotek-status').textContent = 'Mendeteksi lokasi…';
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { error } = await sb.from('tenants').update({ lokasi_lat: pos.coords.latitude, lokasi_lng: pos.coords.longitude }).eq('id', currentProfile.tenant_id);
+      if (error){ showToast('Gagal menyimpan lokasi: ' + error.message, true); return; }
+      showToast('✓ Titik lokasi apotek tersimpan');
+      await loadLokasiAbsenSettings();
+    }, () => showToast('Gagal deteksi lokasi. Izinkan akses lokasi di browser.', true));
+  }
+  async function updateRadiusAbsen(value){
+    const radius = parseInt(value) || 150;
+    const { error } = await sb.from('tenants').update({ radius_absen_meter: radius }).eq('id', currentProfile.tenant_id);
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast(`✓ Radius toleransi diatur ${radius}m`);
+  }
+
+  // ================= PENGUMUMAN =================
+  function openPengumumanModal(){
+    document.getElementById('pg-judul').value = '';
+    document.getElementById('pg-isi').value = '';
+    document.getElementById('pengumuman-modal').classList.add('show');
+  }
+  async function submitPengumuman(){
+    const judul = document.getElementById('pg-judul').value.trim();
+    const isi = document.getElementById('pg-isi').value.trim();
+    if (!judul || !isi){ showToast('Judul dan isi wajib diisi.', true); return; }
+    const btn = document.getElementById('pg-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengumumkan…';
+    const { error } = await sb.from('pengumuman').insert({ tenant_id: currentProfile.tenant_id, judul, isi, dibuat_oleh: currentProfile.id });
+    btn.disabled = false; btn.textContent = 'Umumkan';
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    showToast('✓ Pengumuman terkirim ke semua karyawan');
+    closeModal('pengumuman-modal');
+    await loadPengumuman();
+  }
+  async function loadPengumuman(){
+    const el = document.getElementById('pengumuman-list');
+    if (!el) return;
+    const { data } = await sb.from('pengumuman').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(5);
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada pengumuman.</div>'; return; }
+    el.innerHTML = data.map(p => `
+      <div style="padding:10px 0; border-bottom:1px solid var(--line);">
+        <div style="font-size:13px; font-weight:700;">${p.judul}</div>
+        <div style="font-size:12px; color:var(--ink-soft); margin-top:3px; white-space:pre-line;">${p.isi}</div>
+        <div style="font-size:10.5px; color:var(--ink-soft); margin-top:4px;">${new Date(p.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+      </div>`).join('');
+  }
+
+  // ================= LEADERBOARD KASIR =================
+  async function loadLeaderboardKasir(){
+    const el = document.getElementById('leaderboard-list');
+    if (!el) return;
+    const awalMinggu = new Date(); awalMinggu.setDate(awalMinggu.getDate() - awalMinggu.getDay()); awalMinggu.setHours(0,0,0,0);
+    const { data: tx } = await sb.from('transactions').select('kasir_id, total').eq('tenant_id', currentProfile.tenant_id).neq('status_transaksi','dibatalkan').gte('created_at', awalMinggu.toISOString());
+    if (!tx || tx.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada transaksi minggu ini.</div>'; return; }
+    const rekap = {};
+    tx.forEach(t => { if (!t.kasir_id) return; rekap[t.kasir_id] = rekap[t.kasir_id] || { omzet:0, jumlah:0 }; rekap[t.kasir_id].omzet += parseFloat(t.total); rekap[t.kasir_id].jumlah++; });
+    const idList = Object.keys(rekap);
+    if (idList.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada data transaksi per kasir.</div>'; return; }
+    const { data: profiles } = await sb.from('user_profiles').select('id, nama').in('id', idList);
+    const namaMap = {}; (profiles||[]).forEach(p => namaMap[p.id] = p.nama);
+    const ranking = idList.map(id => ({ id, nama: namaMap[id] || 'Kasir', ...rekap[id] })).sort((a,b) => b.omzet - a.omzet);
+    const MEDALI = ['🥇','🥈','🥉'];
+    el.innerHTML = ranking.slice(0,10).map((r, idx) => `
+      <div class="row-item">
+        <div class="emp-dot">${MEDALI[idx] || (idx+1)}</div>
+        <div><div class="row-name">${r.nama}</div><div class="row-meta">${r.jumlah} transaksi</div></div>
+        <div class="row-right"><div class="num" style="font-size:13px;">Rp ${Math.round(r.omzet).toLocaleString('id-ID')}</div></div>
+      </div>`).join('');
+  }
+
+  // ================= KONTRAK KARYAWAN =================
+  const DIVISI_LABEL = { kasir:'Kasir', apoteker:'Apoteker', admin_gudang:'Admin Gudang', hr:'HR', marketing:'Marketing', lainnya:'Lainnya' };
+  const TARGET_BONUS_LABEL = { omzet_kasir:'Omzet Kasir', jumlah_transaksi:'Jumlah Transaksi', kehadiran_persen:'Persentase Kehadiran' };
+
+  async function openKontrakModal(){
+    const emps = await getActiveEmployeesForSelect();
+    document.getElementById('kk-employee').innerHTML = emps.map(e => `<option value="${e.id}">${e.nama}</option>`).join('') || '<option value="">Belum ada karyawan</option>';
+    document.getElementById('kk-sop').value = '';
+    document.getElementById('kk-gaji-pokok').value = '';
+    document.getElementById('kk-tunjangan-list').innerHTML = '';
+    document.getElementById('kk-target-jenis').value = '';
+    document.getElementById('kk-target-nilai-wrap').style.display = 'none';
+    document.getElementById('kk-target-nilai').value = '';
+    document.getElementById('kk-bonus-nominal').value = '';
+    document.getElementById('kk-tgl-mulai').value = new Date().toISOString().slice(0,10);
+    document.getElementById('kk-tgl-berakhir').value = '';
+    document.getElementById('kontrak-modal').classList.add('show');
+    tambahBarisTunjangan();
+  }
+  document.addEventListener('change', (e) => { if (e.target.id === 'kk-target-jenis'){ document.getElementById('kk-target-nilai-wrap').style.display = e.target.value ? 'flex' : 'none'; } });
+
+  function tambahBarisTunjangan(){
+    const wrap = document.getElementById('kk-tunjangan-list');
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:6px; margin-bottom:6px;';
+    row.innerHTML = `<input type="text" placeholder="Nama tunjangan (mis. Transport)" class="kk-tunjangan-nama" style="flex:1.5; border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:12px;">
+      <input type="number" placeholder="Rp" class="kk-tunjangan-jumlah" style="flex:1; border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:12px;">
+      <button type="button" onclick="this.parentElement.remove()" style="border:none; background:none; color:var(--danger); font-size:16px; padding:0 6px;">×</button>`;
+    wrap.appendChild(row);
+  }
+
+  async function submitKontrak(){
+    const employeeId = document.getElementById('kk-employee').value;
+    const gajiPokok = parseFloat(document.getElementById('kk-gaji-pokok').value) || 0;
+    if (!employeeId){ showToast('Pilih karyawan dulu.', true); return; }
+    const btn = document.getElementById('kk-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+
+    const tunjangan = Array.from(document.querySelectorAll('#kk-tunjangan-list > div')).map(row => ({
+      nama: row.querySelector('.kk-tunjangan-nama').value.trim(),
+      jumlah: parseFloat(row.querySelector('.kk-tunjangan-jumlah').value) || 0,
+    })).filter(t => t.nama);
+
+    const targetJenis = document.getElementById('kk-target-jenis').value || null;
+
+    const { error } = await sb.from('kontrak_karyawan').insert({
+      tenant_id: currentProfile.tenant_id, employee_id: employeeId,
+      divisi: document.getElementById('kk-divisi').value,
+      sop_ringkas: document.getElementById('kk-sop').value.trim() || null,
+      gaji_pokok: gajiPokok, tunjangan,
+      target_bonus_jenis: targetJenis,
+      target_bonus_nilai: targetJenis ? (parseFloat(document.getElementById('kk-target-nilai').value) || 0) : null,
+      bonus_nominal: targetJenis ? (parseFloat(document.getElementById('kk-bonus-nominal').value) || 0) : 0,
+      tanggal_mulai: document.getElementById('kk-tgl-mulai').value || new Date().toISOString().slice(0,10),
+      tanggal_berakhir: document.getElementById('kk-tgl-berakhir').value || null,
+      dibuat_oleh: currentProfile.id,
+    });
+    btn.disabled = false; btn.textContent = 'Simpan Kontrak';
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Kontrak tersimpan');
+    closeModal('kontrak-modal');
+    await loadKontrakList();
+  }
+
+  async function loadKontrakList(){
+    const el = document.getElementById('kontrak-list');
+    if (!el) return;
+    const { data } = await sb.from('kontrak_karyawan').select('*, employees(nama)').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false });
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada kontrak dibuat.</div>'; return; }
+    el.innerHTML = data.map(k => {
+      const totalTunjangan = (k.tunjangan||[]).reduce((s,t)=>s+parseFloat(t.jumlah||0),0);
+      return `<div class="row-item">
+        <div class="emp-dot">${(k.employees?.nama||'?').substring(0,2).toUpperCase()}</div>
+        <div><div class="row-name">${k.employees?.nama || '—'} — ${DIVISI_LABEL[k.divisi]}</div><div class="row-meta">Pokok Rp${Math.round(k.gaji_pokok).toLocaleString('id-ID')} + Tunjangan Rp${Math.round(totalTunjangan).toLocaleString('id-ID')}${k.target_bonus_jenis ? ` · Bonus jika ${TARGET_BONUS_LABEL[k.target_bonus_jenis]} ≥ ${k.target_bonus_nilai.toLocaleString('id-ID')}` : ''}</div></div>
+        <div class="row-right"><span class="pill ${k.status==='aktif'?'ok':'crit'}">${k.status==='aktif'?'Aktif':k.status}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  // ================= TUKAR SHIFT =================
+  async function openShiftSwapModal(){
+    const { data: emp } = await sb.from('employees').select('id, nama, tenant_id').eq('tenant_id', currentProfile.tenant_id).eq('status','aktif').order('nama');
+    document.getElementById('ss-ke-employee').innerHTML = (emp||[]).map(e => `<option value="${e.id}">${e.nama}</option>`).join('') || '<option value="">Belum ada karyawan</option>';
+    document.getElementById('ss-tanggal').value = '';
+    document.getElementById('ss-alasan').value = '';
+    document.getElementById('shift-swap-modal').classList.add('show');
+  }
+  async function submitShiftSwap(){
+    const tanggal = document.getElementById('ss-tanggal').value;
+    if (!tanggal){ showToast('Pilih tanggal shift dulu.', true); return; }
+    const { data: myEmp } = await sb.from('employees').select('id').eq('profile_id', currentProfile.id).eq('tenant_id', currentProfile.tenant_id).maybeSingle();
+    if (!myEmp){ showToast('Akun kamu belum terhubung ke data karyawan.', true); return; }
+    const btn = document.getElementById('ss-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengajukan…';
+    const { error } = await sb.from('shift_swap_requests').insert({
+      tenant_id: currentProfile.tenant_id, dari_employee_id: myEmp.id,
+      ke_employee_id: document.getElementById('ss-ke-employee').value || null,
+      tanggal_shift: tanggal, alasan: document.getElementById('ss-alasan').value.trim() || null,
+      dibuat_oleh: currentProfile.id,
+    });
+    btn.disabled = false; btn.textContent = 'Ajukan';
+    if (error){ showToast('Gagal mengajukan: ' + error.message, true); return; }
+    showToast('✓ Pengajuan tukar shift terkirim, menunggu persetujuan Owner');
+    closeModal('shift-swap-modal');
+    await loadShiftSwapList();
+  }
+  async function loadShiftSwapList(){
+    const el = document.getElementById('shift-swap-list');
+    if (!el) return;
+    const { data } = await sb.from('shift_swap_requests').select('*, dari:employees!shift_swap_requests_dari_employee_id_fkey(nama), ke:employees!shift_swap_requests_ke_employee_id_fkey(nama)').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(10);
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada pengajuan tukar shift.</div>'; return; }
+    const isOwner = currentProfile.role === 'owner';
+    const STATUS_LABEL = { menunggu:'Menunggu', disetujui:'Disetujui', ditolak:'Ditolak' };
+    el.innerHTML = data.map(s => `
+      <div class="row-item">
+        <div class="emp-dot">🔄</div>
+        <div><div class="row-name">${s.dari?.nama || '—'} ↔ ${s.ke?.nama || 'siapa saja'}</div><div class="row-meta">${new Date(s.tanggal_shift).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}${s.alasan ? ' · '+s.alasan : ''}</div></div>
+        <div class="row-right">
+          <span class="pill ${s.status==='disetujui'?'ok':s.status==='ditolak'?'crit':'warn'}">${STATUS_LABEL[s.status]}</span>
+          ${isOwner && s.status==='menunggu' ? `<div style="display:flex; gap:6px; margin-top:4px;"><button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--good);" onclick="setujuiTukarShift('${s.id}')">Setujui</button><button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="tolakTukarShift('${s.id}')">Tolak</button></div>` : ''}
+        </div>
+      </div>`).join('');
+  }
+  async function setujuiTukarShift(id){
+    await sb.from('shift_swap_requests').update({ status: 'disetujui' }).eq('id', id);
+    showToast('✓ Tukar shift disetujui');
+    await loadShiftSwapList();
+  }
+  async function tolakTukarShift(id){
+    await sb.from('shift_swap_requests').update({ status: 'ditolak' }).eq('id', id);
+    showToast('Tukar shift ditolak');
+    await loadShiftSwapList();
+  }
 </script>
 
 </body>
