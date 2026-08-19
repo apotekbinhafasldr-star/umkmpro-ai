@@ -316,7 +316,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v39-0800</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v40-0830</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -433,6 +433,10 @@
           <div class="greeting-eyebrow" id="today-date">—</div>
           <h1 class="greeting" id="dash-greeting">Selamat datang 👋</h1>
         </div>
+        <button class="btn-primary" onclick="openAttendanceModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
+          Absen Sekarang
+        </button>
       </div>
 
       <div class="panel" id="tugas-harian-panel" style="border:1.5px solid var(--brand); background:var(--brand-tint);">
@@ -8112,7 +8116,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
   // ================= WIDGET BANTUAN AI (asisten cara pakai aplikasi) =================
   const PANDUAN_APLIKASI = `Kamu adalah asisten bantuan untuk aplikasi kasir & manajemen usaha "UMKMpro AI" (khusus apotek). Jawab singkat, jelas, langkah demi langkah, dalam Bahasa Indonesia santai tapi sopan. Kalau pertanyaan di luar topik aplikasi ini, arahkan balik dengan ramah. Berikut panduan tiap menu di aplikasi:
 
-**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama.
+**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama.
 
 **Kasir/POS**: ketik nama obat di bar pencarian atau pakai tombol Scan (kamera) / Scan Kartu pelanggan. Tap produk: kalau produk sederhana langsung masuk keranjang; kalau produk punya satuan kemasan (Box dll) akan muncul popup pilih jumlah & satuan. Atur qty pakai tombol +/− di keranjang. Pilih metode bayar (Tunai/QRIS/Debit-Kredit), bisa split bayar campur. Setelah checkout bisa cetak struk (print biasa, kirim WA, atau cetak langsung ke printer Bluetooth thermal kalau sudah di-pairing).
 
