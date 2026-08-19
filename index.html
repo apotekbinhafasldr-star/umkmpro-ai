@@ -316,7 +316,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v30-0300</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v33-0430</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -433,6 +433,14 @@
           <div class="greeting-eyebrow" id="today-date">—</div>
           <h1 class="greeting" id="dash-greeting">Selamat datang 👋</h1>
         </div>
+      </div>
+
+      <div class="panel" id="tugas-harian-panel" style="border:1.5px solid var(--brand); background:var(--brand-tint);">
+        <div class="panel-head">
+          <div class="panel-title" style="color:var(--brand);">📋 Tugas Hari Ini Untukmu</div>
+          <button class="btn-secondary owner-only" onclick="openTugasModal()">+ Kasih Tugas</button>
+        </div>
+        <div class="panel-body" id="tugas-harian-list"><div class="loading-note">Memuat…</div></div>
       </div>
 
       <div class="kpi-row">
@@ -1106,7 +1114,7 @@
       <!-- BUAT PROMOSI -->
       <div class="sub-page" id="sub-promosi">
         <div class="panel">
-          <div class="panel-head"><div class="panel-title">Generator Konten Promosi</div></div>
+          <div class="panel-head"><div class="panel-title">Generator Konten Promosi (AI)</div></div>
           <div class="panel-body">
             <div class="field">
               <label>Produk / Racikan yang Dipromosikan</label>
@@ -1126,11 +1134,28 @@
               <label>Diskon (%)</label>
               <input type="number" id="promo-diskon-persen" placeholder="Contoh: 20">
             </div>
-            <button class="btn-primary" style="width:100%; justify-content:center;" onclick="generatePromoContent()">
+            <div class="field"><label>Catatan tambahan buat AI (opsional)</label><input type="text" id="promo-catatan" placeholder="Contoh: gaya bahasa santai, sasar ibu-ibu"></div>
+            <button class="btn-primary" style="width:100%; justify-content:center;" id="promo-generate-btn" onclick="generatePromoContentAI()">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-3px; margin-right:6px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              Buat Konten Promosi
+              Buat Konten Promosi (AI)
             </button>
             <div id="promo-result-wrap" style="margin-top:16px;"></div>
+          </div>
+        </div>
+
+        <div class="panel" id="promo-kirim-panel" style="display:none;">
+          <div class="panel-head"><div class="panel-title">Kirim ke Pelanggan</div></div>
+          <div class="panel-body">
+            <div class="field">
+              <label>Target Pelanggan</label>
+              <select id="promo-target" onchange="loadDaftarTargetPromo()">
+                <option value="semua">Semua Pelanggan Terdaftar</option>
+                <option value="lama">Belum Belanja 30+ Hari</option>
+                <option value="member">Member/Reseller Saja</option>
+              </select>
+            </div>
+            <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:10px;">Tap "Kirim" satu-satu di daftar bawah — WhatsApp akan terbuka dengan teks promo sudah otomatis terisi, tinggal tekan kirim di WA.</div>
+            <div id="promo-target-list"><div class="loading-note">Pilih target dulu di atas.</div></div>
           </div>
         </div>
       </div>
@@ -1696,6 +1721,40 @@
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('points-modal')">Batal</button>
       <button class="btn-primary" id="pt-submit-btn" onclick="submitPoints()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KASIH TUGAS HARIAN -->
+<div class="modal-overlay" id="tugas-modal">
+  <div class="modal-card">
+    <div class="modal-title">Kasih Tugas / Instruksi</div>
+    <div class="field"><label>Judul Tugas</label><input type="text" id="tg-judul" placeholder="Contoh: Cek ulang stok obat resep"></div>
+    <div class="field"><label>Detail (opsional)</label><input type="text" id="tg-deskripsi" placeholder="Penjelasan tambahan"></div>
+    <div class="field">
+      <label>Ditugaskan ke</label>
+      <select id="tg-target" onchange="toggleTugasKaryawanList()">
+        <option value="semua">Semua Karyawan</option>
+        <option value="individu">Karyawan Tertentu (pilih)</option>
+        <option value="role:kasir">Semua Kasir</option>
+        <option value="role:admin_gudang">Semua Admin Gudang</option>
+        <option value="role:apoteker">Semua Apoteker</option>
+        <option value="role:hr">Semua HR</option>
+        <option value="role:marketing">Semua Marketing</option>
+      </select>
+      <div id="tg-karyawan-list" style="margin-top:8px; max-height:140px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; padding:8px; display:none;"></div>
+    </div>
+    <div class="field">
+      <label>Prioritas</label>
+      <select id="tg-prioritas">
+        <option value="sedang">Sedang</option>
+        <option value="tinggi">Tinggi</option>
+        <option value="rendah">Rendah</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('tugas-modal')">Batal</button>
+      <button class="btn-primary" id="tg-submit-btn" onclick="submitTugas()">Kirim Tugas</button>
     </div>
   </div>
 </div>
@@ -2397,6 +2456,8 @@
    try{
     const tenantId = currentProfile.tenant_id;
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+
+    loadTugasHarian();
 
     const { data: todayTx } = await sb.from('transactions')
       .select('total').eq('tenant_id', tenantId).gte('created_at', todayStart.toISOString());
@@ -4853,15 +4914,52 @@
     el.innerHTML = '<div class="loading-note">Memuat data…</div>';
     const { data } = await sb.from('supplier_debts').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', {ascending:false});
     if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada utang tercatat.</div>'; return; }
-    el.innerHTML = data.map(s => `
+    const isOwner = currentProfile.role === 'owner';
+    el.innerHTML = data.map(s => {
+      let aksi = '';
+      if (s.status === 'lunas'){
+        // tidak ada aksi, sudah selesai
+      } else if (s.status === 'menunggu_konfirmasi_lunas'){
+        aksi = isOwner
+          ? `<div style="display:flex; gap:6px; margin-top:4px;"><button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--good);" onclick="konfirmasiLunasSupplier('${s.id}')">Konfirmasi Lunas</button><button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="tolakLunasSupplier('${s.id}')">Tolak</button></div>`
+          : '';
+      } else {
+        aksi = isOwner
+          ? `<button class="btn-secondary" style="font-size:10px; padding:3px 7px; margin-top:4px;" onclick="konfirmasiLunasSupplier('${s.id}')">Tandai Lunas</button>`
+          : `<button class="btn-secondary" style="font-size:10px; padding:3px 7px; margin-top:4px;" onclick="ajukanLunasSupplier('${s.id}')">Ajukan Sudah Dibayar</button>`;
+      }
+      const LABEL = { lunas:'Lunas', menunggu_konfirmasi_lunas:'Menunggu Konfirmasi Owner' };
+      return `
       <div class="row-item">
         <div class="emp-dot">${s.supplier.substring(0,2).toUpperCase()}</div>
         <div><div class="row-name">${s.supplier}</div><div class="row-meta">Jatuh tempo: ${s.jatuh_tempo ? new Date(s.jatuh_tempo).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '—'}</div></div>
         <div class="row-right">
           <div class="num" style="font-size:13px;">Rp ${parseFloat(s.sisa).toLocaleString('id-ID')}</div>
-          <span class="pill ${s.status === 'lunas' ? 'ok' : 'crit'}">${s.status === 'lunas' ? 'Lunas' : 'Belum Lunas'}</span>
+          <span class="pill ${s.status === 'lunas' ? 'ok' : s.status === 'menunggu_konfirmasi_lunas' ? 'warn' : 'crit'}">${LABEL[s.status] || 'Belum Lunas'}</span>
+          ${aksi}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
+  }
+
+  async function ajukanLunasSupplier(id){
+    if (!confirm('Ajukan utang ini sudah dibayar? Owner akan mengonfirmasi sebelum statusnya berubah jadi Lunas.')) return;
+    const { error } = await sb.from('supplier_debts').update({ status: 'menunggu_konfirmasi_lunas' }).eq('id', id);
+    if (error){ showToast('Gagal mengajukan: ' + error.message, true); return; }
+    showToast('✓ Diajukan, menunggu konfirmasi Owner');
+    await loadSupplierDebts();
+  }
+  async function konfirmasiLunasSupplier(id){
+    const { error } = await sb.from('supplier_debts').update({ status: 'lunas', sisa: 0 }).eq('id', id);
+    if (error){ showToast('Gagal konfirmasi: ' + error.message, true); return; }
+    showToast('✓ Utang ditandai lunas');
+    await loadSupplierDebts();
+  }
+  async function tolakLunasSupplier(id){
+    const { error } = await sb.from('supplier_debts').update({ status: 'belum_lunas' }).eq('id', id);
+    if (error){ showToast('Gagal menolak: ' + error.message, true); return; }
+    showToast('Pengajuan ditolak, dikembalikan ke Belum Lunas');
+    await loadSupplierDebts();
   }
   function openSupplierDebtModal(){
     ['sd-supplier','sd-jumlah','sd-jatuh-tempo','sd-catatan'].forEach(id => document.getElementById(id).value = '');
@@ -5240,7 +5338,9 @@
     };
   }
 
-  function generatePromoContent(){
+  let teksPromoTerakhir = '';
+
+  async function generatePromoContentAI(){
     const select = document.getElementById('promo-produk');
     const opt = select.options[select.selectedIndex];
     if (!opt){ showToast('Belum ada produk untuk dipromosikan.', true); return; }
@@ -5251,41 +5351,80 @@
     const diskonPersen = parseInt(document.getElementById('promo-diskon-persen').value) || 20;
     const hargaDiskon = Math.round(harga * (1 - diskonPersen/100));
     const namaUsaha = document.getElementById('sidebar-tenant').textContent || 'Toko Kami';
-    const emoji = { diskon:'🔥', baru:'✨', stok_terbatas:'⏰', reminder:'💊', umum:'🏪' };
+    const catatan = document.getElementById('promo-catatan').value.trim();
+    const JENIS_LABEL = { diskon:'diskon/harga spesial', baru:'produk baru datang', stok_terbatas:'stok terbatas', reminder:'pengingat rutin belanja', umum:'promosi umum toko' };
 
-    const templates = {
-      diskon: [
-        `${emoji.diskon} PROMO SPESIAL! ${emoji.diskon}\n\n${namaProduk} diskon ${diskonPersen}%!\n~~Rp${harga.toLocaleString('id-ID')}~~ jadi cuma Rp${hargaDiskon.toLocaleString('id-ID')}\n\nYuk mampir ke ${namaUsaha} atau order online, stok terbatas! 🏃‍♀️`,
-        `Kabar baik buat kamu! 🎉\n${namaProduk} lagi diskon ${diskonPersen}% cuma hari ini di ${namaUsaha}.\nHarga normal Rp${harga.toLocaleString('id-ID')}, sekarang Rp${hargaDiskon.toLocaleString('id-ID')} aja!\nBuruan sebelum kehabisan ya 😉`,
-        `${emoji.diskon} Diskon ${diskonPersen}% untuk ${namaProduk}!\nDari Rp${harga.toLocaleString('id-ID')} jadi Rp${hargaDiskon.toLocaleString('id-ID')}.\nOrder sekarang di ${namaUsaha}, bisa ambil sendiri atau diantar 🛵`
-      ],
-      baru: [
-        `${emoji.baru} BARU DATANG! ${emoji.baru}\n\n${namaProduk} sekarang tersedia di ${namaUsaha}!\nHarga cuma Rp${harga.toLocaleString('id-ID')}.\nYuk cek sebelum kehabisan~`,
-        `Halo! Kami baru saja restock ${namaProduk} 🎊\nTersedia sekarang di ${namaUsaha} dengan harga Rp${harga.toLocaleString('id-ID')}.\nLangsung order ya!`,
-      ],
-      stok_terbatas: [
-        `${emoji.stok_terbatas} STOK TERBATAS! ${emoji.stok_terbatas}\n${namaProduk} tinggal sedikit lho di ${namaUsaha}!\nHarga Rp${harga.toLocaleString('id-ID')}. Buruan sebelum kehabisan 🏃`,
-        `Buruan sebelum kehabisan! ${namaProduk} stoknya menipis di ${namaUsaha}.\nRp${harga.toLocaleString('id-ID')} aja, order sekarang sebelum ludes ya!`
-      ],
-      reminder: [
-        `${emoji.reminder} Reminder buat kamu yang rutin konsumsi ${namaProduk}~\nJangan sampai kehabisan ya! Tersedia di ${namaUsaha}, Rp${harga.toLocaleString('id-ID')}.\nOrder sekarang biar gak lupa 😊`,
-        `Halo! Sudah waktunya restock ${namaProduk}? 💊\nTersedia di ${namaUsaha} seharga Rp${harga.toLocaleString('id-ID')}. Order sekarang ya, biar gak kehabisan!`
-      ],
-      umum: [
-        `🏪 ${namaUsaha}\nSalah satu produk andalan kami: ${namaProduk}, harga Rp${harga.toLocaleString('id-ID')}.\nYuk mampir atau order online sekarang!`,
-        `Cari ${namaProduk}? Ada di ${namaUsaha}! 😊\nHarga Rp${harga.toLocaleString('id-ID')}, kualitas terjamin. Order sekarang ya~`
-      ]
-    };
-
-    const pilihan = templates[jenis] || templates.umum;
+    const btn = document.getElementById('promo-generate-btn');
+    btn.disabled = true; btn.textContent = 'Membuat...';
     const wrap = document.getElementById('promo-result-wrap');
-    wrap.innerHTML = pilihan.map((teks, idx) => `
-      <div style="background:var(--surface-2); border-radius:12px; padding:14px 16px; margin-bottom:12px; position:relative;">
-        <div style="font-size:10.5px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px;">Variasi ${idx+1}</div>
-        <div style="font-size:13px; white-space:pre-line; line-height:1.6; margin-bottom:10px;">${teks}</div>
-        <button class="btn-secondary" onclick="copyPromoText(${idx})" id="promo-copy-btn-${idx}">📋 Salin Teks</button>
-        <textarea id="promo-text-${idx}" style="position:absolute; left:-9999px;">${teks}</textarea>
-      </div>`).join('');
+    wrap.innerHTML = '<div class="loading-note">AI sedang menulis 3 variasi promo…</div>';
+
+    let prompt = `Buatkan 3 variasi pesan promosi WhatsApp untuk apotek "${namaUsaha}", produk: ${namaProduk}, harga normal Rp${harga.toLocaleString('id-ID')}`;
+    if (jenis === 'diskon') prompt += `, sedang diskon ${diskonPersen}% jadi Rp${hargaDiskon.toLocaleString('id-ID')}`;
+    prompt += `. Jenis promosi: ${JENIS_LABEL[jenis]}. Bahasa Indonesia santai, ramah, cocok dikirim via WhatsApp ke pelanggan apotek (bukan bahasa medis kaku), pakai emoji secukupnya, jangan berlebihan. Setiap variasi maksimal 5 baris.`;
+    if (catatan) prompt += ` Catatan tambahan: ${catatan}.`;
+    prompt += ` Balas HANYA dalam format: pisahkan tiap variasi dengan baris "---" di antaranya, tanpa penomoran atau judul tambahan.`;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
+      });
+      const data = await response.json();
+      const teksMentah = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n');
+      const variasi = teksMentah.split('---').map(v => v.trim()).filter(v => v.length > 5);
+      if (variasi.length === 0) throw new Error('AI tidak mengembalikan hasil.');
+
+      wrap.innerHTML = variasi.map((teks, idx) => `
+        <div style="background:var(--surface-2); border-radius:12px; padding:14px 16px; margin-bottom:12px; position:relative;">
+          <div style="font-size:10.5px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px;">Variasi ${idx+1}</div>
+          <div style="font-size:13px; white-space:pre-line; line-height:1.6; margin-bottom:10px;">${teks}</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-secondary" onclick="copyPromoText(${idx})" id="promo-copy-btn-${idx}">📋 Salin</button>
+            <button class="btn-primary" onclick="pakaiPromoIni(${idx})">✓ Pakai Ini &amp; Kirim ke Pelanggan</button>
+          </div>
+          <textarea id="promo-text-${idx}" style="position:absolute; left:-9999px;">${teks}</textarea>
+        </div>`).join('');
+    } catch (err) {
+      wrap.innerHTML = `<div class="loading-note" style="color:var(--danger);">Gagal membuat promo: ${err.message}. Coba lagi.</div>`;
+    }
+    btn.disabled = false; btn.textContent = 'Buat Konten Promosi (AI)';
+  }
+
+  function pakaiPromoIni(idx){
+    teksPromoTerakhir = document.getElementById('promo-text-' + idx).value;
+    document.getElementById('promo-kirim-panel').style.display = 'block';
+    document.getElementById('promo-kirim-panel').scrollIntoView({ behavior: 'smooth' });
+    loadDaftarTargetPromo();
+  }
+
+  async function loadDaftarTargetPromo(){
+    const target = document.getElementById('promo-target').value;
+    const el = document.getElementById('promo-target-list');
+    el.innerHTML = '<div class="loading-note">Memuat daftar pelanggan…</div>';
+
+    let query = sb.from('customer_points').select('nama, whatsapp, tipe_pelanggan, updated_at').eq('tenant_id', currentProfile.tenant_id).not('whatsapp','is',null);
+    if (target === 'member') query = query.in('tipe_pelanggan', ['member','reseller']);
+    const { data } = await query;
+    let list = data || [];
+
+    if (target === 'lama'){
+      const batas30 = new Date(); batas30.setDate(batas30.getDate() - 30);
+      list = list.filter(p => !p.updated_at || new Date(p.updated_at) < batas30);
+    }
+
+    if (list.length === 0){ el.innerHTML = '<div class="loading-note">Tidak ada pelanggan yang cocok dengan target ini.</div>'; return; }
+
+    el.innerHTML = list.map((p, i) => {
+      const pesan = encodeURIComponent(`Halo ${p.nama} 👋\n\n${teksPromoTerakhir}`);
+      const nomor = p.whatsapp.replace(/^0/,'62').replace(/\D/g,'');
+      return `<div class="row-item">
+        <div class="emp-dot">${p.nama.substring(0,2).toUpperCase()}</div>
+        <div><div class="row-name">${p.nama}</div><div class="row-meta">${p.whatsapp}</div></div>
+        <div class="row-right"><a href="https://wa.me/${nomor}?text=${pesan}" target="_blank" class="btn-secondary" style="font-size:11px; padding:5px 12px; text-decoration:none; display:inline-block;">Kirim →</a></div>
+      </div>`;
+    }).join('');
   }
 
   function copyPromoText(idx){
@@ -5622,10 +5761,11 @@
     for (const supplier of supplierList){
       const items = window.__rekomendasiGrup[supplier];
       const nomorPO = 'PO-' + Date.now() + '-' + Math.floor(Math.random()*1000);
-      const totalEstimasi = items.reduce((s,p) => s + (p.perluDipesan * (p.hargaSatuan||0)), 0);
+    const totalEstimasi = items.reduce((s,p) => s + (p.perluDipesan * (p.hargaSatuan||0)), 0);
+      const statusAwal = currentProfile.role === 'owner' ? 'dipesan' : 'menunggu_persetujuan';
       const { data: po } = await sb.from('purchase_orders').insert({
         tenant_id: currentProfile.tenant_id, nomor_po: nomorPO, nama_supplier: supplier,
-        dibuat_oleh: currentProfile.id, total_estimasi: totalEstimasi
+        dibuat_oleh: currentProfile.id, total_estimasi: totalEstimasi, status: statusAwal
       }).select().single();
       if (po){
         const poItems = items.map(p => ({
@@ -5648,7 +5788,8 @@
 
     const { data: po, error } = await sb.from('purchase_orders').insert({
       tenant_id: currentProfile.tenant_id, nomor_po: nomorPO, nama_supplier: namaSupplier,
-      dibuat_oleh: currentProfile.id, total_estimasi: totalEstimasi
+      dibuat_oleh: currentProfile.id, total_estimasi: totalEstimasi,
+      status: currentProfile.role === 'owner' ? 'dipesan' : 'menunggu_persetujuan'
     }).select().single();
     if (error){ showToast('Gagal membuat PO: ' + error.message, true); return; }
 
@@ -5726,17 +5867,30 @@
     const el = document.getElementById('po-history-list');
     if (!el) return;
     const { data } = await sb.from('purchase_orders').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(10);
-    const STATUS_LABEL = { dipesan:'Dipesan', diterima_sebagian:'Diterima Sebagian', diterima_lengkap:'Selesai', dibatalkan:'Dibatalkan' };
+    const STATUS_LABEL = { menunggu_persetujuan:'Menunggu Persetujuan Owner', dipesan:'Dipesan', diterima_sebagian:'Diterima Sebagian', diterima_lengkap:'Selesai', dibatalkan:'Dibatalkan' };
     if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada riwayat PO.</div>'; return; }
     el.innerHTML = data.map(po => `
       <div class="row-item">
         <div><div class="row-name">${po.nomor_po} — ${po.nama_supplier}</div><div class="row-meta">${new Date(po.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div></div>
         <div class="row-right">
           <div class="num" style="font-size:12.5px;">Rp ${parseFloat(po.total_estimasi).toLocaleString('id-ID')}</div>
-          <span class="pill ${po.status === 'diterima_lengkap' ? 'ok' : po.status === 'dibatalkan' ? 'crit' : 'warn'}">${STATUS_LABEL[po.status]}</span>
+          <span class="pill ${po.status === 'diterima_lengkap' ? 'ok' : po.status === 'dibatalkan' ? 'crit' : 'warn'}">${STATUS_LABEL[po.status] || po.status}</span>
+          ${po.status === 'menunggu_persetujuan' && currentProfile.role === 'owner' ? `<div style="display:flex; gap:6px; margin-top:4px;"><button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--good);" onclick="setujuiPO('${po.id}')">Setujui</button><button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="tolakPO('${po.id}')">Tolak</button></div>` : ''}
           ${['dipesan','diterima_sebagian'].includes(po.status) ? `<button class="btn-secondary" style="font-size:10px; padding:3px 7px; margin-top:4px;" onclick="tutupPO('${po.id}')">Tutup PO Ini</button>` : ''}
         </div>
       </div>`).join('');
+  }
+
+  async function setujuiPO(poId){
+    await sb.from('purchase_orders').update({ status: 'dipesan' }).eq('id', poId);
+    showToast('✓ PO disetujui — siap dipesan ke supplier');
+    await loadPOHistory();
+  }
+  async function tolakPO(poId){
+    if (!confirm('Tolak PO ini? Statusnya akan dibatalkan.')) return;
+    await sb.from('purchase_orders').update({ status: 'dibatalkan' }).eq('id', poId);
+    showToast('PO ditolak');
+    await loadPOHistory();
   }
 
   async function tutupPO(poId){
@@ -7465,25 +7619,123 @@
     showToast('✓ File Excel diunduh');
   }
 
-  (async () => {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session){ await initApp(); }
-  })();
+  // ================= TUGAS HARIAN (biar Owner tidak perlu briefing tatap muka) =================
+  async function toggleTugasKaryawanList(){
+    const target = document.getElementById('tg-target').value;
+    const wrap = document.getElementById('tg-karyawan-list');
+    if (target !== 'individu'){ wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    wrap.innerHTML = '<div class="loading-note">Memuat karyawan…</div>';
+    const { data } = await sb.from('employees').select('id, nama, jabatan, profile_id').eq('tenant_id', currentProfile.tenant_id).eq('status','aktif').not('profile_id','is',null);
+    if (!data || data.length === 0){ wrap.innerHTML = '<div class="loading-note">Belum ada karyawan dengan akun login.</div>'; return; }
+    wrap.innerHTML = data.map(e => `
+      <label style="display:flex; align-items:center; gap:8px; padding:5px 0; font-size:12.5px; cursor:pointer;">
+        <input type="checkbox" class="tg-karyawan-check" value="${e.profile_id}"> ${e.nama} <span style="color:var(--ink-soft);">(${e.jabatan||''})</span>
+      </label>`).join('');
+  }
+
+  function openTugasModal(){
+    ['tg-judul','tg-deskripsi'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('tg-target').value = 'semua';
+    document.getElementById('tg-karyawan-list').style.display = 'none';
+    document.getElementById('tugas-modal').classList.add('show');
+  }
+
+  async function submitTugas(){
+    const judul = document.getElementById('tg-judul').value.trim();
+    if (!judul){ showToast('Judul tugas wajib diisi.', true); return; }
+    const btn = document.getElementById('tg-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+
+    const target = document.getElementById('tg-target').value;
+    const deskripsi = document.getElementById('tg-deskripsi').value.trim() || null;
+    const prioritas = document.getElementById('tg-prioritas').value;
+    const base = { tenant_id: currentProfile.tenant_id, judul, deskripsi, prioritas, dibuat_oleh: currentProfile.id };
+
+    let rows = [];
+    if (target === 'semua'){
+      rows = [{ ...base, ditugaskan_ke: null, ditugaskan_role: null }];
+    } else if (target.startsWith('role:')){
+      rows = [{ ...base, ditugaskan_ke: null, ditugaskan_role: target.split(':')[1] }];
+    } else if (target === 'individu'){
+      const dipilih = Array.from(document.querySelectorAll('.tg-karyawan-check:checked')).map(el => el.value);
+      if (dipilih.length === 0){ showToast('Pilih minimal satu karyawan.', true); btn.disabled = false; btn.textContent = 'Kirim Tugas'; return; }
+      rows = dipilih.map(profileId => ({ ...base, ditugaskan_ke: profileId, ditugaskan_role: null }));
+    }
+
+    const { error } = await sb.from('tugas_harian').insert(rows);
+    btn.disabled = false; btn.textContent = 'Kirim Tugas';
+    if (error){ showToast('Gagal mengirim: ' + error.message, true); return; }
+    showToast(`✓ Tugas dikirim ke ${rows.length > 1 ? rows.length + ' karyawan' : (target === 'semua' ? 'semua karyawan' : target.startsWith('role:') ? 'semua ' + target.split(':')[1] : '1 karyawan')}`);
+    closeModal('tugas-modal');
+    await loadTugasHarian();
+  }
+
+  async function loadTugasHarian(){
+    const el = document.getElementById('tugas-harian-list');
+    if (!el) return;
+    const isOwner = currentProfile.role === 'owner';
+
+    if (isOwner){
+      // Owner lihat SEMUA tugas hari ini + status siapa yang sudah/belum selesai — buat dipantau
+      const today = new Date().toISOString().slice(0,10);
+      const [{ data: tugas }, { data: karyawanList }] = await Promise.all([
+        sb.from('tugas_harian').select('*').eq('tenant_id', currentProfile.tenant_id).eq('tanggal', today).order('created_at', { ascending: false }),
+        sb.from('employees').select('profile_id, nama').eq('tenant_id', currentProfile.tenant_id).not('profile_id','is',null),
+      ]);
+      const namaMap = {}; (karyawanList||[]).forEach(k => namaMap[k.profile_id] = k.nama);
+      if (!tugas || tugas.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada tugas dikirim hari ini.</div>'; return; }
+      const PRIORITAS_WARNA = { tinggi:'var(--danger)', sedang:'var(--amber)', rendah:'var(--ink-soft)' };
+      el.innerHTML = tugas.map(t => {
+        const targetLabel = t.ditugaskan_ke ? (namaMap[t.ditugaskan_ke] || 'Karyawan') : t.ditugaskan_role ? `Semua ${t.ditugaskan_role}` : 'Semua Karyawan';
+        return `<div class="row-item">
+          <div class="emp-dot" style="background:${t.status==='selesai'?'var(--good-tint)':'var(--surface-2)'}; color:${t.status==='selesai'?'var(--good)':PRIORITAS_WARNA[t.prioritas]};">${t.status==='selesai'?'✓':'●'}</div>
+          <div><div class="row-name">${t.judul}</div><div class="row-meta">Untuk: ${targetLabel}${t.deskripsi ? ' · ' + t.deskripsi : ''}</div></div>
+          <div class="row-right"><span class="pill ${t.status==='selesai'?'ok':'warn'}">${t.status==='selesai'?'Selesai':'Belum'}</span></div>
+        </div>`;
+      }).join('');
+    } else {
+      // Karyawan biasa: cuma lihat tugas buat dirinya, bisa tandai selesai
+      const today = new Date().toISOString().slice(0,10);
+      const { data: tugas } = await sb.from('tugas_harian').select('*').eq('tenant_id', currentProfile.tenant_id).eq('tanggal', today)
+        .or(`ditugaskan_ke.eq.${currentProfile.id},ditugaskan_role.eq.${currentProfile.role},and(ditugaskan_ke.is.null,ditugaskan_role.is.null)`)
+        .order('created_at', { ascending: false });
+      if (!tugas || tugas.length === 0){ el.innerHTML = '<div class="loading-note">Tidak ada tugas khusus hari ini — kerjakan seperti biasa 👍</div>'; return; }
+      const PRIORITAS_WARNA = { tinggi:'var(--danger)', sedang:'var(--amber)', rendah:'var(--ink-soft)' };
+      el.innerHTML = tugas.map(t => `
+        <div class="row-item">
+          <div class="emp-dot" style="background:var(--surface-2); color:${PRIORITAS_WARNA[t.prioritas]};">●</div>
+          <div><div class="row-name" style="${t.status==='selesai'?'text-decoration:line-through; opacity:0.6;':''}">${t.judul}</div><div class="row-meta">${t.deskripsi || ''}</div></div>
+          <div class="row-right">
+            ${t.status === 'selesai'
+              ? `<span class="pill ok">✓ Selesai</span>`
+              : `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="tandaiTugasSelesai('${t.id}')">Tandai Selesai</button>`}
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  async function tandaiTugasSelesai(id){
+    const { error } = await sb.from('tugas_harian').update({ status: 'selesai', diselesaikan_pada: new Date().toISOString() }).eq('id', id);
+    if (error){ showToast('Gagal update: ' + error.message, true); return; }
+    showToast('✓ Tugas ditandai selesai');
+    await loadTugasHarian();
+  }
 
   // ================= WIDGET BANTUAN AI (asisten cara pakai aplikasi) =================
   const PANDUAN_APLIKASI = `Kamu adalah asisten bantuan untuk aplikasi kasir & manajemen usaha "UMKMpro AI" (khusus apotek). Jawab singkat, jelas, langkah demi langkah, dalam Bahasa Indonesia santai tapi sopan. Kalau pertanyaan di luar topik aplikasi ini, arahkan balik dengan ramah. Berikut panduan tiap menu di aplikasi:
 
-**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan).
+**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama.
 
 **Kasir/POS**: ketik nama obat di bar pencarian atau pakai tombol Scan (kamera) / Scan Kartu pelanggan. Tap produk: kalau produk sederhana langsung masuk keranjang; kalau produk punya satuan kemasan (Box dll) akan muncul popup pilih jumlah & satuan. Atur qty pakai tombol +/− di keranjang. Pilih metode bayar (Tunai/QRIS/Debit-Kredit), bisa split bayar campur. Setelah checkout bisa cetak struk (print biasa, kirim WA, atau cetak langsung ke printer Bluetooth thermal kalau sudah di-pairing).
 
-**Stok & Gudang**: tombol "Scan Barang Masuk" buat nambah stok barang yang SUDAH terdaftar (auto minta batch, kedaluwarsa, jumlah, harga modal). Tombol "🏷️ Daftarkan Produk Baru" (untuk admin gudang) buat produk BARU BELUM ada, harga jualnya otomatis dihitung sistem dari markup per kategori yang diatur Owner — admin gudang tidak perlu tahu harga jualnya. Tombol "Tambah Produk (Atur Harga)" cuma untuk Owner/Apoteker, bisa atur harga modal & jual manual sekaligus lihat margin. Ada juga tab Kombinasi Produk (bundling), Utang Supplier, Stock Opname (hitung fisik), Rekomendasi Pesanan, dan Analisis Pareto (produk mana yang paling laku + rekomendasi naik/turun margin otomatis).
+**Stok & Gudang**: tombol "Scan Barang Masuk" buat nambah stok barang yang SUDAH terdaftar (auto minta batch, kedaluwarsa, jumlah, harga modal). Tombol "🏷️ Daftarkan Produk Baru" (untuk admin gudang) buat produk BARU BELUM ada, harga jualnya otomatis dihitung sistem dari markup per kategori yang diatur Owner — admin gudang tidak perlu tahu harga jualnya. Tombol "Tambah Produk (Atur Harga)" cuma untuk Owner/Apoteker, bisa atur harga modal & jual manual sekaligus lihat margin. Ada juga tab Kombinasi Produk (bundling), Utang Supplier, Stock Opname (hitung fisik), Rekomendasi Pesanan, dan Analisis Pareto (produk mana yang paling laku + rekomendasi naik/turun margin otomatis). Alur pemesanan ke supplier: staf non-Owner bikin PO dari Rekomendasi Pesanan → statusnya "Menunggu Persetujuan Owner" → Owner tinggal tap Setujui/Tolak, tidak perlu susun manual. Alur bayar utang supplier: staf ajukan "Sudah Dibayar" → Owner konfirmasi jadi Lunas (Owner sendiri bisa langsung tandai lunas tanpa approval tambahan).
 
 **Laporan Keuangan**: pilih periode (Hari Ini/Minggu/Bulan/Tahun). Ada grafik tren Omzet vs Laba, Laporan Laba Rugi lengkap, Arus Kas, PPN Keluaran (kalau status PKP diaktifkan di menu Pajak), dan Neraca (estimasi posisi Aset/Kewajiban/Modal). Tombol "+ Catat Biaya" buat catat biaya operasional (sewa, listrik, gaji, dll) per kategori. Tombol "Ekspor Excel" buat unduh laporan. Panel "Setor/Tarik Modal Owner" buat catat kalau Owner masukin uang pribadi ke usaha (Setor Modal) atau ambil uang usaha buat pribadi (Tarik Modal).
 
 **Karyawan & Shift**: kelola data karyawan, absen, jadwal shift, pengajuan cuti, lembur, gaji/kasbon, evaluasi kinerja. Owner bisa undang karyawan buat punya akun login sendiri dengan peran (role) tertentu: Owner (akses penuh), Apoteker, Kasir, Admin Gudang, HR, Marketing — tiap peran cuma lihat menu sesuai tugasnya.
 
-**Pelanggan & Piutang**: catat piutang pelanggan (ada tanggal jatuh tempo + tombol ingatkan WA), retur barang, poin loyalitas pelanggan, pesanan online (toko online), buat promosi, daftar tunggu barang kosong, dan pelanggan khusus/reseller.
+**Pelanggan & Piutang**: catat piutang pelanggan (ada tanggal jatuh tempo + tombol ingatkan WA), retur barang, poin loyalitas pelanggan, pesanan online (toko online), tab "Buat Promosi" (AI generate 3 variasi teks promosi otomatis dari produk+jenis promo pilihan, lalu bisa dikirim ke target pelanggan tertentu — semua/belum belanja 30 hari/member — tinggal tap "Kirim" per pelanggan, WA terbuka dengan teks sudah terisi), daftar tunggu barang kosong, dan pelanggan khusus/reseller.
 
 **Pajak**: isi profil pajak usaha (NPWP, Bentuk Badan Usaha: Perorangan/CV/PT, status PKP, skema pajak), dan atur pengingat tenggat pajak.
 
@@ -7532,6 +7784,11 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     }
     box.scrollTop = box.scrollHeight;
   }
+
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session){ await initApp(); }
+  })();
 </script>
 
 </body>
