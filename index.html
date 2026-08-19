@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v54-1730</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v57-1900</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -1185,6 +1185,11 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
           </div>
           <div class="panel-body" style="font-size:11.5px; color:var(--ink-soft); padding:14px 18px;">Tap tombol di atas buat unduh/cetak surat keterangan kerja terbaru, misalnya buat keperluan pinjaman bank.</div>
         </div>
+        <div class="panel" id="ps-kontrak-panel" style="display:none;">
+          <div class="panel-head"><div class="panel-title">📄 Kontrak Kerja Saya</div></div>
+          <div class="panel-body" id="ps-kontrak-list"></div>
+          <div class="panel-body" style="font-size:11px; color:var(--ink-soft); padding:0 18px 14px;">Tap "Lihat &amp; Cetak" buat buka kontraknya, lalu simpan sebagai PDF lewat menu Print/Bagikan di HP kamu.</div>
+        </div>
         <div class="panel" id="ps-peringatan-panel" style="display:none;">
           <div class="panel-head"><div class="panel-title">Riwayat Peringatan</div></div>
           <div class="panel-body" id="ps-peringatan-list"></div>
@@ -1434,8 +1439,33 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     <main>
       <div class="topbar">
         <div>
-          <div class="greeting-eyebrow">Pajak</div>
-          <h1 class="greeting">Profil &amp; Pengingat Pajak</h1>
+          <div class="greeting-eyebrow">Pajak &amp; Profil Usaha</div>
+          <h1 class="greeting">Profil, Pajak &amp; Pengingat</h1>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">🏢 Profil Usaha</div></div>
+        <div class="panel-body">
+          <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:12px;">Data ini otomatis muncul di header &amp; footer surat kontrak, surat keterangan kerja, ID card, dan dokumen lain — sekali diisi di sini, langsung terpakai di semua tempat.</div>
+          <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+            <div id="pu-logo-preview" style="width:64px; height:64px; border-radius:14px; background:var(--surface-2) center/cover no-repeat; border:1.5px solid var(--line); flex-shrink:0;"></div>
+            <button class="btn-secondary" onclick="document.getElementById('pu-logo-input').click()">📷 Ganti Logo</button>
+            <input type="file" id="pu-logo-input" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
+          </div>
+          <div class="field"><label>Nama Usaha</label><input type="text" id="pu-nama-usaha" placeholder="Contoh: Apotek Sehat Farma"></div>
+          <div class="field">
+            <label>Jenis Usaha</label>
+            <select id="pu-jenis-usaha">
+              <option value="apotek">Apotek</option>
+              <option value="toko_obat">Toko Obat</option>
+              <option value="klinik">Klinik</option>
+              <option value="lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div class="field"><label>Email Usaha</label><input type="email" id="pu-email" placeholder="usaha@email.com"></div>
+          <div class="field"><label>No. WhatsApp Usaha</label><input type="text" id="pu-wa" placeholder="08xxxxxxxxxx"></div>
+          <div class="field"><label>Alamat Usaha</label><textarea id="pu-alamat" rows="2" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit;" placeholder="Alamat lengkap usaha"></textarea></div>
+          <button class="btn-primary" style="width:100%; justify-content:center;" onclick="simpanProfilUsaha()" id="pu-submit-btn">Simpan Profil Usaha</button>
         </div>
       </div>
       <div class="grid-2">
@@ -6149,7 +6179,7 @@ Baca & tanda tangan kontrak kerja</textarea>
   async function loadPajakPage(){
     const [{ data: profile }, { data: tenantData }] = await Promise.all([
       sb.from('tax_profiles').select('*').eq('tenant_id', currentProfile.tenant_id).maybeSingle(),
-      sb.from('tenants').select('bentuk_badan_usaha').eq('id', currentProfile.tenant_id).single(),
+      sb.from('tenants').select('bentuk_badan_usaha, nama_usaha, jenis_usaha, email, no_whatsapp, alamat, logo_url').eq('id', currentProfile.tenant_id).single(),
     ]);
     if (profile){
       document.getElementById('tax-npwp').value = profile.npwp || '';
@@ -6159,7 +6189,33 @@ Baca & tanda tangan kontrak kerja</textarea>
     }
     document.getElementById('tax-badan-usaha').value = tenantData?.bentuk_badan_usaha || 'perorangan';
     updateCatatanBadanUsaha();
+
+    document.getElementById('pu-nama-usaha').value = tenantData?.nama_usaha || '';
+    document.getElementById('pu-jenis-usaha').value = tenantData?.jenis_usaha || 'apotek';
+    document.getElementById('pu-email').value = tenantData?.email || '';
+    document.getElementById('pu-wa').value = tenantData?.no_whatsapp || '';
+    document.getElementById('pu-alamat').value = tenantData?.alamat || '';
+    const puPreview = document.getElementById('pu-logo-preview');
+    if (puPreview) puPreview.style.backgroundImage = tenantData?.logo_url ? `url(${tenantData.logo_url})` : 'none';
+
     await loadTaxDeadlines();
+  }
+  async function simpanProfilUsaha(){
+    const namaUsaha = document.getElementById('pu-nama-usaha').value.trim();
+    if (!namaUsaha){ showToast('Nama usaha wajib diisi.', true); return; }
+    const btn = document.getElementById('pu-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    const { error } = await sb.from('tenants').update({
+      nama_usaha: namaUsaha,
+      jenis_usaha: document.getElementById('pu-jenis-usaha').value,
+      email: document.getElementById('pu-email').value.trim() || null,
+      no_whatsapp: document.getElementById('pu-wa').value.trim() || null,
+      alamat: document.getElementById('pu-alamat').value.trim() || null,
+    }).eq('id', currentProfile.tenant_id);
+    btn.disabled = false; btn.textContent = 'Simpan Profil Usaha';
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Profil usaha tersimpan — otomatis terpakai di semua dokumen');
+    document.getElementById('sidebar-tenant').textContent = namaUsaha;
   }
   async function saveTaxProfile(){
     const btn = document.getElementById('tax-save-btn');
@@ -6370,6 +6426,8 @@ Baca & tanda tangan kontrak kerja</textarea>
     if (updateErr){ showToast('Gagal menyimpan logo: ' + updateErr.message, true); return; }
 
     applyTenantLogo(logoUrl);
+    const puPreview = document.getElementById('pu-logo-preview');
+    if (puPreview) puPreview.style.backgroundImage = `url(${logoUrl})`;
     const ukuranKB = Math.round(compressedBlob.size / 1024);
     showToast(`✓ Logo diperbarui (${ukuranKB} KB, otomatis dikompres)`);
   }
@@ -7080,6 +7138,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     window.__psEmployeeId = emp.id;
     loadOnboardingKaryawanSendiri(emp.id);
     loadPeringatanKaryawanSendiri(emp.id);
+    loadKontrakSayaSendiri(emp.id, emp.nama);
 
     const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
 
@@ -8542,7 +8601,7 @@ Baca & tanda tangan kontrak kerja</textarea>
   // ================= WIDGET BANTUAN AI (asisten cara pakai aplikasi) =================
   const PANDUAN_APLIKASI = `Kamu adalah asisten bantuan untuk aplikasi kasir & manajemen usaha "UMKMpro AI" (khusus apotek). Jawab singkat, jelas, langkah demi langkah, dalam Bahasa Indonesia santai tapi sopan. Kalau pertanyaan di luar topik aplikasi ini, arahkan balik dengan ramah. Berikut panduan tiap menu di aplikasi:
 
-**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada panel **"🤖 Saran Tugas Otomatis"** (khusus Owner) — sistem otomatis deteksi masalah (stok menipis, obat mendekati kedaluwarsa, utang/piutang segera jatuh tempo) dan sarankan tugas ke role yang tepat (Admin Gudang, Apoteker, Kasir), Owner tinggal tap "✓ Setujui & Kirim", tidak perlu ngetik manual. Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas manual ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama. Fitur HR tambahan: **Kuota Cuti Otomatis**, **Riwayat Peringatan/SP**, **Onboarding Checklist**, **Surat Keterangan Kerja** otomatis. Ada juga **Seleksi Karyawan**: Owner bikin **Bank Soal** pilihan ganda per posisi, lalu **Tambah Kandidat** — sistem otomatis buat link tes unik yang bisa dikerjakan kandidat tanpa perlu akun/login, hasil dan skornya otomatis dihitung di server (anti-contek), Owner tinggal lihat skor dan tap Terima/Tolak. Ada juga **fitur anti-nepotisme**: form Tambah Karyawan & Tambah Kandidat punya kolom deklarasi transparan "punya hubungan keluarga dengan Owner/karyawan lain" — kalau diisi, muncul tag "👪 Keluarga" di daftar karyawan/kandidat. **Gaji pokok otomatis dipotong sesuai persentase kehadiran** — pola kerja standar **6 hari kerja/1 hari libur per minggu** (pakai data jadwal shift kalau Owner sudah isi, kalau belum diasumsikan otomatis). **Cuti Tahunan** dikecualikan dari potongan, tapi **Sakit/Izin tetap dihitung sebagai ketidakhadiran yang memotong gaji** meskipun ada surat dokter (surat dokter cuma bukti resmi, bukan pembebas potongan) — saat ajukan sakit, karyawan bisa upload foto surat dokter/resep obat. **Alpa (tidak hadir tanpa keterangan sama sekali) terdeteksi otomatis oleh sistem tiap malam** dan langsung dicatat sebagai peringatan progresif: alpa ke-1 = Teguran Lisan, ke-2 = SP1, ke-3 = SP2, ke-4 dst = SP3 — tanpa Owner perlu input manual. **Slip gaji juga dihitung otomatis tiap tanggal 1**, muncul di Dashboard panel "🧾 Slip Gaji Otomatis Siap Dikirim", Owner tinggal tap "Kirim WA" per karyawan. **Potongan BPJS bersifat opsional** (toggle di menu HR → panel "🏥 Potongan BPJS") — wajar dimatikan untuk UMKM yang belum daftarkan karyawan ke BPJS; kalau dimatikan, slip gaji dan surat kontrak otomatis tidak menyebut BPJS sama sekali. Menu di sidebar sekarang bernama **"HR"** (Human Resource) — isinya sub-fitur Karyawan & Shift lengkap. Kalau ada komplain gaji baru yang belum dibalas, muncul **badge angka merah** di menu HR (tanpa perlu buka menunya dulu buat tahu). Karyawan yang kurang puas sama slip gajinya bisa tap **"💬 Komplain"** di riwayat gaji-nya (Profil Saya), Owner/HR lihat & balas di menu HR panel "💬 Komplain Gaji".
+**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada panel **"🤖 Saran Tugas Otomatis"** (khusus Owner) — sistem otomatis deteksi masalah (stok menipis, obat mendekati kedaluwarsa, utang/piutang segera jatuh tempo) dan sarankan tugas ke role yang tepat (Admin Gudang, Apoteker, Kasir), Owner tinggal tap "✓ Setujui & Kirim", tidak perlu ngetik manual. Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas manual ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama. Fitur HR tambahan: **Kuota Cuti Otomatis**, **Riwayat Peringatan/SP**, **Onboarding Checklist**, **Surat Keterangan Kerja** otomatis. Ada juga **Seleksi Karyawan**: Owner bikin **Bank Soal** pilihan ganda per posisi, lalu **Tambah Kandidat** — sistem otomatis buat link tes unik yang bisa dikerjakan kandidat tanpa perlu akun/login, hasil dan skornya otomatis dihitung di server (anti-contek), Owner tinggal lihat skor dan tap Terima/Tolak. Ada juga **fitur anti-nepotisme**: form Tambah Karyawan & Tambah Kandidat punya kolom deklarasi transparan "punya hubungan keluarga dengan Owner/karyawan lain" — kalau diisi, muncul tag "👪 Keluarga" di daftar karyawan/kandidat. **Gaji pokok otomatis dipotong sesuai persentase kehadiran** — pola kerja standar **6 hari kerja/1 hari libur per minggu** (pakai data jadwal shift kalau Owner sudah isi, kalau belum diasumsikan otomatis). **Cuti Tahunan** dikecualikan dari potongan, tapi **Sakit/Izin tetap dihitung sebagai ketidakhadiran yang memotong gaji** meskipun ada surat dokter (surat dokter cuma bukti resmi, bukan pembebas potongan) — saat ajukan sakit, karyawan bisa upload foto surat dokter/resep obat. **Alpa (tidak hadir tanpa keterangan sama sekali) terdeteksi otomatis oleh sistem tiap malam** dan langsung dicatat sebagai peringatan progresif: alpa ke-1 = Teguran Lisan, ke-2 = SP1, ke-3 = SP2, ke-4 dst = SP3 — tanpa Owner perlu input manual. **Slip gaji juga dihitung otomatis tiap tanggal 1**, muncul di Dashboard panel "🧾 Slip Gaji Otomatis Siap Dikirim", Owner tinggal tap "Kirim WA" per karyawan. **Potongan BPJS bersifat opsional** (toggle di menu HR → panel "🏥 Potongan BPJS") — wajar dimatikan untuk UMKM yang belum daftarkan karyawan ke BPJS; kalau dimatikan, slip gaji dan surat kontrak otomatis tidak menyebut BPJS sama sekali. Menu di sidebar sekarang bernama **"HR"** (Human Resource) — isinya sub-fitur Karyawan & Shift lengkap. Kalau ada komplain gaji baru yang belum dibalas, muncul **badge angka merah** di menu HR (tanpa perlu buka menunya dulu buat tahu). Karyawan yang kurang puas sama slip gajinya bisa tap **"💬 Komplain"** di riwayat gaji-nya (Profil Saya), Owner/HR lihat & balas di menu HR panel "💬 Komplain Gaji". Setiap karyawan bisa lihat & cetak/simpan **kontrak kerjanya sendiri kapan saja dalam bentuk digital** (panel "📄 Kontrak Kerja Saya" di Profil Saya, tap "Lihat & Cetak" lalu simpan sebagai PDF lewat menu Print HP) — jadi karyawan tetap pegang versi fisik yang ditandatangani, sekaligus punya salinan digital yang bisa diakses ulang kapan saja tanpa minta ke Owner.
 
 **Kasir/POS**: ketik nama obat di bar pencarian atau pakai tombol Scan (kamera) / Scan Kartu pelanggan. Tap produk: kalau produk sederhana langsung masuk keranjang; kalau produk punya satuan kemasan (Box dll) akan muncul popup pilih jumlah & satuan. Atur qty pakai tombol +/− di keranjang. Pilih metode bayar (Tunai/QRIS/Debit-Kredit), bisa split bayar campur. Setelah checkout bisa cetak struk (print biasa, kirim WA, atau cetak langsung ke printer Bluetooth thermal kalau sudah di-pairing).
 
@@ -8554,7 +8613,7 @@ Baca & tanda tangan kontrak kerja</textarea>
 
 **Pelanggan & Piutang**: catat piutang pelanggan (ada tanggal jatuh tempo + tombol ingatkan WA), retur barang, poin loyalitas pelanggan, pesanan online (toko online), tab "Buat Promosi" (AI generate 3 variasi teks promosi otomatis dari produk+jenis promo pilihan, lalu bisa dikirim ke target pelanggan tertentu — semua/belum belanja 30 hari/member — tinggal tap "Kirim" per pelanggan, WA terbuka dengan teks sudah terisi), daftar tunggu barang kosong, dan pelanggan khusus/reseller.
 
-**Pajak**: isi profil pajak usaha (NPWP, Bentuk Badan Usaha: Perorangan/CV/PT, status PKP, skema pajak), dan atur pengingat tenggat pajak.
+**Pajak & Profil Usaha**: ada panel **"🏢 Profil Usaha"** (Nama Usaha, Jenis Usaha, Email, No. WhatsApp, Alamat, Logo) — data ini otomatis muncul di header & footer semua dokumen (surat kontrak kerja, surat keterangan kerja, ID card karyawan) tanpa perlu isi ulang di tiap tempat. Di bawahnya ada profil pajak usaha (NPWP, Bentuk Badan Usaha: Perorangan/CV/PT, status PKP, skema pajak), dan pengingat tenggat pajak.
 
 **Langganan**: cek status langganan aplikasi ini sendiri (trial/aktif) dan riwayat tagihan.
 
@@ -8942,6 +9001,22 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       </div>`).join('');
   }
 
+  // Kontrak kerja milik karyawan sendiri — bisa lihat & cetak/simpan PDF kapan saja (digital), sekaligus tetap ada versi fisik ditandatangani
+  async function loadKontrakSayaSendiri(employeeId, namaKaryawan){
+    const panel = document.getElementById('ps-kontrak-panel');
+    const el = document.getElementById('ps-kontrak-list');
+    if (!panel || !el) return;
+    const { data } = await sb.from('kontrak_karyawan').select('*').eq('employee_id', employeeId).eq('status','aktif').order('created_at', { ascending: false });
+    if (!data || data.length === 0){ panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    window.__kontrakSayaData = data.map(k => ({ ...k, employees: { nama: namaKaryawan, jabatan: currentProfile.role } }));
+    el.innerHTML = data.map((k, idx) => `
+      <div class="row-item">
+        <div><div class="row-name">Kontrak ${DIVISI_LABEL[k.divisi]}</div><div class="row-meta">Berlaku sejak ${new Date(k.tanggal_mulai).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div></div>
+        <div class="row-right"><button class="btn-secondary" style="font-size:10.5px; padding:5px 10px;" onclick="cetakSuratKontrak(window.__kontrakSayaData[${idx}])">📄 Lihat &amp; Cetak</button></div>
+      </div>`).join('');
+  }
+
   // ================= ONBOARDING CHECKLIST =================
   async function openOnboardingModal(){
     const emps = await getActiveEmployeesForSelect();
@@ -9222,7 +9297,8 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       pasal('Jam &amp; Hari Kerja', 'Karyawan bekerja dengan pola <b>6 (enam) hari kerja dan 1 (satu) hari libur</b> per minggu, sesuai jadwal shift yang diatur oleh Pemberi Kerja, kecuali disepakati lain.'),
       pasal('Cuti &amp; Izin', `Karyawan berhak atas cuti tahunan sebanyak <b>${kuotaCuti} hari kerja</b> per tahun. Izin sakit tetap wajib disertai bukti keterangan dokter, namun tetap diperhitungkan sebagai ketidakhadiran dalam perhitungan gaji sesuai kebijakan Pemberi Kerja.`),
       pasal('Kerahasiaan', 'Karyawan wajib menjaga kerahasiaan data pelanggan, data usaha, dan informasi internal lainnya, baik selama maupun setelah masa kerja berakhir.'),
-      pasal('Pemutusan Hubungan Kerja', 'Masing-masing pihak dapat mengakhiri perjanjian ini dengan pemberitahuan tertulis minimal <b>30 (tiga puluh) hari</b> sebelumnya, kecuali dalam hal pelanggaran berat yang dapat diakhiri seketika sesuai peraturan ketenagakerjaan yang berlaku.'),
+      pasal('Sanksi atas Pelanggaran', `Pelanggaran terhadap tata tertib atau kewajiban dalam perjanjian ini dikenakan sanksi bertahap sesuai catatan pada sistem: <b>Teguran Lisan → Surat Peringatan 1 (SP1) → Surat Peringatan 2 (SP2) → Surat Peringatan 3 (SP3)</b>. Setiap Surat Peringatan berlaku selama <b>6 (enam) bulan</b> sejak diterbitkan. Apabila Karyawan melakukan pelanggaran kembali dalam masa berlaku SP3, Pemberi Kerja berhak melakukan Pemutusan Hubungan Kerja sesuai ketentuan Pasal 161 UU Ketenagakerjaan yang berlaku. Pelanggaran berat (seperti pencurian, penggelapan, atau kebocoran data rahasia yang disengaja) dapat diproses sesuai mekanisme yang diatur peraturan perundang-undangan ketenagakerjaan, termasuk kemungkinan pemutusan hubungan kerja tanpa melalui tahapan SP.`),
+      pasal('Pemutusan Hubungan Kerja', 'Masing-masing pihak dapat mengakhiri perjanjian ini dengan pemberitahuan tertulis minimal <b>30 (tiga puluh) hari</b> sebelumnya, kecuali dalam hal pelanggaran berat atau akumulasi SP3 sebagaimana diatur pada Pasal Sanksi di atas, yang dapat diakhiri seketika sesuai peraturan ketenagakerjaan yang berlaku.'),
       pasal('Penyelesaian Perselisihan', 'Apabila timbul perselisihan, kedua belah pihak sepakat menyelesaikannya secara musyawarah terlebih dahulu, dan apabila tidak tercapai kesepakatan akan diselesaikan sesuai peraturan perundang-undangan ketenagakerjaan yang berlaku di Indonesia.'),
       pasal('Ketentuan Lain', 'Hal-hal yang belum diatur dalam perjanjian ini akan diatur kemudian berdasarkan kesepakatan kedua belah pihak dan peraturan ketenagakerjaan yang berlaku.'),
     ].filter(Boolean).join('');
