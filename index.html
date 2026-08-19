@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v51-1610</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v52-1630</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -1009,8 +1009,11 @@
       </div>
 
       <div class="panel">
-        <div class="panel-head"><div class="panel-title">📢 Papan Pengumuman</div><button class="btn-secondary owner-only" onclick="openPengumumanModal()">+ Pengumuman</button></div>
-        <div class="panel-body" id="pengumuman-list"><div class="loading-note">Memuat…</div></div>
+        <div class="panel-head"><div class="panel-title">📢 Papan Pengumuman</div></div>
+        <div class="panel-body">
+          <div id="pengumuman-list"><div class="loading-note">Memuat…</div></div>
+          <button class="btn-primary owner-only" style="width:100%; justify-content:center; margin-top:10px;" onclick="openPengumumanModal()">📢 Buat Pengumuman</button>
+        </div>
       </div>
 
       <div class="panel">
@@ -1043,18 +1046,27 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       </div>
 
       <div class="panel">
-        <div class="panel-head"><div class="panel-title">🔄 Tukar Shift</div><button class="btn-secondary" onclick="openShiftSwapModal()">+ Ajukan Tukar</button></div>
-        <div class="panel-body" id="shift-swap-list"><div class="loading-note">Memuat…</div></div>
+        <div class="panel-head"><div class="panel-title">🔄 Tukar Shift</div></div>
+        <div class="panel-body">
+          <div id="shift-swap-list"><div class="loading-note">Memuat…</div></div>
+          <button class="btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="openShiftSwapModal()">🔄 Ajukan Tukar Shift</button>
+        </div>
       </div>
 
       <div class="panel owner-only">
-        <div class="panel-head"><div class="panel-title">⚠️ Riwayat Peringatan (SP)</div><button class="btn-secondary" onclick="openPeringatanModal()">+ Catat Peringatan</button></div>
-        <div class="panel-body" id="peringatan-list"><div class="loading-note">Memuat…</div></div>
+        <div class="panel-head"><div class="panel-title">⚠️ Riwayat Peringatan (SP)</div></div>
+        <div class="panel-body">
+          <div id="peringatan-list"><div class="loading-note">Memuat…</div></div>
+          <button class="btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="openPeringatanModal()">⚠️ Catat Peringatan</button>
+        </div>
       </div>
 
       <div class="panel owner-only">
-        <div class="panel-head"><div class="panel-title">✅ Onboarding Karyawan Baru</div><button class="btn-secondary" onclick="openOnboardingModal()">+ Buat Checklist</button></div>
-        <div class="panel-body" id="onboarding-owner-list"><div class="loading-note">Memuat…</div></div>
+        <div class="panel-head"><div class="panel-title">✅ Onboarding Karyawan Baru</div></div>
+        <div class="panel-body">
+          <div id="onboarding-owner-list"><div class="loading-note">Memuat…</div></div>
+          <button class="btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="openOnboardingModal()">✅ Buat Checklist Onboarding</button>
+        </div>
       </div>
 
       <div class="panel owner-only">
@@ -1063,13 +1075,19 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       </div>
 
       <div class="panel owner-only">
-        <div class="panel-head"><div class="panel-title">📝 Bank Soal Seleksi</div><button class="btn-secondary" onclick="openSoalModal()">+ Tambah Soal</button></div>
-        <div class="panel-body" id="soal-seleksi-list"><div class="loading-note">Memuat…</div></div>
+        <div class="panel-head"><div class="panel-title">📝 Bank Soal Seleksi</div></div>
+        <div class="panel-body">
+          <div id="soal-seleksi-list"><div class="loading-note">Memuat…</div></div>
+          <button class="btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="openSoalModal()">📝 Tambah Soal Seleksi</button>
+        </div>
       </div>
 
       <div class="panel owner-only">
-        <div class="panel-head"><div class="panel-title">🎯 Kandidat &amp; Hasil Tes</div><button class="btn-secondary" onclick="openKandidatModal()">+ Tambah Kandidat</button></div>
-        <div class="panel-body" id="kandidat-list"><div class="loading-note">Memuat…</div></div>
+        <div class="panel-head"><div class="panel-title">🎯 Kandidat &amp; Hasil Tes</div></div>
+        <div class="panel-body">
+          <div id="kandidat-list"><div class="loading-note">Memuat…</div></div>
+          <button class="btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="openKandidatModal()">🎯 Tambah Kandidat</button>
+        </div>
       </div>
 
       <div class="panel">
