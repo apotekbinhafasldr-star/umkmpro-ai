@@ -316,7 +316,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v40-0830</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v41-0900</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -1732,7 +1732,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     <div class="modal-title">Absen Sekarang</div>
     <div id="af-employee-info" style="font-size:12.5px; color:var(--ink-soft); margin-bottom:10px;"></div>
     <div id="af-camera-wrap" style="position:relative; width:100%; aspect-ratio:1; background:#000; border-radius:12px; overflow:hidden; margin-bottom:10px;">
-      <video id="af-video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
+      <video id="af-video" style="width:100%; height:100%; object-fit:cover;" playsinline muted autoplay></video>
       <canvas id="af-canvas" style="display:none;"></canvas>
       <img id="af-preview" style="display:none; width:100%; height:100%; object-fit:cover;">
     </div>
@@ -4574,7 +4574,9 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     // Nyalakan kamera depan
     try{
       afStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      document.getElementById('af-video').srcObject = afStream;
+      const videoEl = document.getElementById('af-video');
+      videoEl.srcObject = afStream;
+      videoEl.play().catch(() => {}); // jaring pengaman kalau autoplay diblokir browser
     } catch(err){
       document.getElementById('af-camera-wrap').innerHTML = '<div style="color:#fff; padding:20px; text-align:center; font-size:12px;">Tidak bisa akses kamera. Izinkan kamera di pengaturan browser.</div>';
     }
