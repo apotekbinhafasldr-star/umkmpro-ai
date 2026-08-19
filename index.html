@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v48-1400</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v49-1500</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -2543,7 +2543,7 @@ Baca & tanda tangan kontrak kerja</textarea>
 <div class="modal-overlay" id="bon-scan-modal">
   <div class="modal-card" style="max-width:560px;">
     <div class="modal-title">Scan Bon Pembelian (AI)</div>
-    <div class="auth-note">💡 Foto bon/faktur dari supplier, sistem baca teksnya otomatis. <b>Hasil OCR tidak selalu 100% akurat</b> — pastikan cek & lengkapi tiap baris sebelum konfirmasi ke stok.</div>
+    <div class="auth-note">🤖 Foto bon/faktur dari supplier, dibaca pakai AI (bukan OCR biasa) — jauh lebih pintar buat tabel rumit, otomatis abaikan teks yang bukan nama barang. <b>Tetap tidak selalu 100% akurat</b> — pastikan cek & lengkapi tiap baris sebelum konfirmasi ke stok.</div>
     <div style="font-size:11px; color:var(--ink-soft); margin:8px 0 14px; padding:10px 12px; background:var(--surface-2); border-radius:8px;">
       📸 <b>Tips foto yang bagus:</b> foto tegak lurus (jangan miring/serong), pencahayaan terang tanpa bayangan, isi penuh area foto dengan nota (jangan terlalu jauh). Nota dengan tabel banyak kolom sempit lebih sulit dibaca — kalau hasilnya berantakan, gunakan "+ Tambah Baris Manual" saja.
     </div>
@@ -7321,31 +7321,70 @@ Baca & tanda tangan kontrak kerja</textarea>
     });
   }
 
+  // Ubah foto jadi base64 buat dikirim ke AI Vision — diperkecil dulu (jaga rasio, tidak dipotong) biar tidak kelamaan upload
+  function resizeImageToBase64(file, maxDim){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      reader.onerror = reject;
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim){
+          const rasio = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * rasio); height = Math.round(height * rasio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]); // buang prefix data:image/jpeg;base64,
+      };
+      img.onerror = () => reject(new Error('File bukan gambar yang valid.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function processBonScan(event){
     const file = event.target.files[0];
     if (!file) return;
 
     document.getElementById('bon-progress').style.display = 'block';
-    document.getElementById('bon-progress-percent').textContent = 'Memproses foto…';
+    document.getElementById('bon-progress-percent').textContent = 'AI sedang membaca nota…';
 
     try{
-      const processedBlob = await preprocessImageForOCR(file);
-      const result = await Tesseract.recognize(processedBlob, 'ind+eng', {
-        logger: (m) => {
-          if (m.status === 'recognizing text'){
-            document.getElementById('bon-progress-percent').textContent = Math.round(m.progress * 100) + '%';
-          }
-        }
+      const base64 = await resizeImageToBase64(file, 1568);
+      const daftarProdukRingkas = products.map(p => p.nama).join(', ');
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+              { type: 'text', text: `Ini foto nota/bon/faktur pembelian barang apotek. Baca isinya dan ambil HANYA baris yang benar-benar berisi nama barang yang dibeli beserta jumlahnya (qty/unit). ABAIKAN sepenuhnya: kop surat, header aplikasi/email (seperti "Inbox", nama akun email, jam, tanggal render), nomor halaman, QR code, URL, kolom harga/total per baris, tanda tangan, catatan kaki, dan apa pun yang bukan baris nama barang.\n\nDaftar produk yang SUDAH terdaftar di sistem (buat referensi pencocokan nama, kalau nama di nota mirip salah satu ini pakai nama dari daftar ini): ${daftarProdukRingkas || '(belum ada produk terdaftar)'}\n\nBalas HANYA dalam format JSON array, tanpa teks lain, tanpa markdown code fence, contoh persis:\n[{"nama":"Paracetamol 500mg","qty":12},{"nama":"Cendo Xitrol","qty":6}]\n\nKalau qty tidak jelas/tidak ketemu di baris itu, isi qty dengan 1. Kalau sama sekali tidak ada baris barang yang terbaca, balas array kosong [].` }
+            ]
+          }],
+        }),
       });
+      const data = await response.json();
+      let teksJson = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('').trim();
+      teksJson = teksJson.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
+      const hasil = JSON.parse(teksJson);
 
-      const teksMentah = result.data.text;
-      // Ambil baris yang kemungkinan berisi nama barang + angka (harga/qty) — saring baris kosong/terlalu pendek
-      const baris = teksMentah.split('\n').map(b => b.trim()).filter(b => b.length > 3);
+      if (!Array.isArray(hasil) || hasil.length === 0){
+        throw new Error('AI tidak menemukan baris barang di foto ini. Coba foto ulang lebih jelas, atau isi manual pakai tombol "+ Tambah Baris Manual".');
+      }
 
-      bonExtractedLines = baris.map(b => {
-        // Coba tebak angka terakhir di baris sebagai qty (heuristik sederhana, user tetap harus cek manual)
-        const angkaMatch = b.match(/(\d+)\s*$/);
-        return { teksAsli: b, namaTebakan: angkaMatch ? b.replace(angkaMatch[0], '').trim() : b, qtyTebakan: angkaMatch ? parseInt(angkaMatch[1]) : '', productId: null };
+      bonExtractedLines = hasil.map(item => {
+        const namaAI = (item.nama || '').trim();
+        // Coba cocokkan otomatis ke produk yang sudah ada (biar user makin sedikit kerja manual)
+        const cocok = products.find(p => p.nama.toLowerCase() === namaAI.toLowerCase())
+          || products.find(p => p.nama.toLowerCase().includes(namaAI.toLowerCase()) || namaAI.toLowerCase().includes(p.nama.toLowerCase()));
+        return { teksAsli: namaAI, namaTebakan: namaAI, qtyTebakan: parseInt(item.qty) || 1, productId: cocok ? cocok.id : null };
       });
 
       document.getElementById('bon-progress').style.display = 'none';
@@ -7364,11 +7403,11 @@ Baca & tanda tangan kontrak kerja</textarea>
 
     wrap.innerHTML = bonExtractedLines.map((line, idx) => `
       <div style="background:var(--surface-2); border-radius:9px; padding:10px 12px; margin-bottom:8px;">
-        <div style="font-size:10.5px; color:var(--ink-soft); margin-bottom:6px; font-style:italic;">Terbaca: "${line.teksAsli}"</div>
+        <div style="font-size:10.5px; color:var(--ink-soft); margin-bottom:6px; font-style:italic;">Dibaca AI: "${line.teksAsli}"${line.productId ? ' <span style="color:var(--good); font-style:normal; font-weight:700;">✓ Auto-cocok</span>' : ''}</div>
         <div class="field-row" style="margin-bottom:6px;">
           <div class="field" style="margin-bottom:0;">
             <label style="font-size:10px;">Cocokkan ke Produk</label>
-            <select onchange="bonExtractedLines[${idx}].productId = this.value" style="font-size:12px; padding:7px 9px;">${optionsProduk}</select>
+            <select onchange="bonExtractedLines[${idx}].productId = this.value" style="font-size:12px; padding:7px 9px;">${optionsProduk.replace(`value="${line.productId}"`, `value="${line.productId}" selected`)}</select>
           </div>
           <div class="field" style="margin-bottom:0;">
             <label style="font-size:10px;">Jumlah</label>
@@ -8475,7 +8514,7 @@ Baca & tanda tangan kontrak kerja</textarea>
 
 **Kasir/POS**: ketik nama obat di bar pencarian atau pakai tombol Scan (kamera) / Scan Kartu pelanggan. Tap produk: kalau produk sederhana langsung masuk keranjang; kalau produk punya satuan kemasan (Box dll) akan muncul popup pilih jumlah & satuan. Atur qty pakai tombol +/− di keranjang. Pilih metode bayar (Tunai/QRIS/Debit-Kredit), bisa split bayar campur. Setelah checkout bisa cetak struk (print biasa, kirim WA, atau cetak langsung ke printer Bluetooth thermal kalau sudah di-pairing).
 
-**Stok & Gudang**: tombol "Scan Barang Masuk" buat nambah stok barang yang SUDAH terdaftar (auto minta batch, kedaluwarsa, jumlah, harga modal). Tombol "🏷️ Daftarkan Produk Baru" (untuk admin gudang) buat produk BARU BELUM ada, harga jualnya otomatis dihitung sistem dari markup per kategori yang diatur Owner — admin gudang tidak perlu tahu harga jualnya. Tombol "Tambah Produk (Atur Harga)" cuma untuk Owner/Apoteker, bisa atur harga modal & jual manual sekaligus lihat margin. Ada juga tab Kombinasi Produk (bundling), Utang Supplier, Stock Opname (hitung fisik), Rekomendasi Pesanan, dan Analisis Pareto (produk mana yang paling laku + rekomendasi naik/turun margin otomatis). Alur pemesanan ke supplier: staf non-Owner bikin PO dari Rekomendasi Pesanan → statusnya "Menunggu Persetujuan Owner" → Owner tinggal tap Setujui/Tolak, tidak perlu susun manual. Alur bayar utang supplier: staf ajukan "Sudah Dibayar" → Owner konfirmasi jadi Lunas (Owner sendiri bisa langsung tandai lunas tanpa approval tambahan).
+**Stok & Gudang**: tombol "Scan Barang Masuk" buat nambah stok barang yang SUDAH terdaftar (auto minta batch, kedaluwarsa, jumlah, harga modal). Tombol "🏷️ Daftarkan Produk Baru" (untuk admin gudang) buat produk BARU BELUM ada, harga jualnya otomatis dihitung sistem dari markup per kategori yang diatur Owner — admin gudang tidak perlu tahu harga jualnya. Tombol "Tambah Produk (Atur Harga)" cuma untuk Owner/Apoteker, bisa atur harga modal & jual manual sekaligus lihat margin. Ada juga tab Kombinasi Produk (bundling), Utang Supplier, Stock Opname (hitung fisik), Rekomendasi Pesanan, Analisis Pareto (produk mana yang paling laku + rekomendasi naik/turun margin otomatis), dan **Scan Bon Pembelian (AI)** — foto nota/faktur dari supplier, dibaca pakai AI Vision (Claude, bukan OCR biasa) yang otomatis abaikan teks yang bukan nama barang dan coba cocokkan otomatis ke produk yang sudah terdaftar, staf tinggal cek & lengkapi tiap baris sebelum konfirmasi ke stok. Alur pemesanan ke supplier: staf non-Owner bikin PO dari Rekomendasi Pesanan → statusnya "Menunggu Persetujuan Owner" → Owner tinggal tap Setujui/Tolak, tidak perlu susun manual. Alur bayar utang supplier: staf ajukan "Sudah Dibayar" → Owner konfirmasi jadi Lunas (Owner sendiri bisa langsung tandai lunas tanpa approval tambahan).
 
 **Laporan Keuangan**: pilih periode (Hari Ini/Minggu/Bulan/Tahun). Ada grafik tren Omzet vs Laba, Laporan Laba Rugi lengkap, Arus Kas, PPN Keluaran (kalau status PKP diaktifkan di menu Pajak), dan Neraca (estimasi posisi Aset/Kewajiban/Modal). Tombol "+ Catat Biaya" buat catat biaya operasional (sewa, listrik, gaji, dll) per kategori. Tombol "Ekspor Excel" buat unduh laporan. Panel "Setor/Tarik Modal Owner" buat catat kalau Owner masukin uang pribadi ke usaha (Setor Modal) atau ambil uang usaha buat pribadi (Tarik Modal).
 
