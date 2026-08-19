@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v52-1630</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v54-1730</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -999,6 +999,17 @@
             <label>Radius Toleransi (meter)</label>
             <input type="number" id="radius-absen-input" placeholder="150" onchange="updateRadiusAbsen(this.value)">
           </div>
+        </div>
+      </div>
+
+      <div class="panel owner-only">
+        <div class="panel-head"><div class="panel-title">🏥 Potongan BPJS</div></div>
+        <div class="panel-body" style="padding:16px 18px;">
+          <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+            <input type="checkbox" id="bpjs-aktif-toggle" style="width:20px; height:20px;" onchange="toggleBpjsAktif(this.checked)">
+            <span style="font-size:13px; font-weight:600;">Hitung potongan BPJS di slip gaji &amp; kontrak</span>
+          </label>
+          <div style="font-size:11.5px; color:var(--ink-soft); margin-top:8px;">Matikan kalau karyawan belum didaftarkan BPJS (wajar untuk skala UMKM) — slip gaji &amp; surat kontrak otomatis tidak menyebut potongan BPJS.</div>
         </div>
       </div>
 
@@ -8531,7 +8542,7 @@ Baca & tanda tangan kontrak kerja</textarea>
   // ================= WIDGET BANTUAN AI (asisten cara pakai aplikasi) =================
   const PANDUAN_APLIKASI = `Kamu adalah asisten bantuan untuk aplikasi kasir & manajemen usaha "UMKMpro AI" (khusus apotek). Jawab singkat, jelas, langkah demi langkah, dalam Bahasa Indonesia santai tapi sopan. Kalau pertanyaan di luar topik aplikasi ini, arahkan balik dengan ramah. Berikut panduan tiap menu di aplikasi:
 
-**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada panel **"🤖 Saran Tugas Otomatis"** (khusus Owner) — sistem otomatis deteksi masalah (stok menipis, obat mendekati kedaluwarsa, utang/piutang segera jatuh tempo) dan sarankan tugas ke role yang tepat (Admin Gudang, Apoteker, Kasir), Owner tinggal tap "✓ Setujui & Kirim", tidak perlu ngetik manual. Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas manual ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama. Fitur HR tambahan: **Kuota Cuti Otomatis**, **Riwayat Peringatan/SP**, **Onboarding Checklist**, **Surat Keterangan Kerja** otomatis. Ada juga **Seleksi Karyawan**: Owner bikin **Bank Soal** pilihan ganda per posisi, lalu **Tambah Kandidat** — sistem otomatis buat link tes unik yang bisa dikerjakan kandidat tanpa perlu akun/login, hasil dan skornya otomatis dihitung di server (anti-contek), Owner tinggal lihat skor dan tap Terima/Tolak. Ada juga **fitur anti-nepotisme**: form Tambah Karyawan & Tambah Kandidat punya kolom deklarasi transparan "punya hubungan keluarga dengan Owner/karyawan lain" — kalau diisi, muncul tag "👪 Keluarga" di daftar karyawan/kandidat. **Gaji pokok otomatis dipotong sesuai persentase kehadiran** — pola kerja standar **6 hari kerja/1 hari libur per minggu** (pakai data jadwal shift kalau Owner sudah isi, kalau belum diasumsikan otomatis). **Cuti Tahunan** dikecualikan dari potongan, tapi **Sakit/Izin tetap dihitung sebagai ketidakhadiran yang memotong gaji** meskipun ada surat dokter (surat dokter cuma bukti resmi, bukan pembebas potongan) — saat ajukan sakit, karyawan bisa upload foto surat dokter/resep obat. **Alpa (tidak hadir tanpa keterangan sama sekali) terdeteksi otomatis oleh sistem tiap malam** dan langsung dicatat sebagai peringatan progresif: alpa ke-1 = Teguran Lisan, ke-2 = SP1, ke-3 = SP2, ke-4 dst = SP3 — tanpa Owner perlu input manual. **Slip gaji juga dihitung otomatis tiap tanggal 1**, muncul di Dashboard panel "🧾 Slip Gaji Otomatis Siap Dikirim", Owner tinggal tap "Kirim WA" per karyawan. Menu di sidebar sekarang bernama **"HR"** (Human Resource) — isinya sub-fitur Karyawan & Shift lengkap. Kalau ada komplain gaji baru yang belum dibalas, muncul **badge angka merah** di menu HR (tanpa perlu buka menunya dulu buat tahu). Karyawan yang kurang puas sama slip gajinya bisa tap **"💬 Komplain"** di riwayat gaji-nya (Profil Saya), Owner/HR lihat & balas di menu HR panel "💬 Komplain Gaji".
+**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada panel **"🤖 Saran Tugas Otomatis"** (khusus Owner) — sistem otomatis deteksi masalah (stok menipis, obat mendekati kedaluwarsa, utang/piutang segera jatuh tempo) dan sarankan tugas ke role yang tepat (Admin Gudang, Apoteker, Kasir), Owner tinggal tap "✓ Setujui & Kirim", tidak perlu ngetik manual. Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas manual ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama. Fitur HR tambahan: **Kuota Cuti Otomatis**, **Riwayat Peringatan/SP**, **Onboarding Checklist**, **Surat Keterangan Kerja** otomatis. Ada juga **Seleksi Karyawan**: Owner bikin **Bank Soal** pilihan ganda per posisi, lalu **Tambah Kandidat** — sistem otomatis buat link tes unik yang bisa dikerjakan kandidat tanpa perlu akun/login, hasil dan skornya otomatis dihitung di server (anti-contek), Owner tinggal lihat skor dan tap Terima/Tolak. Ada juga **fitur anti-nepotisme**: form Tambah Karyawan & Tambah Kandidat punya kolom deklarasi transparan "punya hubungan keluarga dengan Owner/karyawan lain" — kalau diisi, muncul tag "👪 Keluarga" di daftar karyawan/kandidat. **Gaji pokok otomatis dipotong sesuai persentase kehadiran** — pola kerja standar **6 hari kerja/1 hari libur per minggu** (pakai data jadwal shift kalau Owner sudah isi, kalau belum diasumsikan otomatis). **Cuti Tahunan** dikecualikan dari potongan, tapi **Sakit/Izin tetap dihitung sebagai ketidakhadiran yang memotong gaji** meskipun ada surat dokter (surat dokter cuma bukti resmi, bukan pembebas potongan) — saat ajukan sakit, karyawan bisa upload foto surat dokter/resep obat. **Alpa (tidak hadir tanpa keterangan sama sekali) terdeteksi otomatis oleh sistem tiap malam** dan langsung dicatat sebagai peringatan progresif: alpa ke-1 = Teguran Lisan, ke-2 = SP1, ke-3 = SP2, ke-4 dst = SP3 — tanpa Owner perlu input manual. **Slip gaji juga dihitung otomatis tiap tanggal 1**, muncul di Dashboard panel "🧾 Slip Gaji Otomatis Siap Dikirim", Owner tinggal tap "Kirim WA" per karyawan. **Potongan BPJS bersifat opsional** (toggle di menu HR → panel "🏥 Potongan BPJS") — wajar dimatikan untuk UMKM yang belum daftarkan karyawan ke BPJS; kalau dimatikan, slip gaji dan surat kontrak otomatis tidak menyebut BPJS sama sekali. Menu di sidebar sekarang bernama **"HR"** (Human Resource) — isinya sub-fitur Karyawan & Shift lengkap. Kalau ada komplain gaji baru yang belum dibalas, muncul **badge angka merah** di menu HR (tanpa perlu buka menunya dulu buat tahu). Karyawan yang kurang puas sama slip gajinya bisa tap **"💬 Komplain"** di riwayat gaji-nya (Profil Saya), Owner/HR lihat & balas di menu HR panel "💬 Komplain Gaji".
 
 **Kasir/POS**: ketik nama obat di bar pencarian atau pakai tombol Scan (kamera) / Scan Kartu pelanggan. Tap produk: kalau produk sederhana langsung masuk keranjang; kalau produk punya satuan kemasan (Box dll) akan muncul popup pilih jumlah & satuan. Atur qty pakai tombol +/− di keranjang. Pilih metode bayar (Tunai/QRIS/Debit-Kredit), bisa split bayar campur. Setelah checkout bisa cetak struk (print biasa, kirim WA, atau cetak langsung ke printer Bluetooth thermal kalau sudah di-pairing).
 
@@ -9183,50 +9194,75 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
   // ================= CETAK SURAT KONTRAK KERJA =================
   // Bisa dipanggil dengan object kontrak langsung (setelah simpan / dari tombol daftar)
   async function cetakSuratKontrak(kontrak){
-    const { data: tenantData } = await sb.from('tenants').select('nama_usaha, alamat').eq('id', currentProfile.tenant_id).single();
+    const { data: tenantData } = await sb.from('tenants').select('nama_usaha, alamat, no_whatsapp, logo_url, bpjs_aktif').eq('id', currentProfile.tenant_id).single();
+    const bpjsAktif = !!tenantData?.bpjs_aktif;
 
     const totalTunjangan = (kontrak.tunjangan||[]).reduce((s,t)=>s+parseFloat(t.jumlah||0),0);
     const namaUsaha = tenantData?.nama_usaha || 'Usaha';
     const tglMulai = new Date(kontrak.tanggal_mulai).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
     const tglBerakhir = kontrak.tanggal_berakhir ? new Date(kontrak.tanggal_berakhir).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}) : 'tidak ditentukan (sampai diberhentikan salah satu pihak)';
+    const { data: empData } = await sb.from('employees').select('kuota_cuti_tahunan').eq('id', kontrak.employee_id).maybeSingle();
+    const kuotaCuti = empData?.kuota_cuti_tahunan ?? 12;
+
+    let nomorPasal = 1;
+    const pasal = (judul, isi) => `<div class="pasal"><b>Pasal ${nomorPasal++} — ${judul}</b><br>${isi}</div>`;
+
+    const isiPasal = [
+      pasal('Posisi &amp; Masa Kerja', `Karyawan bekerja pada posisi <b>${DIVISI_LABEL[kontrak.divisi]}</b>, terhitung sejak <b>${tglMulai}</b> sampai dengan <b>${tglBerakhir}</b>.`),
+      pasal('Tugas &amp; Tanggung Jawab', kontrak.sop_ringkas || 'Melaksanakan tugas sesuai posisi yang ditentukan dan mematuhi seluruh SOP yang berlaku di tempat kerja.'),
+      `<div class="pasal"><b>Pasal ${nomorPasal++} — Kompensasi</b>
+        <table>
+          <tr><td>Gaji Pokok</td><td>: Rp ${Math.round(kontrak.gaji_pokok).toLocaleString('id-ID')} / bulan</td></tr>
+          ${(kontrak.tunjangan||[]).map(t => `<tr><td>${t.nama}</td><td>: Rp ${Math.round(t.jumlah).toLocaleString('id-ID')} / bulan</td></tr>`).join('')}
+          <tr><td><b>Total Tetap</b></td><td>: <b>Rp ${Math.round(parseFloat(kontrak.gaji_pokok) + totalTunjangan).toLocaleString('id-ID')} / bulan</b></td></tr>
+        </table>
+        <div style="font-size:11.5px; color:#555; margin-top:4px;">Gaji dibayarkan tiap tanggal 1${bpjsAktif ? ', sudah memperhitungkan potongan BPJS Ketenagakerjaan &amp; Kesehatan sesuai ketentuan berlaku,' : ''} dan dapat disesuaikan berdasarkan persentase kehadiran bulan berjalan.</div>
+      </div>`,
+      kontrak.target_bonus_jenis ? pasal('Bonus Kinerja', `Karyawan berhak atas bonus sebesar <b>Rp ${Math.round(kontrak.bonus_nominal).toLocaleString('id-ID')}</b> apabila mencapai target ${TARGET_BONUS_LABEL[kontrak.target_bonus_jenis]} sebesar <b>${kontrak.target_bonus_nilai.toLocaleString('id-ID')}</b> dalam satu bulan berjalan.`) : '',
+      pasal('Jam &amp; Hari Kerja', 'Karyawan bekerja dengan pola <b>6 (enam) hari kerja dan 1 (satu) hari libur</b> per minggu, sesuai jadwal shift yang diatur oleh Pemberi Kerja, kecuali disepakati lain.'),
+      pasal('Cuti &amp; Izin', `Karyawan berhak atas cuti tahunan sebanyak <b>${kuotaCuti} hari kerja</b> per tahun. Izin sakit tetap wajib disertai bukti keterangan dokter, namun tetap diperhitungkan sebagai ketidakhadiran dalam perhitungan gaji sesuai kebijakan Pemberi Kerja.`),
+      pasal('Kerahasiaan', 'Karyawan wajib menjaga kerahasiaan data pelanggan, data usaha, dan informasi internal lainnya, baik selama maupun setelah masa kerja berakhir.'),
+      pasal('Pemutusan Hubungan Kerja', 'Masing-masing pihak dapat mengakhiri perjanjian ini dengan pemberitahuan tertulis minimal <b>30 (tiga puluh) hari</b> sebelumnya, kecuali dalam hal pelanggaran berat yang dapat diakhiri seketika sesuai peraturan ketenagakerjaan yang berlaku.'),
+      pasal('Penyelesaian Perselisihan', 'Apabila timbul perselisihan, kedua belah pihak sepakat menyelesaikannya secara musyawarah terlebih dahulu, dan apabila tidak tercapai kesepakatan akan diselesaikan sesuai peraturan perundang-undangan ketenagakerjaan yang berlaku di Indonesia.'),
+      pasal('Ketentuan Lain', 'Hal-hal yang belum diatur dalam perjanjian ini akan diatur kemudian berdasarkan kesepakatan kedua belah pihak dan peraturan ketenagakerjaan yang berlaku.'),
+    ].filter(Boolean).join('');
 
     const win = window.open('', '_blank', 'width=420,height=700');
     if (!win){ showToast('Popup diblokir browser — izinkan popup untuk cetak surat.', true); return; }
     win.document.write(`
       <html><head><title>Surat Kontrak Kerja - ${kontrak.employees?.nama}</title>
       <style>
-        body{ font-family:'Times New Roman',serif; font-size:13px; line-height:1.7; max-width:640px; margin:24px auto; color:#111; padding:0 20px; }
-        h2{ text-align:center; margin-bottom:2px; text-decoration:underline; }
-        .center{ text-align:center; margin-bottom:20px; font-size:12px; }
-        table{ width:100%; margin:14px 0; border-collapse:collapse; }
+        *{ box-sizing:border-box; }
+        body{ font-family:'Times New Roman',serif; font-size:13px; line-height:1.7; max-width:680px; margin:0 auto; color:#1a1a1a; background:#faf7f2; }
+        .header{ background:linear-gradient(120deg,#B8763E,#8C4A2F); color:#fff; padding:26px 20px 22px; text-align:center; }
+        .header img{ width:56px; height:56px; border-radius:12px; object-fit:cover; margin-bottom:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); }
+        .header .nama-usaha{ font-family:Georgia,serif; font-size:19px; font-weight:700; letter-spacing:.02em; }
+        .header .detail-usaha{ font-size:11px; opacity:.92; margin-top:4px; }
+        .isi{ padding:24px 22px; background:#fff; }
+        h2{ text-align:center; margin:0 0 4px; text-decoration:underline; font-size:16px; }
+        .center{ text-align:center; margin-bottom:18px; font-size:11.5px; color:#666; }
+        .pasal{ margin-bottom:14px; }
+        table{ width:100%; margin:8px 0; border-collapse:collapse; }
         td{ padding:3px 6px; vertical-align:top; font-size:12.5px; }
-        .no-print{ text-align:center; margin-top:20px; }
-        @media print{ .no-print{ display:none; } }
+        .footer{ background:#8C4A2F; color:#f0e4d8; text-align:center; padding:12px 20px; font-size:10px; }
+        .no-print{ text-align:center; margin:20px 0; }
+        @media print{ .no-print{ display:none; } body{ background:#fff; } }
       </style></head>
       <body>
+        <div class="header">
+          ${tenantData?.logo_url ? `<img src="${tenantData.logo_url}">` : ''}
+          <div class="nama-usaha">${namaUsaha}</div>
+          <div class="detail-usaha">${tenantData?.alamat || ''}${tenantData?.alamat && tenantData?.no_whatsapp ? ' · ' : ''}${tenantData?.no_whatsapp ? 'WA: ' + tenantData.no_whatsapp : ''}</div>
+        </div>
+        <div class="isi">
         <h2>SURAT PERJANJIAN KERJA WAKTU TERTENTU (PKWT)</h2>
-        <div class="center">${namaUsaha}${tenantData?.alamat ? ' — ' + tenantData.alamat : ''}</div>
+        <div class="center">Nomor: PKWT/${new Date(kontrak.tanggal_mulai).getFullYear()}/${(kontrak.id||'').slice(0,8).toUpperCase()}</div>
         <p>Pada hari ini, yang bertanda tangan di bawah ini:</p>
         <p><b>PIHAK PERTAMA</b> (Pemberi Kerja): ${namaUsaha}</p>
         <p><b>PIHAK KEDUA</b> (Pekerja): <b>${kontrak.employees?.nama}</b>, selanjutnya disebut sebagai Karyawan.</p>
         <p>Kedua belah pihak sepakat mengikatkan diri dalam Perjanjian Kerja Waktu Tertentu dengan ketentuan sebagai berikut:</p>
 
-        <p><b>Pasal 1 — Posisi &amp; Masa Kerja</b><br>
-        Karyawan bekerja pada posisi <b>${DIVISI_LABEL[kontrak.divisi]}</b>, terhitung sejak <b>${tglMulai}</b> sampai dengan <b>${tglBerakhir}</b>.</p>
-
-        <p><b>Pasal 2 — Tugas &amp; Tanggung Jawab</b><br>
-        ${kontrak.sop_ringkas || 'Melaksanakan tugas sesuai posisi yang ditentukan dan mematuhi seluruh SOP yang berlaku di tempat kerja.'}</p>
-
-        <p><b>Pasal 3 — Kompensasi</b></p>
-        <table>
-          <tr><td>Gaji Pokok</td><td>: Rp ${Math.round(kontrak.gaji_pokok).toLocaleString('id-ID')} / bulan</td></tr>
-          ${(kontrak.tunjangan||[]).map(t => `<tr><td>${t.nama}</td><td>: Rp ${Math.round(t.jumlah).toLocaleString('id-ID')} / bulan</td></tr>`).join('')}
-          <tr><td><b>Total Tetap</b></td><td>: <b>Rp ${Math.round(parseFloat(kontrak.gaji_pokok) + totalTunjangan).toLocaleString('id-ID')} / bulan</b></td></tr>
-        </table>
-        ${kontrak.target_bonus_jenis ? `<p><b>Pasal 4 — Bonus Kinerja</b><br>Karyawan berhak atas bonus sebesar <b>Rp ${Math.round(kontrak.bonus_nominal).toLocaleString('id-ID')}</b> apabila mencapai target ${TARGET_BONUS_LABEL[kontrak.target_bonus_jenis]} sebesar <b>${kontrak.target_bonus_nilai.toLocaleString('id-ID')}</b> dalam satu bulan berjalan.</p>` : ''}
-
-        <p><b>Pasal ${kontrak.target_bonus_jenis ? '5' : '4'} — Ketentuan Lain</b><br>
-        Hal-hal yang belum diatur dalam perjanjian ini akan diatur kemudian berdasarkan kesepakatan kedua belah pihak dan peraturan ketenagakerjaan yang berlaku.</p>
+        ${isiPasal}
 
         <table style="margin-top:50px;">
           <tr>
@@ -9237,6 +9273,8 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
 
         <div style="font-size:9.5px; color:#777; margin-top:24px;">*Ini template dasar PKWT yang dibuat otomatis dari data kontrak di sistem — untuk kasus khusus, tetap disarankan dicek ke yang paham hukum ketenagakerjaan sebelum dipakai resmi.</div>
         <div class="no-print"><button onclick="window.print()" style="padding:8px 18px; font-size:12px;">Cetak</button></div>
+        </div>
+        <div class="footer">${namaUsaha}${tenantData?.alamat ? ' — ' + tenantData.alamat : ''} · Dokumen ini dibuat otomatis oleh sistem</div>
       </body></html>`);
     win.document.close();
   }
@@ -9343,7 +9381,9 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     btn.disabled = true; btn.textContent = 'Menerbitkan…';
 
     const potonganLain = parseFloat(document.getElementById('skk-potongan').value) || 0;
-    const { bpjsTK, bpjsKes } = hitungBPJS(d.gajiBruto);
+    const { data: tenantBpjs } = await sb.from('tenants').select('bpjs_aktif').eq('id', currentProfile.tenant_id).single();
+    const bpjsAktif = !!tenantBpjs?.bpjs_aktif;
+    const { bpjsTK, bpjsKes } = bpjsAktif ? hitungBPJS(d.gajiBruto) : { bpjsTK: 0, bpjsKes: 0 };
     const pph21 = hitungPPh21Bulanan(d.gajiBruto - bpjsTK - bpjsKes, d.kontrak.employees?.status_ptkp || 'TK/0');
     const gajiBersih = d.gajiBruto - bpjsTK - bpjsKes - pph21 - potonganLain;
     const periode = new Date().toLocaleDateString('id-ID', { month:'long', year:'numeric' });
@@ -9376,9 +9416,16 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
   async function loadLokasiAbsenSettings(){
     const statusEl = document.getElementById('lokasi-apotek-status');
     if (!statusEl) return;
-    const { data } = await sb.from('tenants').select('lokasi_lat, lokasi_lng, radius_absen_meter').eq('id', currentProfile.tenant_id).single();
+    const { data } = await sb.from('tenants').select('lokasi_lat, lokasi_lng, radius_absen_meter, bpjs_aktif').eq('id', currentProfile.tenant_id).single();
     document.getElementById('radius-absen-input').value = data?.radius_absen_meter ?? 150;
     statusEl.textContent = data?.lokasi_lat ? `✓ Lokasi sudah diatur (${data.lokasi_lat.toFixed(5)}, ${data.lokasi_lng.toFixed(5)})` : 'Lokasi belum diatur — karyawan bisa absen dari mana saja.';
+    const bpjsToggle = document.getElementById('bpjs-aktif-toggle');
+    if (bpjsToggle) bpjsToggle.checked = !!data?.bpjs_aktif;
+  }
+  async function toggleBpjsAktif(checked){
+    const { error } = await sb.from('tenants').update({ bpjs_aktif: checked }).eq('id', currentProfile.tenant_id);
+    if (error){ showToast('Gagal mengubah pengaturan: ' + error.message, true); return; }
+    showToast(checked ? '✓ Potongan BPJS diaktifkan' : '✓ Potongan BPJS dimatikan — slip gaji tidak akan menyebut BPJS lagi');
   }
   function ambilLokasiApotekSekarang(){
     if (!navigator.geolocation){ showToast('Browser tidak mendukung GPS.', true); return; }
