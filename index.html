@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v49-1500</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v51-1610</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -1019,8 +1019,11 @@
       </div>
 
       <div class="panel">
-        <div class="panel-head"><div class="panel-title">📄 Kontrak Karyawan</div><button class="btn-secondary owner-only" onclick="openKontrakModal()">+ Buat Kontrak</button></div>
-        <div class="panel-body" id="kontrak-list"><div class="loading-note">Memuat…</div></div>
+        <div class="panel-head"><div class="panel-title">📄 Kontrak Karyawan</div></div>
+        <div class="panel-body">
+          <div id="kontrak-list"><div class="loading-note">Memuat…</div></div>
+          <button class="btn-primary owner-only" style="width:100%; justify-content:center; margin-top:10px;" onclick="openKontrakModal()">📄 Buat Kontrak</button>
+        </div>
       </div>
 
       <div class="panel owner-only">
@@ -6020,7 +6023,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     prompt += ` Balas HANYA dalam format: pisahkan tiap variasi dengan baris "---" di antaranya, tanpa penomoran atau judul tambahan.`;
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/panggil-claude`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
@@ -7355,7 +7358,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       const base64 = await resizeImageToBase64(file, 1568);
       const daftarProdukRingkas = products.map(p => p.nama).join(', ');
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/panggil-claude`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -8550,7 +8553,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     riwayatChatBantuan.push({ role: 'user', content: teks });
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/panggil-claude`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
