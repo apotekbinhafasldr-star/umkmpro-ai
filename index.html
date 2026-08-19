@@ -316,7 +316,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v34-0530</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v36-0615</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -896,28 +896,32 @@
   <!-- KARYAWAN & SHIFT (HR) -->
   <div class="page" id="page-hr">
     <main>
-      <div class="topbar">
+      <div class="topbar" style="position:relative;">
         <div>
           <div class="greeting-eyebrow">Karyawan &amp; Shift</div>
           <h1 class="greeting" id="hr-title">Tim Kerja</h1>
         </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;" id="hr-action-buttons">
-          <button class="btn-secondary" onclick="openAttendanceModal()">Absen Sekarang</button>
-          <button class="btn-secondary owner-only" onclick="openAttendanceManualModal()">Absen Manual (Owner)</button>
-          <button class="btn-secondary" onclick="openShiftModal()">Atur Jadwal</button>
-          <button class="btn-secondary" onclick="openLeaveModal()">Ajukan Cuti</button>
-          <button class="btn-secondary" onclick="openOvertimeModal()">Catat Lembur</button>
-          <button class="btn-secondary owner-only" onclick="openPayrollModal()">Catat Gaji/Kasbon</button>
-          <button class="btn-primary owner-only" onclick="openSlipKontrakModal()" style="background:var(--brand-deep);">🧾 Slip Gaji dari Kontrak</button>
-          <button class="btn-secondary" onclick="openEvaluationModal()">Catat Evaluasi</button>
-          <button class="btn-primary" onclick="openEmployeeModal()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-            Tambah Karyawan
+        <div style="display:flex; gap:8px; align-items:flex-start; position:relative;">
+          <button class="btn-primary" onclick="openAttendanceModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
+            Absen Sekarang
           </button>
-          <button class="btn-primary owner-only" onclick="openInviteModal()" style="background:var(--brand-deep);">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M19 8v6M22 11h-6"/><circle cx="9" cy="7" r="4"/></svg>
-            Undang Karyawan (Akun Login)
-          </button>
+          <button class="btn-secondary" onclick="toggleHrMoreMenu()">⋯ Aksi Lain</button>
+          <div id="hr-more-menu" style="display:none; position:absolute; top:calc(100% + 6px); right:0; z-index:30; background:var(--surface); border:1.5px solid var(--line); border-radius:14px; box-shadow:0 12px 32px rgba(0,0,0,.18); padding:8px; width:230px;">
+            <button class="btn-primary" onclick="closeHrMoreMenu(); openEmployeeModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+              Tambah Karyawan
+            </button>
+            <button class="btn-secondary owner-only" onclick="closeHrMoreMenu(); openInviteModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px; background:var(--brand-tint); color:var(--brand); border-color:var(--brand);">Undang Karyawan (Akun Login)</button>
+            <div style="border-top:1px solid var(--line); margin:6px 0;"></div>
+            <button class="btn-secondary owner-only" onclick="closeHrMoreMenu(); openAttendanceManualModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px;">Absen Manual (Owner)</button>
+            <button class="btn-secondary" onclick="closeHrMoreMenu(); openShiftModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px;">Atur Jadwal</button>
+            <button class="btn-secondary" onclick="closeHrMoreMenu(); openLeaveModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px;">Ajukan Cuti</button>
+            <button class="btn-secondary" onclick="closeHrMoreMenu(); openOvertimeModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px;">Catat Lembur</button>
+            <button class="btn-secondary owner-only" onclick="closeHrMoreMenu(); openPayrollModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px;">Catat Gaji/Kasbon</button>
+            <button class="btn-secondary owner-only" onclick="closeHrMoreMenu(); openSlipKontrakModal();" style="width:100%; justify-content:flex-start; margin-bottom:4px;">🧾 Slip Gaji dari Kontrak</button>
+            <button class="btn-secondary" onclick="closeHrMoreMenu(); openEvaluationModal();" style="width:100%; justify-content:flex-start;">Catat Evaluasi</button>
+          </div>
         </div>
       </div>
 
@@ -1575,7 +1579,7 @@
 
 <div class="modal-overlay" id="employee-modal">
   <div class="modal-card">
-    <div class="modal-title">Tambah Karyawan</div>
+    <div class="modal-title" id="ef-modal-title">Tambah Karyawan</div>
     <div class="field"><label>Nama Karyawan</label><input type="text" id="ef-nama" placeholder="Nama lengkap"></div>
     <div class="field">
       <label>Jabatan</label>
@@ -1613,23 +1617,31 @@
 <div class="modal-overlay" id="invite-modal">
   <div class="modal-card">
     <div class="modal-title">Undang Karyawan Buat Akun Login</div>
-    <div class="field"><label>Email Karyawan</label><input type="email" id="inv-email" placeholder="email@karyawan.com"></div>
-    <div class="field">
-      <label>Peran / Hak Akses</label>
-      <select id="inv-role">
-        <option value="kasir">Kasir — hanya Kasir/POS</option>
-        <option value="apoteker">Apoteker — Kasir/POS + Stok</option>
-        <option value="admin_gudang">Admin Gudang — Stok & Gudang</option>
-        <option value="hr">HR — Karyawan & Shift</option>
-        <option value="marketing">Marketing — Pelanggan & Piutang</option>
-      </select>
+    <div id="invite-form-wrap">
+      <div class="field"><label>Email Karyawan</label><input type="email" id="inv-email" placeholder="email@karyawan.com"></div>
+      <div class="field"><label>No. WhatsApp Karyawan (buat kirim link otomatis)</label><input type="text" id="inv-wa" placeholder="08xxxxxxxxxx"></div>
+      <div class="field">
+        <label>Peran / Hak Akses</label>
+        <select id="inv-role">
+          <option value="kasir">Kasir — hanya Kasir/POS</option>
+          <option value="apoteker">Apoteker — Kasir/POS + Stok</option>
+          <option value="admin_gudang">Admin Gudang — Stok & Gudang</option>
+          <option value="hr">HR — Karyawan & Shift</option>
+          <option value="marketing">Marketing — Pelanggan & Piutang</option>
+        </select>
+      </div>
+      <div class="auth-note" style="margin-top:6px;">
+        💡 Tidak ada email otomatis terkirim — setelah kamu kirim undangan di sini, kamu perlu kirim link daftar ke karyawan sendiri (bisa lewat tombol WA yang muncul setelah ini).
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('invite-modal')">Batal</button>
+        <button class="btn-primary" id="inv-submit-btn" onclick="submitInvitation()">Kirim Undangan</button>
+      </div>
     </div>
-    <div class="auth-note" style="margin-top:6px;">
-      💡 Setelah diundang, minta karyawan buka link aplikasi dan <b>Daftar</b> pakai email ini — sistem otomatis mengenali undangan dan memberi akses sesuai peran yang dipilih (bukan jadi owner baru).
-    </div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeModal('invite-modal')">Batal</button>
-      <button class="btn-primary" id="inv-submit-btn" onclick="submitInvitation()">Kirim Undangan</button>
+    <div id="invite-success-wrap" style="display:none;">
+      <div style="background:var(--good-tint); border-radius:10px; padding:14px; margin-bottom:14px; font-size:13px; color:var(--good); font-weight:600;">✓ Undangan tersimpan di sistem — sekarang kirim link daftarnya ke karyawan:</div>
+      <a id="invite-wa-link" href="#" target="_blank" class="btn-primary" style="width:100%; justify-content:center; text-decoration:none; margin-bottom:8px;">📤 Kirim Link Daftar via WhatsApp</a>
+      <button class="btn-secondary" style="width:100%; justify-content:center;" onclick="closeModal('invite-modal')">Selesai</button>
     </div>
   </div>
 </div>
@@ -4320,9 +4332,10 @@
 
     const empListEl = document.getElementById('hr-employee-list');
     empListEl.innerHTML = empList.length ? empList.map(e => `
-      <div class="row-item">
+      <div class="row-item" style="cursor:pointer;" onclick="openEditEmployeeModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
         <div class="emp-dot">${e.nama.substring(0,2).toUpperCase()}</div>
         <div><div class="row-name">${e.nama}</div><div class="row-meta">${JABATAN_LABEL[e.jabatan] || e.jabatan} · ${e.no_hp || '—'}</div></div>
+        <div class="row-right owner-only" onclick="event.stopPropagation();"><button class="btn-secondary" style="font-size:10px; padding:3px 8px; color:var(--danger);" onclick="nonaktifkanKaryawan('${e.id}')">Nonaktifkan</button></div>
       </div>`).join('') : '<div class="loading-note">Belum ada karyawan.</div>';
 
     const today = new Date().toISOString().split('T')[0];
@@ -4395,7 +4408,11 @@
   }
 
   // ---- Tambah Karyawan ----
+  let editingEmployeeId = null;
   function openEmployeeModal(){
+    editingEmployeeId = null;
+    document.getElementById('ef-modal-title').textContent = 'Tambah Karyawan';
+    document.getElementById('ef-submit-btn').textContent = 'Simpan Karyawan';
     document.getElementById('ef-nama').value = '';
     document.getElementById('ef-jabatan').value = 'kasir';
     document.getElementById('ef-hp').value = '';
@@ -4403,23 +4420,46 @@
     document.getElementById('ef-ptkp').value = 'TK/0';
     document.getElementById('employee-modal').classList.add('show');
   }
+  function openEditEmployeeModal(emp){
+    editingEmployeeId = emp.id;
+    document.getElementById('ef-modal-title').textContent = 'Edit Karyawan';
+    document.getElementById('ef-submit-btn').textContent = 'Simpan Perubahan';
+    document.getElementById('ef-nama').value = emp.nama;
+    document.getElementById('ef-jabatan').value = emp.jabatan;
+    document.getElementById('ef-hp').value = emp.no_hp || '';
+    document.getElementById('ef-email').value = emp.email || '';
+    document.getElementById('ef-ptkp').value = emp.status_ptkp || 'TK/0';
+    document.getElementById('employee-modal').classList.add('show');
+  }
   async function submitNewEmployee(){
     const nama = document.getElementById('ef-nama').value.trim();
     if (!nama){ showToast('Nama karyawan wajib diisi.', true); return; }
     const btn = document.getElementById('ef-submit-btn');
     btn.disabled = true; btn.textContent = 'Menyimpan…';
-    const { error } = await sb.from('employees').insert({
-      tenant_id: currentProfile.tenant_id, nama,
-      jabatan: document.getElementById('ef-jabatan').value,
+    const payload = {
+      nama, jabatan: document.getElementById('ef-jabatan').value,
       no_hp: document.getElementById('ef-hp').value.trim() || null,
       email: document.getElementById('ef-email').value.trim() || null,
       status_ptkp: document.getElementById('ef-ptkp').value,
-      status: 'aktif'
-    });
-    btn.disabled = false; btn.textContent = 'Simpan Karyawan';
+    };
+    let error;
+    if (editingEmployeeId){
+      ({ error } = await sb.from('employees').update(payload).eq('id', editingEmployeeId));
+    } else {
+      payload.tenant_id = currentProfile.tenant_id; payload.status = 'aktif';
+      ({ error } = await sb.from('employees').insert(payload));
+    }
+    btn.disabled = false; btn.textContent = editingEmployeeId ? 'Simpan Perubahan' : 'Simpan Karyawan';
     if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
-    showToast('✓ Karyawan berhasil ditambahkan');
+    showToast(editingEmployeeId ? '✓ Data karyawan diperbarui' : '✓ Karyawan berhasil ditambahkan');
     closeModal('employee-modal');
+    await loadHrPage();
+  }
+  async function nonaktifkanKaryawan(id){
+    if (!confirm('Nonaktifkan karyawan ini? Dia tidak akan muncul lagi di daftar aktif.')) return;
+    const { error } = await sb.from('employees').update({ status: 'nonaktif' }).eq('id', id);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    showToast('✓ Karyawan dinonaktifkan');
     await loadHrPage();
   }
 
@@ -5966,7 +6006,10 @@
 
   // ================= UNDANGAN KARYAWAN =================
   function openInviteModal(){
+    document.getElementById('invite-form-wrap').style.display = 'block';
+    document.getElementById('invite-success-wrap').style.display = 'none';
     document.getElementById('inv-email').value = '';
+    document.getElementById('inv-wa').value = '';
     document.getElementById('inv-role').value = 'kasir';
     document.getElementById('invite-modal').classList.add('show');
   }
@@ -5975,15 +6018,23 @@
     if (!email){ showToast('Email wajib diisi.', true); return; }
     const btn = document.getElementById('inv-submit-btn');
     btn.disabled = true; btn.textContent = 'Mengirim…';
+    const role = document.getElementById('inv-role').value;
     const { error } = await sb.from('invitations').insert({
       tenant_id: currentProfile.tenant_id, email,
-      role: document.getElementById('inv-role').value,
-      dibuat_oleh: currentProfile.id
+      role, dibuat_oleh: currentProfile.id
     });
     btn.disabled = false; btn.textContent = 'Kirim Undangan';
     if (error){ showToast('Gagal mengundang: ' + error.message, true); return; }
-    showToast('✓ Undangan tersimpan — minta karyawan daftar pakai email ini');
-    closeModal('invite-modal');
+
+    const linkApp = window.location.origin + window.location.pathname;
+    const namaUsaha = document.getElementById('sidebar-tenant')?.textContent || 'apotek kami';
+    const pesan = encodeURIComponent(`Halo! Kamu diundang gabung aplikasi kasir ${namaUsaha} sebagai ${JABATAN_LABEL[role] || role}.\n\nCara daftar:\n1. Buka: ${linkApp}\n2. Tap "Daftar"\n3. Pakai email: ${email}\n4. Buat password sendiri\n\nSetelah daftar, akun kamu otomatis aktif dengan akses ${JABATAN_LABEL[role] || role}. 🙏`);
+    const waInput = document.getElementById('inv-wa').value.trim();
+    const nomorWA = waInput ? waInput.replace(/^0/,'62').replace(/\D/g,'') : '';
+    document.getElementById('invite-wa-link').href = nomorWA ? `https://wa.me/${nomorWA}?text=${pesan}` : `https://wa.me/?text=${pesan}`;
+
+    document.getElementById('invite-form-wrap').style.display = 'none';
+    document.getElementById('invite-success-wrap').style.display = 'block';
     await loadInvitations();
   }
   async function loadInvitations(){
@@ -8009,7 +8060,7 @@
 
 **Laporan Keuangan**: pilih periode (Hari Ini/Minggu/Bulan/Tahun). Ada grafik tren Omzet vs Laba, Laporan Laba Rugi lengkap, Arus Kas, PPN Keluaran (kalau status PKP diaktifkan di menu Pajak), dan Neraca (estimasi posisi Aset/Kewajiban/Modal). Tombol "+ Catat Biaya" buat catat biaya operasional (sewa, listrik, gaji, dll) per kategori. Tombol "Ekspor Excel" buat unduh laporan. Panel "Setor/Tarik Modal Owner" buat catat kalau Owner masukin uang pribadi ke usaha (Setor Modal) atau ambil uang usaha buat pribadi (Tarik Modal).
 
-**Karyawan & Shift**: kelola data karyawan, jadwal shift, pengajuan cuti, lembur, evaluasi kinerja. Absen sekarang pakai **selfie wajib + GPS** (anti titip-absen) — karyawan foto diri sendiri, lokasi otomatis dicek terhadap titik apotek yang diatur Owner (geofencing, radius bisa diatur). Owner bisa catat absen manual buat karyawan tanpa akun login. Ada **Papan Pengumuman** (broadcast ke semua karyawan), **Leaderboard Kasir** (ranking omzet mingguan per kasir), **Kontrak Karyawan** (gaji pokok + daftar tunjangan + target bonus opsional berdasarkan omzet/jumlah transaksi/kehadiran — diatur Owner per karyawan), **Tukar Shift** (karyawan ajukan, Owner approve/tolak), dan **Slip Gaji dari Kontrak** (tombol khusus Owner — otomatis hitung gaji pokok + tunjangan + cek apakah target bonus tercapai + potongan BPJS/PPh21 otomatis, langsung terbit slip gaji digital). Owner bisa undang karyawan buat punya akun login sendiri dengan peran (role) tertentu: Owner, Apoteker, Kasir, Admin Gudang, HR, Marketing — tiap peran cuma lihat menu sesuai tugasnya.
+**Karyawan & Shift**: kelola data karyawan (tap baris karyawan buat edit datanya), jadwal shift, pengajuan cuti, lembur, evaluasi kinerja. Tombol aksi sekarang rapi: "Absen Sekarang" tampil langsung, sisanya (Tambah Karyawan, Undang Karyawan, Absen Manual, Atur Jadwal, Ajukan Cuti, Catat Lembur, Catat Gaji/Kasbon, Slip Gaji dari Kontrak, Catat Evaluasi) ada di dropdown "⋯ Aksi Lain" di pojok kanan atas. Absen sekarang pakai **selfie wajib + GPS** (anti titip-absen) — karyawan foto diri sendiri, lokasi otomatis dicek terhadap titik apotek yang diatur Owner (geofencing, radius bisa diatur). Owner bisa catat absen manual buat karyawan tanpa akun login. Ada **Papan Pengumuman** (broadcast ke semua karyawan), **Leaderboard Kasir** (ranking omzet mingguan per kasir), **Kontrak Karyawan** (gaji pokok + daftar tunjangan + target bonus opsional berdasarkan omzet/jumlah transaksi/kehadiran — diatur Owner per karyawan), **Tukar Shift** (karyawan ajukan, Owner approve/tolak), dan **Slip Gaji dari Kontrak** (tombol khusus Owner — otomatis hitung gaji pokok + tunjangan + cek apakah target bonus tercapai + potongan BPJS/PPh21 otomatis, langsung terbit slip gaji digital). Owner bisa undang karyawan buat punya akun login sendiri dengan peran (role) tertentu: Owner, Apoteker, Kasir, Admin Gudang, HR, Marketing — tiap peran cuma lihat menu sesuai tugasnya.
 
 **Pelanggan & Piutang**: catat piutang pelanggan (ada tanggal jatuh tempo + tombol ingatkan WA), retur barang, poin loyalitas pelanggan, pesanan online (toko online), tab "Buat Promosi" (AI generate 3 variasi teks promosi otomatis dari produk+jenis promo pilihan, lalu bisa dikirim ke target pelanggan tertentu — semua/belum belanja 30 hari/member — tinggal tap "Kirim" per pelanggan, WA terbuka dengan teks sudah terisi), daftar tunggu barang kosong, dan pelanggan khusus/reseller.
 
@@ -8065,6 +8116,18 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const { data: { session } } = await sb.auth.getSession();
     if (session){ await initApp(); }
   })();
+
+  // ================= DROPDOWN "AKSI LAIN" DI HALAMAN HR =================
+  function toggleHrMoreMenu(){
+    const menu = document.getElementById('hr-more-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+  function closeHrMoreMenu(){ document.getElementById('hr-more-menu').style.display = 'none'; }
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('hr-more-menu');
+    if (!menu || menu.style.display === 'none') return;
+    if (!menu.contains(e.target) && e.target.getAttribute('onclick') !== 'toggleHrMoreMenu()'){ menu.style.display = 'none'; }
+  });
 
   // ================= SLIP GAJI OTOMATIS DARI KONTRAK =================
   let kontrakAktifTerpilih = null;
