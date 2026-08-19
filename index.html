@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
   if ('serviceWorker' in navigator){
     window.addEventListener('load', () => {
@@ -315,7 +316,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v21-2200</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v27-0100</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -403,6 +404,10 @@
           <button class="nav-item" data-page="pajak" onclick="goPage('pajak', this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
             Pajak
+          </button>
+          <button class="nav-item" data-page="langganan" onclick="goPage('langganan', this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Langganan
           </button>
         </nav>
       </div>
@@ -610,9 +615,12 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             Import Excel
           </button>
-          <button class="btn-primary" onclick="openProductModal()">
+          <button class="btn-secondary gudang-simple-access" style="background:var(--brand-tint); color:var(--brand); border-color:var(--brand);" onclick="openDaftarProdukGudangModal()">
+            🏷️ Daftarkan Produk Baru
+          </button>
+          <button class="btn-primary apoteker-access" onclick="openProductModal()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-            Tambah Produk
+            Tambah Produk (Atur Harga)
           </button>
         </div>
       </div>
@@ -628,6 +636,11 @@
               <input type="number" id="batas-diskon-input" placeholder="20" style="width:80px; border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:13px;" onchange="updateBatasDiskon(this.value)">
               <span style="font-size:12.5px; color:var(--ink-soft);">% dari subtotal — di atas ini, kasir wajib isi alasan sebelum bisa checkout</span>
             </div>
+          </div>
+          <div style="border-top:1px solid var(--surface-2); padding-top:14px; margin-top:14px;">
+            <label style="font-size:13px; font-weight:600; display:block; margin-bottom:4px;">🏷️ Markup Otomatis per Kategori (untuk Produk Baru dari Gudang)</label>
+            <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:10px;">Barang laku cepat → margin tipis. Barang jarang laku/khusus → margin lebih tebal. Admin gudang tidak lihat angka ini, cuma hasil harganya.</div>
+            <div id="markup-kategori-list" style="display:flex; flex-direction:column; gap:8px;"></div>
           </div>
         </div>
       </div>
@@ -739,6 +752,15 @@
           </div>
           <div class="panel-body" id="pareto-list"><div class="loading-note">Menganalisis data penjualan…</div></div>
         </div>
+        <div class="panel owner-only">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">🏷️ Rekomendasi Penyesuaian Margin</div>
+              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Berdasarkan kecepatan laku 90 hari terakhir — barang laku cepat disarankan margin tipis, barang jarang laku disarankan margin lebih tebal</div>
+            </div>
+          </div>
+          <div class="panel-body" id="margin-rekomendasi-list"><div class="loading-note">Menganalisis…</div></div>
+        </div>
       </div>
 
       <!-- LOG AKTIVITAS -->
@@ -773,6 +795,7 @@
           <div class="greeting-eyebrow">Laporan Keuangan</div>
           <h1 class="greeting" id="kw-title">Ringkasan Bulan Ini</h1>
         </div>
+        <button class="btn-secondary" onclick="exportKeuanganExcel()">📊 Ekspor Excel</button>
       </div>
       <div class="tabs">
         <div class="tab" data-period="today" onclick="setKeuanganPeriod('today', this)">Hari Ini</div>
@@ -784,6 +807,7 @@
         <div class="kpi-card">
           <div class="kpi-label" id="kw-omzet-label">Total Omzet Bulan Ini</div>
           <div class="kpi-value num" id="kw-omzet-bulan">Rp 0</div>
+          <div id="kw-omzet-trend" style="font-size:11px; font-weight:700; margin-top:2px;"></div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Jumlah Transaksi</div>
@@ -794,10 +818,36 @@
           <div class="kpi-value num" id="kw-rata-rata">Rp 0</div>
         </div>
         <div class="kpi-card" style="background:var(--brand-tint);">
-          <div class="kpi-label" style="color:var(--brand);">Laba Kotor (Omzet − HPP)</div>
-          <div class="kpi-value num" id="kw-laba-kotor" style="color:var(--brand);">Rp 0</div>
+          <div class="kpi-label" style="color:var(--brand);">Laba Bersih</div>
+          <div class="kpi-value num" id="kw-laba-bersih" style="color:var(--brand);">Rp 0</div>
+          <div id="kw-laba-trend" style="font-size:11px; font-weight:700; margin-top:2px;"></div>
         </div>
       </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Tren Omzet vs Laba Bersih</div></div>
+        <div class="panel-body" style="height:220px;"><canvas id="kw-chart-tren"></canvas></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Laporan Laba Rugi</div></div>
+          <div class="panel-body" id="kw-laba-rugi"><div class="loading-note">Memuat…</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Arus Kas (Kas Masuk − Kas Keluar)</div></div>
+          <div class="panel-body" id="kw-arus-kas"><div class="loading-note">Memuat…</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Biaya Operasional</div>
+          <button class="btn-secondary" onclick="openBiayaModal()">+ Catat Biaya</button>
+        </div>
+        <div class="panel-body" id="biaya-list"><div class="loading-note">Memuat data…</div></div>
+      </div>
+
       <div class="panel">
         <div class="panel-head"><div class="panel-title" id="kw-list-title">Semua Transaksi Bulan Ini</div></div>
         <div class="panel-body" id="keuangan-list"><div class="loading-note">Memuat data…</div></div>
@@ -1178,6 +1228,27 @@
       </div>
     </main>
   </div>
+
+  <!-- LANGGANAN -->
+  <div class="page" id="page-langganan">
+    <main>
+      <div class="topbar">
+        <div>
+          <div class="greeting-eyebrow">Langganan</div>
+          <h1 class="greeting">Status &amp; Tagihan Langganan</h1>
+        </div>
+      </div>
+      <div class="panel" style="max-width:480px;">
+        <div class="panel-body" id="langganan-status-box" style="padding:20px;">
+          <div class="loading-note">Memuat status langganan…</div>
+        </div>
+      </div>
+      <div class="panel" style="max-width:480px; margin-top:16px;">
+        <div class="panel-head"><h3>Riwayat Tagihan</h3></div>
+        <div class="panel-body" id="langganan-riwayat-list"><div class="loading-note">Memuat riwayat…</div></div>
+      </div>
+    </main>
+  </div>
 </div>
 
 <div class="toast" id="toast">✓ Berhasil disimpan</div>
@@ -1341,7 +1412,50 @@
   </div>
 </div>
 
-<!-- MODAL TAMBAH KARYAWAN -->
+<!-- MODAL DAFTARKAN PRODUK BARU (GUDANG - TANPA HARGA JUAL/MARGIN) -->
+<div class="modal-overlay" id="gudang-product-modal">
+  <div class="modal-card">
+    <div class="modal-title">Daftarkan Produk Baru</div>
+    <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Harga jual dihitung otomatis oleh sistem berdasarkan aturan markup dari Owner — kamu cukup isi harga modal (harga beli dari supplier).</div>
+    <div class="field"><label>Nama Produk</label><input type="text" id="gpf-nama" placeholder="Contoh: Paracetamol 500mg"></div>
+    <div class="field-row">
+      <div class="field">
+        <label>Kategori</label>
+        <select id="gpf-kategori">
+          <option value="obat_bebas">Obat Bebas</option>
+          <option value="obat_resep">Obat Resep</option>
+          <option value="herbal">Herbal</option>
+          <option value="skincare">Skincare</option>
+          <option value="alat_kesehatan">Alat Kesehatan</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Satuan Jual</label>
+        <select id="gpf-satuan">
+          <option value="Pcs">Pcs</option>
+          <option value="Strip">Strip</option>
+          <option value="Tablet">Tablet</option>
+          <option value="Kapsul">Kapsul</option>
+          <option value="Botol">Botol</option>
+          <option value="Tube">Tube</option>
+          <option value="Vial">Vial</option>
+          <option value="Amp">Amp (Ampul)</option>
+          <option value="Sachet">Sachet</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Jumlah Stok Awal</label><input type="number" id="gpf-stok" placeholder="0"></div>
+      <div class="field"><label>Harga Modal per Satuan (Rp)</label><input type="number" id="gpf-harga-modal" placeholder="0"></div>
+    </div>
+    <div class="field"><label>Produsen / Pabrik</label><input type="text" id="gpf-produsen" placeholder="Opsional"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('gudang-product-modal')">Batal</button>
+      <button class="btn-primary" id="gpf-submit-btn" onclick="submitDaftarProdukGudang()">Simpan &amp; Daftarkan</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="employee-modal">
   <div class="modal-card">
     <div class="modal-title">Tambah Karyawan</div>
@@ -1901,7 +2015,7 @@
 
     <div id="tb-tidak-ketemu-view" style="display:none;">
       <div style="background:var(--danger-tint); color:var(--danger); border-radius:10px; padding:12px 14px; margin-bottom:14px; font-size:12.5px;">
-        Kode <b id="tb-kode-tidak-ketemu"></b> belum terdaftar sebagai produk. Daftarkan dulu produknya (Tambah Produk), baru scan lagi untuk terima barang.
+        Kode <b id="tb-kode-tidak-ketemu"></b> belum terdaftar sebagai produk. Daftarkan dulu produknya lewat tombol "Daftarkan Produk Baru", baru scan lagi untuk terima barang.
       </div>
       <button class="btn-secondary" style="width:100%; justify-content:center;" onclick="resetTerimaBarangScan()">Coba Scan Lain</button>
     </div>
@@ -2053,6 +2167,32 @@
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('owner-tx-modal')">Batal</button>
       <button class="btn-primary" id="owtx-submit-btn" onclick="submitOwnerTx()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CATAT BIAYA OPERASIONAL -->
+<div class="modal-overlay" id="biaya-modal">
+  <div class="modal-card">
+    <div class="modal-title">Catat Biaya Operasional</div>
+    <div class="field">
+      <label>Kategori</label>
+      <select id="biaya-kategori">
+        <option value="sewa">Sewa Tempat</option>
+        <option value="listrik_air">Listrik &amp; Air</option>
+        <option value="gaji">Gaji Karyawan</option>
+        <option value="transport">Transport &amp; Pengiriman</option>
+        <option value="marketing">Marketing &amp; Promosi</option>
+        <option value="perlengkapan">Perlengkapan Toko</option>
+        <option value="lainnya">Lainnya</option>
+      </select>
+    </div>
+    <div class="field"><label>Jumlah (Rp)</label><input type="number" id="biaya-jumlah" placeholder="0"></div>
+    <div class="field"><label>Tanggal</label><input type="date" id="biaya-tanggal"></div>
+    <div class="field"><label>Keterangan</label><input type="text" id="biaya-keterangan" placeholder="Opsional"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('biaya-modal')">Batal</button>
+      <button class="btn-primary" id="biaya-submit-btn" onclick="submitBiaya()">Simpan</button>
     </div>
   </div>
 </div>
@@ -3411,6 +3551,7 @@
   }
 
   function printReceipt(data){
+    strukTerakhirUntukCetak = data;
     const tenantName = document.getElementById('sidebar-tenant').textContent || 'Usaha';
     const tenantAlamat = currentTenant?.alamat || '';
     const tenantLogo = currentTenant?.logo_url || '';
@@ -3474,8 +3615,106 @@
         <div class="center">Terima kasih 🙏</div>
         ${tombolWA}
         <button class="no-print cetak-btn" onclick="window.print()">🖨️ Cetak Struk Sekarang</button>
+        <button class="no-print cetak-btn" style="background:#0F6FBF; margin-top:8px;" onclick="window.opener.cetakStrukViaBluetooth()">🔵 Cetak via Printer Bluetooth</button>
       </body></html>`);
     win.document.close();
+  }
+
+  // ================= CETAK VIA PRINTER BLUETOOTH THERMAL (ESC/POS) =================
+  let strukTerakhirUntukCetak = null;
+
+  // Susun data struk jadi rangkaian perintah ESC/POS (bahasa mesin printer thermal),
+  // supaya bisa dikirim langsung ke printer Bluetooth tanpa lewat dialog print browser.
+  function buildEscPosReceipt(data){
+    const enc = new TextEncoder();
+    const ESC = 0x1B, GS = 0x1D;
+    const LEBAR = 32; // lebar kertas 58mm standar (32 karakter). Printer 80mm tetap bisa cetak, cuma rata kanan-nya kurang pas.
+    const chunks = [];
+    const teks = (s) => chunks.push(enc.encode(s));
+    const baris = (label, nilai) => {
+      const spasi = Math.max(1, LEBAR - label.length - nilai.length);
+      teks(label + ' '.repeat(spasi) + nilai + '\n');
+    };
+    const tenantName = document.getElementById('sidebar-tenant')?.textContent || 'Usaha';
+
+    chunks.push(new Uint8Array([ESC,0x40])); // reset printer
+    chunks.push(new Uint8Array([ESC,0x61,0x01])); // rata tengah
+    chunks.push(new Uint8Array([ESC,0x21,0x10])); // teks lebih besar buat nama toko
+    teks(tenantName + '\n');
+    chunks.push(new Uint8Array([ESC,0x21,0x00])); // teks normal lagi
+    if (currentTenant?.alamat) teks(currentTenant.alamat + '\n');
+    teks(data.nomorTransaksi + '\n');
+    teks(data.tanggal.toLocaleString('id-ID') + '\n');
+    chunks.push(new Uint8Array([ESC,0x61,0x00])); // rata kiri
+    teks('-'.repeat(LEBAR) + '\n');
+    data.items.forEach(i => {
+      teks(i.name + (i.isGrosir ? ' (Grosir)' : '') + '\n');
+      baris(`${i.qty} x ${i.price.toLocaleString('id-ID')}`, (i.qty*i.price).toLocaleString('id-ID'));
+    });
+    teks('-'.repeat(LEBAR) + '\n');
+    baris('Subtotal', 'Rp' + data.subtotal.toLocaleString('id-ID'));
+    baris('Diskon', '-Rp' + data.diskon.toLocaleString('id-ID'));
+    chunks.push(new Uint8Array([ESC,0x21,0x10]));
+    baris('TOTAL', 'Rp' + data.total.toLocaleString('id-ID'));
+    chunks.push(new Uint8Array([ESC,0x21,0x00]));
+    baris('Bayar', data.metode.replace('_',' ').toUpperCase());
+    if (data.uangDiterima) baris('Diterima', 'Rp' + data.uangDiterima.toLocaleString('id-ID'));
+    if (data.kembalian) baris('Kembalian', 'Rp' + data.kembalian.toLocaleString('id-ID'));
+    teks('\n');
+    chunks.push(new Uint8Array([ESC,0x61,0x01]));
+    teks('Terima kasih\n\n\n');
+    chunks.push(new Uint8Array([GS,0x56,0x00])); // potong kertas (kalau printernya support auto-cutter)
+
+    let total = 0; chunks.forEach(c => total += c.length);
+    const hasil = new Uint8Array(total);
+    let offset = 0; chunks.forEach(c => { hasil.set(c, offset); offset += c.length; });
+    return hasil;
+  }
+
+  // Cari printer Bluetooth yang sudah di-pairing di HP, lalu kirim data struk langsung ke sana.
+  async function cetakStrukViaBluetooth(){
+    if (!strukTerakhirUntukCetak){ alert('Tidak ada data struk untuk dicetak.'); return; }
+    if (!navigator.bluetooth){
+      alert('HP/browser ini belum mendukung cetak Bluetooth langsung. Pakai Chrome di Android, atau cetak/share seperti biasa.');
+      return;
+    }
+    try{
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [
+          '000018f0-0000-1000-8000-00805f9b34fb',
+          '0000ffe0-0000-1000-8000-00805f9b34fb',
+          '0000ff00-0000-1000-8000-00805f9b34fb',
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455'
+        ]
+      });
+      const server = await device.gatt.connect();
+      const services = await server.getPrimaryServices();
+      let tulisKe = null;
+      for (const service of services){
+        const chars = await service.getCharacteristics();
+        for (const ch of chars){
+          if (ch.properties.write || ch.properties.writeWithoutResponse){ tulisKe = ch; break; }
+        }
+        if (tulisKe) break;
+      }
+      if (!tulisKe){
+        alert('Printer ditemukan tapi tidak ada jalur tulis yang cocok. Pastikan printer sudah di-pairing dulu di Pengaturan Bluetooth HP.');
+        return;
+      }
+      const bytes = buildEscPosReceipt(strukTerakhirUntukCetak);
+      const UKURAN_POTONGAN = 180; // banyak printer BLE cuma terima data dalam potongan kecil
+      for (let i=0; i<bytes.length; i+=UKURAN_POTONGAN){
+        const potongan = bytes.slice(i, i+UKURAN_POTONGAN);
+        if (tulisKe.properties.writeWithoutResponse) await tulisKe.writeValueWithoutResponse(potongan);
+        else await tulisKe.writeValue(potongan);
+        await new Promise(r => setTimeout(r, 40));
+      }
+      showToast('✓ Struk terkirim ke printer Bluetooth');
+    } catch(err){
+      console.error('Cetak Bluetooth gagal:', err);
+      alert('Gagal cetak Bluetooth: ' + (err.message || err) + '\n\nPastikan: printer menyala, sudah di-pairing di Pengaturan Bluetooth HP, dan Bluetooth aktif.');
+    }
   }
 
   // ================= MODE OFFLINE: ANTRIAN & SINKRONISASI =================
@@ -4127,19 +4366,34 @@
     if (sub === 'supplier') loadSupplierDebts();
     if (sub === 'opname') loadOpnamePage();
     if (sub === 'rekomendasi') loadRekomendasiPesanan();
-    if (sub === 'pareto') loadAnalisisPareto();
+    if (sub === 'pareto'){ loadAnalisisPareto(); loadRekomendasiMargin(); }
     if (sub === 'aktivitas') loadLogAktivitas();
     if (sub === 'produk') loadApprovalToggleStatus();
   }
 
   // ================= TOGGLE APPROVAL STOK & LOG AKTIVITAS =================
+  const KATEGORI_PRODUK_LABEL = { obat_bebas:'Obat Bebas', obat_resep:'Obat Resep', herbal:'Herbal', skincare:'Skincare', alat_kesehatan:'Alat Kesehatan' };
+
   async function loadApprovalToggleStatus(){
     const toggle = document.getElementById('approval-stok-toggle');
     if (!toggle) return;
-    const { data } = await sb.from('tenants').select('wajib_approval_stok, batas_diskon_persen_staf').eq('id', currentProfile.tenant_id).single();
+    const { data } = await sb.from('tenants').select('wajib_approval_stok, batas_diskon_persen_staf, markup_per_kategori').eq('id', currentProfile.tenant_id).single();
     toggle.checked = !!data?.wajib_approval_stok;
     const batasInput = document.getElementById('batas-diskon-input');
     if (batasInput) batasInput.value = data?.batas_diskon_persen_staf ?? 20;
+
+    const markupList = document.getElementById('markup-kategori-list');
+    if (markupList){
+      const markupData = data?.markup_per_kategori || {};
+      markupList.innerHTML = Object.entries(KATEGORI_PRODUK_LABEL).map(([key, label]) => `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <span style="font-size:12.5px;">${label}</span>
+          <div style="display:flex; align-items:center; gap:4px;">
+            <input type="number" value="${markupData[key] ?? 20}" style="width:70px; border:1px solid var(--line); border-radius:8px; padding:6px 8px; font-size:13px;" onchange="updateMarkupKategori('${key}', this.value)">
+            <span style="font-size:12px; color:var(--ink-soft);">%</span>
+          </div>
+        </div>`).join('');
+    }
   }
 
   async function toggleApprovalStok(checked){
@@ -4153,6 +4407,15 @@
     const { error } = await sb.from('tenants').update({ batas_diskon_persen_staf: persen }).eq('id', currentProfile.tenant_id);
     if (error){ showToast('Gagal mengubah pengaturan: ' + error.message, true); return; }
     showToast(`✓ Batas diskon staf diatur ke ${persen}%`);
+  }
+
+  async function updateMarkupKategori(kategori, value){
+    const persen = parseFloat(value) || 0;
+    const { data: tenantData } = await sb.from('tenants').select('markup_per_kategori').eq('id', currentProfile.tenant_id).single();
+    const markupBaru = { ...(tenantData?.markup_per_kategori || {}), [kategori]: persen };
+    const { error } = await sb.from('tenants').update({ markup_per_kategori: markupBaru }).eq('id', currentProfile.tenant_id);
+    if (error){ showToast('Gagal mengubah pengaturan: ' + error.message, true); return; }
+    showToast(`✓ Markup ${KATEGORI_PRODUK_LABEL[kategori]} diatur ke ${persen}%`);
   }
 
   let logAktivitasFilter = 'semua';
@@ -5229,6 +5492,9 @@
     document.querySelectorAll('.apoteker-access').forEach(el => {
       el.style.display = (role === 'owner' || role === 'apoteker') ? '' : 'none';
     });
+    document.querySelectorAll('.gudang-simple-access').forEach(el => {
+      el.style.display = (role === 'owner' || role === 'apoteker' || role === 'admin_gudang') ? '' : 'none';
+    });
   }
 
   // ================= STOCK OPNAME =================
@@ -5525,6 +5791,61 @@
           <div class="row-right"><div class="num" style="font-size:13px;">Rp ${Math.round(r.omzet).toLocaleString('id-ID')}</div></div>
         </div>`).join('')}`;
   }
+
+  // ================= REKOMENDASI MARGIN BERBASIS KECEPATAN LAKU =================
+  // Prinsip ritel: barang laku cepat → margin tipis (kompetitif), barang jarang laku → margin tebal (kompensasi biaya simpan & risiko).
+  // Ini cuma SARAN, tidak mengubah harga otomatis — Owner yang putuskan.
+  async function loadRekomendasiMargin(){
+    const el = document.getElementById('margin-rekomendasi-list');
+    if (!el) return; // bukan owner, panel tidak ada di DOM
+    el.innerHTML = '<div class="loading-note">Menganalisis…</div>';
+
+    const tenantId = currentProfile.tenant_id;
+    const day90ago = new Date(); day90ago.setDate(day90ago.getDate() - 90);
+
+    const [{ data: items }, { data: produk }] = await Promise.all([
+      sb.from('transaction_items').select('product_id, qty, transactions!inner(tenant_id, created_at, status_transaksi)')
+        .eq('transactions.tenant_id', tenantId).gte('transactions.created_at', day90ago.toISOString()).neq('transactions.status_transaksi','dibatalkan'),
+      sb.from('products').select('id, nama, harga, harga_modal, kategori').eq('tenant_id', tenantId),
+    ]);
+
+    if (!items || items.length === 0 || !produk){ el.innerHTML = '<div class="loading-note">Belum cukup data penjualan 90 hari terakhir.</div>'; return; }
+
+    const qtyPerProduk = {};
+    items.forEach(i => { if (i.product_id) qtyPerProduk[i.product_id] = (qtyPerProduk[i.product_id] || 0) + i.qty; });
+
+    const produkMap = {}; produk.forEach(p => produkMap[p.id] = p);
+    const qtyArr = Object.values(qtyPerProduk).sort((a,b)=>a-b);
+    const batas1 = qtyArr[Math.floor(qtyArr.length * 0.33)] || 0; // batas Lambat/Sedang
+    const batas2 = qtyArr[Math.floor(qtyArr.length * 0.66)] || 0; // batas Sedang/Cepat
+
+    const rekomendasi = [];
+    Object.entries(qtyPerProduk).forEach(([productId, qtyTerjual]) => {
+      const p = produkMap[productId];
+      if (!p || !p.harga_modal || p.harga_modal <= 0) return;
+      const marginPersen = ((p.harga - p.harga_modal) / p.harga_modal) * 100;
+      const kecepatan = qtyTerjual <= batas1 ? 'Lambat' : (qtyTerjual <= batas2 ? 'Sedang' : 'Cepat');
+
+      let saran = null;
+      if (kecepatan === 'Cepat' && marginPersen > 30){
+        saran = { arah:'turun', teks:`Laku cepat (${qtyTerjual}x terjual) tapi margin ${marginPersen.toFixed(0)}% — pertimbangkan turunkan biar makin kompetitif & makin laris` };
+      } else if (kecepatan === 'Lambat' && marginPersen < 40){
+        saran = { arah:'naik', teks:`Jarang laku (${qtyTerjual}x dalam 90 hari) tapi margin cuma ${marginPersen.toFixed(0)}% — pertimbangkan naikkan, jarang dibandingkan harga pesaing` };
+      }
+      if (saran) rekomendasi.push({ nama: p.nama, kecepatan, marginPersen, ...saran, id: p.id });
+    });
+
+    if (rekomendasi.length === 0){ el.innerHTML = '<div class="loading-note">Margin produk-produk yang laku sudah cukup seimbang, tidak ada saran khusus saat ini.</div>'; return; }
+
+    rekomendasi.sort((a,b) => Math.abs(b.marginPersen-40) - Math.abs(a.marginPersen-40));
+    el.innerHTML = rekomendasi.slice(0, 15).map(r => `
+      <div class="row-item">
+        <div class="emp-dot" style="${r.arah==='turun' ? 'background:var(--danger-tint,#FBE4E4); color:var(--danger);' : 'background:var(--good-tint); color:var(--good);'}">${r.arah==='turun' ? '↓' : '↑'}</div>
+        <div><div class="row-name">${r.nama} <span class="pill" style="font-size:9.5px;">${r.kecepatan}</span></div><div class="row-meta">${r.teks}</div></div>
+        <div class="row-right"><div class="num" style="font-size:12.5px;">${r.marginPersen.toFixed(0)}%</div></div>
+      </div>`).join('');
+  }
+
 
   async function loadOpnamePage(){
     const { data: session } = await sb.from('stock_opname_sessions').select('*').eq('tenant_id', currentProfile.tenant_id).eq('status','berjalan').maybeSingle();
@@ -5933,6 +6254,46 @@
 
     showToast(editingProductId ? '✓ Produk berhasil diperbarui' : '✓ Produk berhasil ditambahkan');
     closeProductModal();
+    await loadStokPage();
+  }
+
+  // ===== Daftarkan Produk Baru versi Gudang (tanpa harga jual/margin terlihat) =====
+  function openDaftarProdukGudangModal(){
+    ['gpf-nama','gpf-stok','gpf-harga-modal','gpf-produsen'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('gudang-product-modal').classList.add('show');
+  }
+
+  async function submitDaftarProdukGudang(){
+    const nama = document.getElementById('gpf-nama').value.trim();
+    const hargaModal = parseFloat(document.getElementById('gpf-harga-modal').value) || 0;
+    if (!nama){ showToast('Nama produk wajib diisi.', true); return; }
+    if (hargaModal <= 0){ showToast('Harga modal wajib diisi.', true); return; }
+
+    const btn = document.getElementById('gpf-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+
+    // Harga jual dihitung otomatis dari markup per kategori milik tenant — admin gudang tidak perlu (dan tidak lihat) angka ini dihitung
+    const kategoriDipilih = document.getElementById('gpf-kategori').value;
+    const { data: tenantData } = await sb.from('tenants').select('markup_per_kategori').eq('id', currentProfile.tenant_id).single();
+    const markup = tenantData?.markup_per_kategori?.[kategoriDipilih] ?? 20;
+    const hargaJualOtomatis = Math.round(hargaModal * (1 + markup / 100));
+
+    const { error } = await sb.from('products').insert({
+      tenant_id: currentProfile.tenant_id,
+      nama,
+      kategori: document.getElementById('gpf-kategori').value,
+      satuan: document.getElementById('gpf-satuan').value,
+      produsen: document.getElementById('gpf-produsen').value.trim() || null,
+      harga_modal: hargaModal,
+      harga: hargaJualOtomatis,
+      stok: parseInt(document.getElementById('gpf-stok').value) || 0,
+      stok_minimum: 10,
+    });
+
+    btn.disabled = false; btn.textContent = 'Simpan & Daftarkan';
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Produk terdaftar, harga jual otomatis mengikuti aturan markup toko');
+    closeModal('gudang-product-modal');
     await loadStokPage();
   }
 
@@ -6554,8 +6915,81 @@
     if (name === 'pelanggan') loadPelangganPage();
     if (name === 'profilsaya') loadProfilSaya();
     if (name === 'pajak') loadPajakPage();
+    if (name === 'langganan') loadLanggananPage();
     if (name === 'keuangan') loadOwnerTx();
     if (name === 'pos'){ loadProducts(); loadShiftStatus(); }
+  }
+
+  const LABEL_STATUS_LANGGANAN = {
+    trial: { teks: 'Masa Coba Gratis', warna: 'var(--brand)' },
+    aktif: { teks: 'Aktif', warna: 'var(--good)' },
+    telat_bayar: { teks: 'Telat Bayar', warna: 'var(--warn)' },
+    nonaktif: { teks: 'Nonaktif', warna: 'var(--danger)' },
+  };
+  const NAMA_PAKET = { kasir_keuangan: 'Kasir & Keuangan', lengkap: 'Lengkap', hr: 'Kasir + HR', pajak_ai: 'Kasir + Pajak AI' };
+
+  async function loadLanggananPage(){
+    const box = document.getElementById('langganan-status-box');
+    const { data: tenant, error } = await sb.from('tenants').select('status_langganan, paket, trial_berakhir_pada, langganan_berakhir_pada').eq('id', currentProfile.tenant_id).single();
+    if (error || !tenant){ box.innerHTML = '<div class="loading-note">Gagal memuat status langganan.</div>'; return; }
+
+    const info = LABEL_STATUS_LANGGANAN[tenant.status_langganan] || LABEL_STATUS_LANGGANAN.trial;
+    const tanggalPenting = tenant.status_langganan === 'trial' ? tenant.trial_berakhir_pada : tenant.langganan_berakhir_pada;
+    const labelTanggal = tenant.status_langganan === 'trial' ? 'Trial berakhir' : 'Aktif sampai';
+    const sisaHari = tanggalPenting ? Math.ceil((new Date(tanggalPenting) - new Date()) / 86400000) : null;
+
+    box.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <div>
+          <div style="font-size:11px; color:var(--ink-soft); font-weight:700;">PAKET</div>
+          <div style="font-size:16px; font-weight:800;">${NAMA_PAKET[tenant.paket] || tenant.paket || '—'}</div>
+        </div>
+        <div style="padding:6px 14px; border-radius:20px; background:${info.warna}; color:#fff; font-size:11px; font-weight:800;">${info.teks}</div>
+      </div>
+      ${tanggalPenting ? `<div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:16px;">${labelTanggal}: <b>${new Date(tanggalPenting).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'})}</b>${sisaHari !== null && sisaHari >= 0 ? ` (${sisaHari} hari lagi)` : ''}</div>` : ''}
+      <button class="btn-primary" style="width:100%;" id="btn-bayar-langganan" onclick="bayarLangganan()">💳 Bayar / Perpanjang Langganan</button>
+    `;
+
+    const { data: riwayat } = await sb.from('tagihan_langganan').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(20);
+    const list = document.getElementById('langganan-riwayat-list');
+    if (!riwayat || riwayat.length === 0){ list.innerHTML = '<div class="loading-note">Belum ada riwayat tagihan.</div>'; return; }
+    const labelStatusTagihan = { menunggu: ['Menunggu Bayar','var(--warn)'], lunas: ['Lunas','var(--good)'], gagal: ['Gagal','var(--danger)'], kadaluwarsa: ['Kadaluwarsa','var(--ink-soft)'] };
+    list.innerHTML = riwayat.map(t => {
+      const [teks, warna] = labelStatusTagihan[t.status] || ['-','var(--ink-soft)'];
+      return `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line);">
+        <div>
+          <div style="font-size:12.5px; font-weight:700;">${new Date(t.periode_mulai).toLocaleDateString('id-ID',{day:'numeric',month:'short'})} - ${new Date(t.periode_selesai).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
+          <div class="num" style="font-size:11.5px; color:var(--ink-soft);">Rp ${Number(t.jumlah).toLocaleString('id-ID')}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:10.5px; font-weight:800; color:${warna};">${teks}</span>
+          ${t.status === 'menunggu' && t.midtrans_payment_url ? `<a href="${t.midtrans_payment_url}" target="_blank" style="font-size:10.5px; font-weight:700; color:var(--brand);">Bayar →</a>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Minta link bayar Midtrans lewat Edge Function (Server Key aman di server, tidak pernah ada di kode HTML ini)
+  async function bayarLangganan(){
+    const btn = document.getElementById('btn-bayar-langganan');
+    btn.disabled = true; btn.textContent = 'Menyiapkan link pembayaran…';
+    try{
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/midtrans-buat-tagihan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Gagal membuat link pembayaran.');
+      window.open(result.payment_url, '_blank');
+      showToast('Link pembayaran dibuka di tab baru.');
+      setTimeout(loadLanggananPage, 1500);
+    } catch(err){
+      alert('Gagal memulai pembayaran: ' + err.message + '\n\nKemungkinan Server Key Midtrans belum dipasang di Edge Function Secrets.');
+    } finally {
+      btn.disabled = false; btn.textContent = '💳 Bayar / Perpanjang Langganan';
+    }
   }
 
   async function loadStokPage(){
@@ -6621,6 +7055,43 @@
     d.setDate(1); d.setHours(0,0,0,0); return d; // month (default)
   }
 
+  const KATEGORI_BIAYA_LABEL = { sewa:'Sewa Tempat', listrik_air:'Listrik & Air', gaji:'Gaji Karyawan', transport:'Transport & Pengiriman', marketing:'Marketing & Promosi', perlengkapan:'Perlengkapan Toko', lainnya:'Lainnya' };
+  let kwChartInstance = null;
+
+  // Rentang periode sekarang + periode sebelumnya (buat bandingkan naik/turun) + rentang untuk grafik
+  function getPeriodRange(period){
+    const now = new Date();
+    let start, prevStart, prevEnd, bucket;
+    if (period === 'today'){
+      start = new Date(now); start.setHours(0,0,0,0);
+      prevEnd = new Date(start);
+      prevStart = new Date(start); prevStart.setDate(prevStart.getDate()-1);
+      bucket = 'jam';
+    } else if (period === 'week'){
+      start = new Date(now); start.setDate(start.getDate() - start.getDay()); start.setHours(0,0,0,0);
+      prevEnd = new Date(start);
+      prevStart = new Date(start); prevStart.setDate(prevStart.getDate()-7);
+      bucket = 'hari';
+    } else if (period === 'year'){
+      start = new Date(now.getFullYear(),0,1);
+      prevEnd = new Date(start);
+      prevStart = new Date(now.getFullYear()-1,0,1);
+      bucket = 'bulan';
+    } else { // month
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      prevEnd = new Date(start);
+      prevStart = new Date(now.getFullYear(), now.getMonth()-1, 1);
+      bucket = 'hari';
+    }
+    return { start, end: now, prevStart, prevEnd, bucket };
+  }
+
+  function persenPerubahan(sekarang, dulu){
+    if (!dulu) return sekarang > 0 ? '+100%' : '0%';
+    const p = ((sekarang - dulu) / Math.abs(dulu)) * 100;
+    return (p >= 0 ? '+' : '') + p.toFixed(0) + '%';
+  }
+
   async function loadKeuanganPage(){
     const listEl = document.getElementById('keuangan-list');
     listEl.innerHTML = '<div class="loading-note">Memuat data…</div>';
@@ -6629,13 +7100,16 @@
     document.getElementById('kw-omzet-label').textContent = 'Total Omzet ' + label;
     document.getElementById('kw-list-title').textContent = 'Semua Transaksi ' + label;
 
-    const periodStart = getPeriodStart(keuanganPeriod);
+    const { start, prevStart, prevEnd, bucket } = getPeriodRange(keuanganPeriod);
 
-    const { data, error } = await sb.from('transactions')
-      .select('id, nomor_transaksi, total, metode_bayar, created_at, status_transaksi, alasan_batal, alasan_diskon_besar, transaction_items(nama_produk, qty, total_hpp)')
-      .eq('tenant_id', currentProfile.tenant_id)
-      .gte('created_at', periodStart.toISOString())
-      .order('created_at', { ascending:false });
+    const [{ data, error }, { data: dataSebelum }, { data: biaya }, { data: biayaSebelum }] = await Promise.all([
+      sb.from('transactions').select('id, nomor_transaksi, total, metode_bayar, created_at, status_transaksi, alasan_batal, alasan_diskon_besar, transaction_items(nama_produk, qty, total_hpp)')
+        .eq('tenant_id', currentProfile.tenant_id).gte('created_at', start.toISOString()).order('created_at', { ascending:false }),
+      sb.from('transactions').select('total, created_at, status_transaksi')
+        .eq('tenant_id', currentProfile.tenant_id).gte('created_at', prevStart.toISOString()).lt('created_at', prevEnd.toISOString()),
+      sb.from('biaya_operasional').select('*').eq('tenant_id', currentProfile.tenant_id).gte('tanggal', start.toISOString().slice(0,10)).order('tanggal',{ascending:false}),
+      sb.from('biaya_operasional').select('jumlah').eq('tenant_id', currentProfile.tenant_id).gte('tanggal', prevStart.toISOString().slice(0,10)).lt('tanggal', prevEnd.toISOString().slice(0,10)),
+    ]);
 
     if (error){ listEl.innerHTML = '<div class="loading-note">Gagal memuat data.</div>'; return; }
 
@@ -6643,11 +7117,57 @@
     const total = dataAktif.reduce((s,t) => s + parseFloat(t.total), 0);
     const totalHPP = dataAktif.reduce((s,t) => s + t.transaction_items.reduce((si,i) => si + parseFloat(i.total_hpp || 0), 0), 0);
     const labaKotor = total - totalHPP;
+    const totalBiaya = (biaya || []).reduce((s,b) => s + parseFloat(b.jumlah), 0);
+    const labaBersih = labaKotor - totalBiaya;
     const count = dataAktif.length;
+
+    const totalSebelum = (dataSebelum || []).filter(t=>t.status_transaksi!=='dibatalkan').reduce((s,t)=>s+parseFloat(t.total),0);
+    const biayaSebelumTotal = (biayaSebelum || []).reduce((s,b)=>s+parseFloat(b.jumlah),0);
+    // Perkiraan laba bersih periode lalu pakai rasio HPP yang sama (data HPP periode lalu tidak diambil detail biar ringan)
+    const rasioHpp = total > 0 ? totalHPP/total : 0;
+    const labaBersihSebelum = (totalSebelum - totalSebelum*rasioHpp) - biayaSebelumTotal;
+
     document.getElementById('kw-omzet-bulan').textContent = 'Rp ' + total.toLocaleString('id-ID');
     document.getElementById('kw-jumlah-trx').textContent = count;
     document.getElementById('kw-rata-rata').textContent = 'Rp ' + (count ? Math.round(total/count) : 0).toLocaleString('id-ID');
-    document.getElementById('kw-laba-kotor').textContent = 'Rp ' + Math.round(labaKotor).toLocaleString('id-ID');
+    document.getElementById('kw-laba-bersih').textContent = 'Rp ' + Math.round(labaBersih).toLocaleString('id-ID');
+
+    const trOmzet = persenPerubahan(total, totalSebelum);
+    document.getElementById('kw-omzet-trend').innerHTML = `<span style="color:${trOmzet.startsWith('+')?'var(--good)':'var(--danger)'}">${trOmzet} vs periode lalu</span>`;
+    const trLaba = persenPerubahan(labaBersih, labaBersihSebelum);
+    document.getElementById('kw-laba-trend').innerHTML = `<span style="color:${trLaba.startsWith('+')?'var(--good)':'var(--danger)'}">${trLaba} vs periode lalu</span>`;
+
+    // ===== Laporan Laba Rugi =====
+    const rugi = document.getElementById('kw-laba-rugi');
+    const baris = (l,v,bold,warna) => `<div style="display:flex; justify-content:space-between; padding:6px 0; ${bold?'font-weight:800; border-top:1.5px solid var(--line); margin-top:4px; padding-top:10px;':''}"><span style="${warna?'color:'+warna+';':''}">${l}</span><span class="num" style="${warna?'color:'+warna+';':''}">Rp ${Math.round(v).toLocaleString('id-ID')}</span></div>`;
+    const biayaPerKategori = (biaya||[]).reduce((acc,b)=>{ acc[b.kategori]=(acc[b.kategori]||0)+parseFloat(b.jumlah); return acc; },{});
+    const barisBiayaPerKategori = Object.entries(biayaPerKategori).map(([k,v]) => baris('　' + KATEGORI_BIAYA_LABEL[k], -v, false, 'var(--ink-soft)')).join('');
+    rugi.innerHTML = baris('Omzet Penjualan', total) + baris('HPP (Modal Barang Terjual)', -totalHPP, false, 'var(--danger)') + baris('Laba Kotor', labaKotor, true) +
+      barisBiayaPerKategori +
+      baris('Total Biaya Operasional', -totalBiaya, false, 'var(--danger)') + baris('Laba Bersih', labaBersih, true, labaBersih>=0?'var(--good)':'var(--danger)');
+
+    // ===== Arus Kas sederhana: tunai masuk dari transaksi tunai - tunai keluar dari biaya =====
+    const kasMasuk = dataAktif.filter(t=>t.metode_bayar==='tunai').reduce((s,t)=>s+parseFloat(t.total),0);
+    const kasNonTunai = total - kasMasuk;
+    const kasKeluar = totalBiaya;
+    const kasBersih = kasMasuk - kasKeluar;
+    const arus = document.getElementById('kw-arus-kas');
+    arus.innerHTML = baris('Kas Masuk (Tunai)', kasMasuk) + baris('Kas Masuk (Non-Tunai/Transfer)', kasNonTunai, false, 'var(--ink-soft)') + baris('Kas Keluar (Biaya Operasional)', -kasKeluar, false, 'var(--danger)') + baris('Kas Bersih Bertambah', kasBersih, true, kasBersih>=0?'var(--good)':'var(--danger)');
+
+    // ===== Daftar Biaya =====
+    const biayaListEl = document.getElementById('biaya-list');
+    if (!biaya || biaya.length === 0){ biayaListEl.innerHTML = '<div class="loading-note">Belum ada biaya tercatat.</div>'; }
+    else {
+      biayaListEl.innerHTML = biaya.map(b => `
+        <div class="row-item">
+          <div class="emp-dot">💸</div>
+          <div><div class="row-name">${KATEGORI_BIAYA_LABEL[b.kategori]||b.kategori}</div><div class="row-meta">${b.keterangan || ''} · ${new Date(b.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</div></div>
+          <div class="row-right"><div class="num" style="font-size:13px;">Rp ${parseFloat(b.jumlah).toLocaleString('id-ID')}</div></div>
+        </div>`).join('');
+    }
+
+    // ===== Grafik Tren =====
+    renderKeuanganChart(dataAktif, biaya || [], start, bucket);
 
     if (!data || data.length === 0){
       listEl.innerHTML = `<div class="loading-note">Belum ada transaksi ${label.toLowerCase()}.</div>`;
@@ -6671,6 +7191,99 @@
             </tr>`).join('')}
         </tbody>
       </table>`;
+  }
+
+  // Susun data transaksi jadi titik-titik grafik per hari/jam/bulan, lalu gambar pakai Chart.js
+  function renderKeuanganChart(transaksi, biaya, start, bucket){
+    const now = new Date();
+    const labels = [];
+    const keyOf = (d) => {
+      if (bucket === 'jam') return d.getHours();
+      if (bucket === 'bulan') return d.getFullYear()+'-'+d.getMonth();
+      return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+    };
+    const omzetMap = {}, biayaMap = {};
+
+    if (bucket === 'jam'){
+      for (let h=0; h<24; h++){ labels.push(h+':00'); omzetMap[h]=0; biayaMap[h]=0; }
+    } else if (bucket === 'bulan'){
+      for (let m=0; m<12; m++){ const d=new Date(start.getFullYear(),m,1); const k=keyOf(d); labels.push(d.toLocaleDateString('id-ID',{month:'short'})); omzetMap[k]=0; biayaMap[k]=0; }
+    } else {
+      const cursor = new Date(start);
+      while (cursor <= now){ const k=keyOf(cursor); labels.push(cursor.toLocaleDateString('id-ID',{day:'numeric',month:'short'})); omzetMap[k]=0; biayaMap[k]=0; cursor.setDate(cursor.getDate()+1); }
+    }
+
+    transaksi.forEach(t => { const k = keyOf(new Date(t.created_at)); if (k in omzetMap) omzetMap[k] += parseFloat(t.total); });
+    biaya.forEach(b => { const k = keyOf(new Date(b.tanggal)); if (k in biayaMap) biayaMap[k] += parseFloat(b.jumlah); });
+
+    const dataOmzet = Object.keys(omzetMap).map(k => omzetMap[k]);
+    const dataLaba = Object.keys(omzetMap).map(k => omzetMap[k] - biayaMap[k]); // laba disederhanakan (belum kurangi HPP per-bucket, cukup buat lihat tren)
+
+    if (kwChartInstance) kwChartInstance.destroy();
+    const ctx = document.getElementById('kw-chart-tren').getContext('2d');
+    kwChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label:'Omzet', data:dataOmzet, borderColor:'#2C4A3A', backgroundColor:'rgba(44,74,58,0.08)', fill:true, tension:0.3, pointRadius:2 },
+          { label:'Laba (perkiraan)', data:dataLaba, borderColor:'#B8860B', backgroundColor:'rgba(184,134,11,0.06)', fill:true, tension:0.3, pointRadius:2 },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'bottom', labels:{ font:{ size:11 } } } },
+        scales:{ y:{ ticks:{ callback:(v)=> 'Rp '+(v/1000).toLocaleString('id-ID')+'rb', font:{size:10} } }, x:{ ticks:{ font:{size:10} } } }
+      }
+    });
+  }
+
+  function openBiayaModal(){
+    document.getElementById('biaya-jumlah').value = '';
+    document.getElementById('biaya-keterangan').value = '';
+    document.getElementById('biaya-tanggal').value = new Date().toISOString().slice(0,10);
+    document.getElementById('biaya-modal').classList.add('show');
+  }
+  async function submitBiaya(){
+    const jumlah = parseFloat(document.getElementById('biaya-jumlah').value) || 0;
+    if (jumlah <= 0){ showToast('Jumlah wajib diisi.', true); return; }
+    const btn = document.getElementById('biaya-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    const { error } = await sb.from('biaya_operasional').insert({
+      tenant_id: currentProfile.tenant_id,
+      kategori: document.getElementById('biaya-kategori').value,
+      jumlah,
+      tanggal: document.getElementById('biaya-tanggal').value || new Date().toISOString().slice(0,10),
+      keterangan: document.getElementById('biaya-keterangan').value.trim() || null,
+      dicatat_oleh: currentProfile.id,
+    });
+    btn.disabled = false; btn.textContent = 'Simpan';
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Biaya tercatat');
+    closeModal('biaya-modal');
+    await loadKeuanganPage();
+  }
+
+  // Ekspor ringkasan periode yang sedang dilihat ke file Excel (pakai library xlsx yang sudah ada)
+  async function exportKeuanganExcel(){
+    const { start } = getPeriodRange(keuanganPeriod);
+    const { data } = await sb.from('transactions').select('nomor_transaksi, total, metode_bayar, created_at, status_transaksi, transaction_items(nama_produk, qty, total_hpp)')
+      .eq('tenant_id', currentProfile.tenant_id).gte('created_at', start.toISOString()).order('created_at');
+    const { data: biaya } = await sb.from('biaya_operasional').select('*').eq('tenant_id', currentProfile.tenant_id).gte('tanggal', start.toISOString().slice(0,10));
+
+    const sheetTransaksi = (data||[]).map(t => ({
+      'No. Transaksi': t.nomor_transaksi, 'Tanggal': new Date(t.created_at).toLocaleString('id-ID'),
+      'Metode Bayar': t.metode_bayar, 'Status': t.status_transaksi,
+      'Total': parseFloat(t.total), 'HPP': t.transaction_items.reduce((s,i)=>s+parseFloat(i.total_hpp||0),0),
+    }));
+    const sheetBiaya = (biaya||[]).map(b => ({ 'Kategori': KATEGORI_BIAYA_LABEL[b.kategori]||b.kategori, 'Tanggal': b.tanggal, 'Jumlah': parseFloat(b.jumlah), 'Keterangan': b.keterangan || '' }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheetTransaksi), 'Transaksi');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheetBiaya), 'Biaya Operasional');
+    const namaFile = `Laporan Keuangan - ${PERIOD_LABEL[keuanganPeriod]} - ${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, namaFile);
+    showToast('✓ File Excel diunduh');
   }
 
   (async () => {
