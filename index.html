@@ -57,6 +57,31 @@
   .live-dot{ width:7px; height:7px; border-radius:50%; background:#7FD9A6; animation:pulse 1.6s infinite; }
   @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
 
+  /* ===== Checklist Tugas Harian — desain elegan ===== */
+  .tugas-progress-wrap{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .tugas-progress-track{ flex:1; height:6px; border-radius:4px; background:rgba(44,74,58,0.12); overflow:hidden; }
+  .tugas-progress-fill{ height:100%; background:var(--brand); border-radius:4px; transition:width .4s ease; }
+  .tugas-progress-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; color:var(--brand); white-space:nowrap; }
+  .tugas-card{ display:flex; align-items:flex-start; gap:12px; padding:14px 4px; border-bottom:1px solid var(--line); }
+  .tugas-card:last-child{ border-bottom:none; }
+  .tugas-check{ width:24px; height:24px; border-radius:50%; border:2px solid var(--brand); flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-top:1px; cursor:pointer; transition:all .15s ease; background:var(--surface); }
+  .tugas-check:active{ transform:scale(0.9); }
+  .tugas-check.done{ background:var(--brand); }
+  .tugas-check.done svg{ display:block; }
+  .tugas-check svg{ display:none; }
+  .tugas-check.readonly{ cursor:default; }
+  .tugas-body{ flex:1; min-width:0; }
+  .tugas-judul{ font-family:'Fraunces',serif; font-size:15px; font-weight:600; line-height:1.35; color:var(--ink); }
+  .tugas-judul.done{ text-decoration:line-through; color:var(--ink-soft); }
+  .tugas-meta{ font-size:11.5px; color:var(--ink-soft); margin-top:4px; line-height:1.5; }
+  .tugas-prio{ display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  .tugas-owner-pill{ font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+  .tugas-owner-pill.done{ background:var(--good-tint); color:var(--good); }
+  .tugas-owner-pill.belum{ background:var(--amber-tint); color:var(--amber); }
+  .tugas-empty{ text-align:center; padding:20px 10px; }
+  .tugas-empty-icon{ font-size:26px; margin-bottom:6px; }
+  .tugas-empty-text{ font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft); font-style:italic; }
+
   /* ---------- AUTH SCREEN ---------- */
   #auth-screen{
     min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--brand-deep); padding:20px;
@@ -316,7 +341,7 @@
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v41-0900</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v43-1000</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -439,9 +464,17 @@
         </button>
       </div>
 
+      <div class="panel owner-only" id="saran-tugas-panel" style="display:none;">
+        <div class="panel-head"><div class="panel-title">🤖 Saran Tugas Otomatis</div></div>
+        <div class="panel-body" id="saran-tugas-list"></div>
+      </div>
+
       <div class="panel" id="tugas-harian-panel" style="border:1.5px solid var(--brand); background:var(--brand-tint);">
         <div class="panel-head">
-          <div class="panel-title" style="color:var(--brand);">📋 Tugas Hari Ini Untukmu</div>
+          <div>
+            <div style="font-size:10px; font-weight:700; color:var(--brand); text-transform:uppercase; letter-spacing:.08em; margin-bottom:2px;">Checklist Harian</div>
+            <div class="panel-title" style="color:var(--brand); font-family:'Fraunces',serif;">Tugas Hari Ini</div>
+          </div>
           <button class="btn-secondary owner-only" onclick="openTugasModal()">+ Kasih Tugas</button>
         </div>
         <div class="panel-body" id="tugas-harian-list"><div class="loading-note">Memuat…</div></div>
@@ -1929,7 +1962,8 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
 <!-- MODAL KASIH TUGAS HARIAN -->
 <div class="modal-overlay" id="tugas-modal">
   <div class="modal-card">
-    <div class="modal-title">Kasih Tugas / Instruksi</div>
+    <div style="font-size:10px; font-weight:700; color:var(--brand); text-transform:uppercase; letter-spacing:.08em; margin-bottom:2px;">Checklist Harian</div>
+    <div class="modal-title" style="font-family:'Fraunces',serif;">Kasih Tugas</div>
     <div class="field"><label>Judul Tugas</label><input type="text" id="tg-judul" placeholder="Contoh: Cek ulang stok obat resep"></div>
     <div class="field"><label>Detail (opsional)</label><input type="text" id="tg-deskripsi" placeholder="Penjelasan tambahan"></div>
     <div class="field">
@@ -1947,11 +1981,12 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     </div>
     <div class="field">
       <label>Prioritas</label>
-      <select id="tg-prioritas">
-        <option value="sedang">Sedang</option>
-        <option value="tinggi">Tinggi</option>
-        <option value="rendah">Rendah</option>
-      </select>
+      <div style="display:flex; gap:8px;" id="tg-prioritas-pills">
+        <div class="tg-prio-pill" data-val="rendah" onclick="pilihPrioritasTugas('rendah')" style="flex:1; text-align:center; padding:9px 0; border-radius:10px; border:1.5px solid var(--line); font-size:12px; font-weight:700; cursor:pointer; color:var(--ink-soft);">Rendah</div>
+        <div class="tg-prio-pill" data-val="sedang" onclick="pilihPrioritasTugas('sedang')" style="flex:1; text-align:center; padding:9px 0; border-radius:10px; border:1.5px solid var(--amber); background:var(--amber-tint); font-size:12px; font-weight:700; cursor:pointer; color:var(--amber);">Sedang</div>
+        <div class="tg-prio-pill" data-val="tinggi" onclick="pilihPrioritasTugas('tinggi')" style="flex:1; text-align:center; padding:9px 0; border-radius:10px; border:1.5px solid var(--line); font-size:12px; font-weight:700; cursor:pointer; color:var(--ink-soft);">Tinggi</div>
+      </div>
+      <input type="hidden" id="tg-prioritas" value="sedang">
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('tugas-modal')">Batal</button>
@@ -2659,6 +2694,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
 
     loadTugasHarian();
+    if (currentProfile.role === 'owner') loadSaranTugasOtomatis();
 
     const { data: todayTx } = await sb.from('transactions')
       .select('total').eq('tenant_id', tenantId).gte('created_at', todayStart.toISOString());
@@ -8031,7 +8067,20 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     ['tg-judul','tg-deskripsi'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('tg-target').value = 'semua';
     document.getElementById('tg-karyawan-list').style.display = 'none';
+    pilihPrioritasTugas('sedang');
     document.getElementById('tugas-modal').classList.add('show');
+  }
+
+  function pilihPrioritasTugas(val){
+    document.getElementById('tg-prioritas').value = val;
+    const WARNA = { rendah: { border:'var(--line)', bg:'transparent', text:'var(--ink-soft)' }, sedang: { border:'var(--amber)', bg:'var(--amber-tint)', text:'var(--amber)' }, tinggi: { border:'var(--danger)', bg:'var(--danger-tint)', text:'var(--danger)' } };
+    document.querySelectorAll('.tg-prio-pill').forEach(el => {
+      const aktif = el.dataset.val === val;
+      const w = WARNA[el.dataset.val];
+      el.style.borderColor = aktif ? w.border : 'var(--line)';
+      el.style.background = aktif ? w.bg : 'transparent';
+      el.style.color = aktif ? w.text : 'var(--ink-soft)';
+    });
   }
 
   async function submitTugas(){
@@ -8068,6 +8117,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     const el = document.getElementById('tugas-harian-list');
     if (!el) return;
     const isOwner = currentProfile.role === 'owner';
+    const PRIORITAS_WARNA = { tinggi:'var(--danger)', sedang:'var(--amber)', rendah:'var(--ink-soft)' };
 
     if (isOwner){
       // Owner lihat SEMUA tugas hari ini + status siapa yang sudah/belum selesai — buat dipantau
@@ -8077,34 +8127,56 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         sb.from('employees').select('profile_id, nama').eq('tenant_id', currentProfile.tenant_id).not('profile_id','is',null),
       ]);
       const namaMap = {}; (karyawanList||[]).forEach(k => namaMap[k.profile_id] = k.nama);
-      if (!tugas || tugas.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada tugas dikirim hari ini.</div>'; return; }
-      const PRIORITAS_WARNA = { tinggi:'var(--danger)', sedang:'var(--amber)', rendah:'var(--ink-soft)' };
-      el.innerHTML = tugas.map(t => {
-        const targetLabel = t.ditugaskan_ke ? (namaMap[t.ditugaskan_ke] || 'Karyawan') : t.ditugaskan_role ? `Semua ${t.ditugaskan_role}` : 'Semua Karyawan';
-        return `<div class="row-item">
-          <div class="emp-dot" style="background:${t.status==='selesai'?'var(--good-tint)':'var(--surface-2)'}; color:${t.status==='selesai'?'var(--good)':PRIORITAS_WARNA[t.prioritas]};">${t.status==='selesai'?'✓':'●'}</div>
-          <div><div class="row-name">${t.judul}</div><div class="row-meta">Untuk: ${targetLabel}${t.deskripsi ? ' · ' + t.deskripsi : ''}</div></div>
-          <div class="row-right"><span class="pill ${t.status==='selesai'?'ok':'warn'}">${t.status==='selesai'?'Selesai':'Belum'}</span></div>
+      if (!tugas || tugas.length === 0){
+        el.innerHTML = `<div class="tugas-empty"><div class="tugas-empty-icon">🌤️</div><div class="tugas-empty-text">Belum ada tugas dikirim hari ini.</div></div>`;
+        return;
+      }
+      const selesaiCount = tugas.filter(t => t.status === 'selesai').length;
+      const persen = Math.round((selesaiCount / tugas.length) * 100);
+      const progressBar = `<div class="tugas-progress-wrap">
+          <div class="tugas-progress-track"><div class="tugas-progress-fill" style="width:${persen}%;"></div></div>
+          <div class="tugas-progress-label">${selesaiCount}/${tugas.length}</div>
+        </div>`;
+      const kartu = tugas.map(t => {
+        const targetLabel = t.ditugaskan_ke ? (namaMap[t.ditugaskan_ke] || 'Karyawan') : t.ditugaskan_role ? `Semua ${JABATAN_LABEL[t.ditugaskan_role] || t.ditugaskan_role}` : 'Semua Karyawan';
+        const done = t.status === 'selesai';
+        return `<div class="tugas-card">
+          <div class="tugas-check readonly ${done?'done':''}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <div class="tugas-body">
+            <div class="tugas-judul ${done?'done':''}">${t.judul}</div>
+            <div class="tugas-meta"><span class="tugas-prio" style="background:${PRIORITAS_WARNA[t.prioritas]};"></span>Untuk ${targetLabel}${t.deskripsi ? ' — ' + t.deskripsi : ''}</div>
+          </div>
+          <span class="tugas-owner-pill ${done?'done':'belum'}">${done?'Selesai':'Belum'}</span>
         </div>`;
       }).join('');
+      el.innerHTML = progressBar + kartu;
     } else {
       // Karyawan biasa: cuma lihat tugas buat dirinya, bisa tandai selesai
       const today = new Date().toISOString().slice(0,10);
       const { data: tugas } = await sb.from('tugas_harian').select('*').eq('tenant_id', currentProfile.tenant_id).eq('tanggal', today)
         .or(`ditugaskan_ke.eq.${currentProfile.id},ditugaskan_role.eq.${currentProfile.role},and(ditugaskan_ke.is.null,ditugaskan_role.is.null)`)
         .order('created_at', { ascending: false });
-      if (!tugas || tugas.length === 0){ el.innerHTML = '<div class="loading-note">Tidak ada tugas khusus hari ini — kerjakan seperti biasa 👍</div>'; return; }
-      const PRIORITAS_WARNA = { tinggi:'var(--danger)', sedang:'var(--amber)', rendah:'var(--ink-soft)' };
-      el.innerHTML = tugas.map(t => `
-        <div class="row-item">
-          <div class="emp-dot" style="background:var(--surface-2); color:${PRIORITAS_WARNA[t.prioritas]};">●</div>
-          <div><div class="row-name" style="${t.status==='selesai'?'text-decoration:line-through; opacity:0.6;':''}">${t.judul}</div><div class="row-meta">${t.deskripsi || ''}</div></div>
-          <div class="row-right">
-            ${t.status === 'selesai'
-              ? `<span class="pill ok">✓ Selesai</span>`
-              : `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="tandaiTugasSelesai('${t.id}')">Tandai Selesai</button>`}
+      if (!tugas || tugas.length === 0){
+        el.innerHTML = `<div class="tugas-empty"><div class="tugas-empty-icon">👍</div><div class="tugas-empty-text">Tidak ada tugas khusus hari ini — kerjakan seperti biasa</div></div>`;
+        return;
+      }
+      const selesaiCount = tugas.filter(t => t.status === 'selesai').length;
+      const persen = Math.round((selesaiCount / tugas.length) * 100);
+      const progressBar = `<div class="tugas-progress-wrap">
+          <div class="tugas-progress-track"><div class="tugas-progress-fill" style="width:${persen}%;"></div></div>
+          <div class="tugas-progress-label">${selesaiCount}/${tugas.length}</div>
+        </div>`;
+      const kartu = tugas.map(t => {
+        const done = t.status === 'selesai';
+        return `<div class="tugas-card">
+          <div class="tugas-check ${done?'done':''}" ${done?'':`onclick="tandaiTugasSelesai('${t.id}')"`}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <div class="tugas-body">
+            <div class="tugas-judul ${done?'done':''}">${t.judul}</div>
+            ${t.deskripsi ? `<div class="tugas-meta"><span class="tugas-prio" style="background:${PRIORITAS_WARNA[t.prioritas]};"></span>${t.deskripsi}</div>` : ''}
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
+      el.innerHTML = progressBar + kartu;
     }
   }
 
@@ -8118,7 +8190,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
   // ================= WIDGET BANTUAN AI (asisten cara pakai aplikasi) =================
   const PANDUAN_APLIKASI = `Kamu adalah asisten bantuan untuk aplikasi kasir & manajemen usaha "UMKMpro AI" (khusus apotek). Jawab singkat, jelas, langkah demi langkah, dalam Bahasa Indonesia santai tapi sopan. Kalau pertanyaan di luar topik aplikasi ini, arahkan balik dengan ramah. Berikut panduan tiap menu di aplikasi:
 
-**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama.
+**Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada panel **"🤖 Saran Tugas Otomatis"** (khusus Owner) — sistem otomatis deteksi masalah (stok menipis, obat mendekati kedaluwarsa, utang/piutang segera jatuh tempo) dan sarankan tugas ke role yang tepat (Admin Gudang, Apoteker, Kasir), Owner tinggal tap "✓ Setujui & Kirim", tidak perlu ngetik manual. Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas manual ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama.
 
 **Kasir/POS**: ketik nama obat di bar pencarian atau pakai tombol Scan (kamera) / Scan Kartu pelanggan. Tap produk: kalau produk sederhana langsung masuk keranjang; kalau produk punya satuan kemasan (Box dll) akan muncul popup pilih jumlah & satuan. Atur qty pakai tombol +/− di keranjang. Pilih metode bayar (Tunai/QRIS/Debit-Kredit), bisa split bayar campur. Setelah checkout bisa cetak struk (print biasa, kirim WA, atau cetak langsung ke printer Bluetooth thermal kalau sudah di-pairing).
 
@@ -8182,6 +8254,74 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const { data: { session } } = await sb.auth.getSession();
     if (session){ await initApp(); }
   })();
+
+  // ================= SARAN TUGAS OTOMATIS (deteksi masalah → sarankan tugas ke role yang tepat) =================
+  async function loadSaranTugasOtomatis(){
+    const panel = document.getElementById('saran-tugas-panel');
+    const el = document.getElementById('saran-tugas-list');
+    if (!panel || !el) return;
+    const tenantId = currentProfile.tenant_id;
+
+    const [{ data: stokMenipis }, { data: kedaluwarsa }, { data: utangJatuhTempo }, { data: piutangJatuhTempo }] = await Promise.all([
+      sb.from('products').select('nama, stok, stok_minimum').eq('tenant_id', tenantId),
+      sb.from('products').select('nama, tanggal_kedaluwarsa').eq('tenant_id', tenantId).not('tanggal_kedaluwarsa','is',null).lte('tanggal_kedaluwarsa', new Date(Date.now()+30*86400000).toISOString().slice(0,10)),
+      sb.from('supplier_debts').select('supplier, sisa, jatuh_tempo').eq('tenant_id', tenantId).neq('status','lunas').not('jatuh_tempo','is',null).lte('jatuh_tempo', new Date(Date.now()+7*86400000).toISOString().slice(0,10)),
+      sb.from('receivables').select('nama, sisa, jatuh_tempo').eq('tenant_id', tenantId).neq('status','lunas').not('jatuh_tempo','is',null).lte('jatuh_tempo', new Date(Date.now()+7*86400000).toISOString().slice(0,10)),
+    ]);
+
+    const saran = [];
+    const menipis = (stokMenipis||[]).filter(p => p.stok < p.stok_minimum);
+    if (menipis.length > 0){
+      const daftar = menipis.slice(0,5).map(p=>p.nama).join(', ') + (menipis.length>5 ? ` +${menipis.length-5} lainnya` : '');
+      saran.push({ judul: `Cek & pesan ulang stok (${menipis.length} produk menipis)`, deskripsi: daftar, role: 'admin_gudang', prioritas: 'tinggi' });
+    }
+    if ((kedaluwarsa||[]).length > 0){
+      const daftar = kedaluwarsa.slice(0,5).map(p=>p.nama).join(', ') + (kedaluwarsa.length>5 ? ` +${kedaluwarsa.length-5} lainnya` : '');
+      saran.push({ judul: `Cek obat mendekati kedaluwarsa (${kedaluwarsa.length} item)`, deskripsi: daftar, role: 'apoteker', prioritas: 'tinggi' });
+    }
+    if ((utangJatuhTempo||[]).length > 0){
+      const daftar = utangJatuhTempo.map(u=>u.supplier).join(', ');
+      saran.push({ judul: `Siapkan pembayaran utang supplier (${utangJatuhTempo.length} tagihan segera jatuh tempo)`, deskripsi: daftar, role: 'admin_gudang', prioritas: 'sedang' });
+    }
+    if ((piutangJatuhTempo||[]).length > 0){
+      const daftar = piutangJatuhTempo.map(p=>p.nama).join(', ');
+      saran.push({ judul: `Tagih piutang pelanggan (${piutangJatuhTempo.length} segera jatuh tempo)`, deskripsi: daftar, role: 'kasir', prioritas: 'sedang' });
+    }
+
+    if (saran.length === 0){ panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    window.__saranTugasData = saran;
+    renderSaranTugasList();
+  }
+
+  async function setujuiSaranTugas(idx){
+    const s = window.__saranTugasData?.[idx];
+    if (!s) return;
+    const { error } = await sb.from('tugas_harian').insert({
+      tenant_id: currentProfile.tenant_id, judul: s.judul, deskripsi: s.deskripsi,
+      ditugaskan_role: s.role, prioritas: s.prioritas, sumber: 'otomatis', dibuat_oleh: currentProfile.id,
+    });
+    if (error){ showToast('Gagal mengirim tugas: ' + error.message, true); return; }
+    showToast('✓ Tugas dikirim ke semua ' + s.role);
+    await loadTugasHarian();
+    // Hapus saran ini dari tampilan (bukan query ulang — datanya belum berubah, cuma tugasnya yang sudah terkirim)
+    window.__saranTugasData.splice(idx, 1);
+    renderSaranTugasList();
+  }
+
+  function renderSaranTugasList(){
+    const panel = document.getElementById('saran-tugas-panel');
+    const el = document.getElementById('saran-tugas-list');
+    const saran = window.__saranTugasData || [];
+    if (saran.length === 0){ panel.style.display = 'none'; return; }
+    const ROLE_LABEL_SINGKAT = { admin_gudang:'Admin Gudang', apoteker:'Apoteker', kasir:'Kasir', hr:'HR', marketing:'Marketing' };
+    el.innerHTML = saran.map((s, idx) => `
+      <div class="row-item">
+        <div class="emp-dot" style="background:${s.prioritas==='tinggi'?'var(--danger-tint,#FBE4E4)':'var(--amber-tint)'}; color:${s.prioritas==='tinggi'?'var(--danger)':'var(--amber)'};">!</div>
+        <div><div class="row-name">${s.judul}</div><div class="row-meta">Untuk: ${ROLE_LABEL_SINGKAT[s.role]} · ${s.deskripsi}</div></div>
+        <div class="row-right"><button class="btn-secondary" style="font-size:10.5px; padding:5px 10px;" onclick="setujuiSaranTugas(${idx})">✓ Setujui &amp; Kirim</button></div>
+      </div>`).join('');
+  }
 
   // ================= ISI DROPDOWN KARYAWAN UNTUK ID CARD =================
   async function isiDropdownEmployeeUmum(){
