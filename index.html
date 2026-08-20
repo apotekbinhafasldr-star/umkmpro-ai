@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v63-2200</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v67-0030</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -491,7 +491,7 @@
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
             <div>
               <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#D4A24E;">Tanyopo Intelligence</div>
-              <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:600; margin-top:2px;">Business Health</div>
+              <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:600; margin-top:2px;">Kesehatan Bisnis</div>
             </div>
             <div style="text-align:right;">
               <div id="bh-level-label" style="font-size:11px; color:rgba(255,255,255,.7);">—</div>
@@ -513,10 +513,42 @@
         <div class="panel-head">
           <div>
             <div style="font-size:10px; font-weight:700; color:var(--brand); text-transform:uppercase; letter-spacing:.08em;">Tanyopo Intelligence</div>
-            <div class="panel-title" style="font-family:'Fraunces',serif;">💡 AI Insights</div>
+            <div class="panel-title" style="font-family:'Fraunces',serif;">💡 Wawasan Bisnis (AI)</div>
           </div>
         </div>
         <div class="panel-body" id="ai-insights-list"></div>
+      </div>
+
+      <div class="panel owner-only" id="recommended-actions-panel" style="display:none; border:1.5px solid #D4A24E; background:#FFF9EF;">
+        <div class="panel-head">
+          <div>
+            <div style="font-size:10px; font-weight:700; color:#8C6A2E; text-transform:uppercase; letter-spacing:.08em;">Tanyopo Intelligence</div>
+            <div class="panel-title" style="font-family:'Fraunces',serif; color:#5C4319;">🎯 Rekomendasi Tindakan</div>
+          </div>
+        </div>
+        <div class="panel-body" id="recommended-actions-list"></div>
+      </div>
+
+      <div class="panel owner-only">
+        <div class="panel-head">
+          <div>
+            <div style="font-size:10px; font-weight:700; color:var(--brand); text-transform:uppercase; letter-spacing:.08em;">Tanyopo Intelligence</div>
+            <div class="panel-title" style="font-family:'Fraunces',serif;">🤖 Tanya Kondisi Bisnis</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+            <button class="btn-secondary" style="font-size:10.5px; padding:5px 10px;" onclick="tanyaBisnisCepat('Bagaimana kondisi bisnis saya bulan ini?')">Kondisi bulan ini?</button>
+            <button class="btn-secondary" style="font-size:10.5px; padding:5px 10px;" onclick="tanyaBisnisCepat('Produk apa yang paling menguntungkan?')">Produk paling untung?</button>
+            <button class="btn-secondary" style="font-size:10.5px; padding:5px 10px;" onclick="tanyaBisnisCepat('Apakah stok saya aman?')">Stok aman?</button>
+            <button class="btn-secondary" style="font-size:10.5px; padding:5px 10px;" onclick="tanyaBisnisCepat('Berapa pengeluaran terbesar bulan ini?')">Pengeluaran terbesar?</button>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="tanya-bisnis-input" placeholder="Tanya apa saja soal bisnismu…" style="flex:1;" onkeypress="if(event.key==='Enter') submitTanyaBisnis()">
+            <button class="btn-primary" id="tanya-bisnis-submit-btn" onclick="submitTanyaBisnis()" style="padding:0 16px;">➤</button>
+          </div>
+          <div id="tanya-bisnis-jawaban" style="display:none; background:var(--surface-2); border-radius:10px; padding:14px; margin-top:12px; font-size:13px; line-height:1.6; white-space:pre-wrap;"></div>
+        </div>
       </div>
 
       <div class="panel owner-only" id="slip-gaji-otomatis-panel" style="display:none;">
@@ -9018,8 +9050,19 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     if (insights && insights.length > 0){
       panelInsight.style.display = 'block';
       const urutanSeverity = { critical:0, warning:1, opportunity:2, info:3 };
+      const CONFIDENCE_LABEL = { high:'Tinggi', medium:'Sedang', low:'Rendah' };
+      const CONFIDENCE_WARNA = { high:'var(--good)', medium:'var(--amber)', low:'var(--ink-soft)' };
       const terurut = [...insights].sort((a,b) => urutanSeverity[a.severity] - urutanSeverity[b.severity]).slice(0,5);
-      listEl.innerHTML = terurut.map(ins => `
+      listEl.innerHTML = terurut.map((ins, idx) => {
+        const dataRows = Object.entries(ins.data_pendukung || {}).map(([key, val]) => {
+          const labelKey = key.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+          let nilai = val;
+          if (Array.isArray(val)) nilai = val.join(', ');
+          else if (typeof val === 'number' && /omzet|biaya|kas|rata_rata|selisih/i.test(key)) nilai = 'Rp ' + Math.round(val).toLocaleString('id-ID');
+          else if (typeof val === 'number' && /persen/i.test(key)) nilai = val + '%';
+          return `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed var(--line); font-size:11px;"><span style="color:var(--ink-soft);">${labelKey}</span><span style="font-weight:600;">${nilai}</span></div>`;
+        }).join('');
+        return `
         <div style="border-left:3px solid ${SEVERITY_WARNA[ins.severity]}; background:var(--surface-2); border-radius:0 10px 10px 0; padding:12px 14px; margin-bottom:10px;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
             <div style="font-weight:700; font-size:13.5px;">${INSIGHT_ICON[ins.kategori]||'📊'} ${ins.judul}</div>
@@ -9027,11 +9070,74 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
           </div>
           <div style="font-size:12px; color:var(--ink-soft); margin-top:5px;">${ins.penjelasan}</div>
           ${ins.rekomendasi ? `<div style="font-size:11.5px; color:var(--brand); margin-top:7px; font-weight:600;">💡 ${ins.rekomendasi}</div>` : ''}
-          ${ins.confidence === 'low' ? `<div style="font-size:9.5px; color:var(--ink-soft); margin-top:5px; font-style:italic;">Data masih sedikit — confidence rendah</div>` : ''}
-        </div>`).join('');
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:9px;">
+            <button onclick="document.getElementById('insight-detail-${idx}').style.display = document.getElementById('insight-detail-${idx}').style.display==='none'?'block':'none';" style="background:none; border:none; padding:0; font-size:10.5px; color:var(--brand); font-weight:700; cursor:pointer;">🔍 Kenapa saya lihat ini?</button>
+            <span style="font-size:9.5px; color:${CONFIDENCE_WARNA[ins.confidence]};">Keyakinan: ${CONFIDENCE_LABEL[ins.confidence] || '—'}</span>
+          </div>
+          <div id="insight-detail-${idx}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid var(--line);">
+            <div style="font-size:10px; color:var(--ink-soft); margin-bottom:5px; font-style:italic;">Data mentah yang jadi dasar insight ini:</div>
+            ${dataRows || '<div style="font-size:11px; color:var(--ink-soft);">Tidak ada data tambahan.</div>'}
+          </div>
+        </div>`;
+      }).join('');
     } else {
       panelInsight.style.display = 'none';
     }
+
+    // ---- Recommended Actions — daftar tindakan konkret, diambil dari rekomendasi tiap insight, urut prioritas ----
+    const panelAksi = document.getElementById('recommended-actions-panel');
+    const listAksi = document.getElementById('recommended-actions-list');
+    const urutanSeverity2 = { critical:0, warning:1, opportunity:2, info:3 };
+    const daftarAksi = (insights || []).filter(i => i.rekomendasi).sort((a,b) => urutanSeverity2[a.severity] - urutanSeverity2[b.severity]);
+    if (daftarAksi.length > 0){
+      panelAksi.style.display = 'block';
+      listAksi.innerHTML = daftarAksi.map((a, i) => `
+        <div style="display:flex; gap:10px; align-items:flex-start; padding:9px 0; ${i < daftarAksi.length-1 ? 'border-bottom:1px dashed #E8D9BC;' : ''}">
+          <div style="width:22px; height:22px; border-radius:50%; background:#D4A24E; color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${i+1}</div>
+          <div>
+            <div style="font-size:12.5px; font-weight:700; color:#5C4319;">${a.rekomendasi}</div>
+            <div style="font-size:10.5px; color:#8C6A2E; margin-top:2px;">Terkait: ${a.judul}</div>
+          </div>
+        </div>`).join('');
+    } else {
+      panelAksi.style.display = 'none';
+    }
+  }
+
+  // ================= ASK UMKMpro AI — Business Assistant (data asli, bukan chatbot bantuan umum) =================
+  function tanyaBisnisCepat(teks){
+    document.getElementById('tanya-bisnis-input').value = teks;
+    submitTanyaBisnis();
+  }
+  async function submitTanyaBisnis(){
+    const input = document.getElementById('tanya-bisnis-input');
+    const pertanyaan = input.value.trim();
+    if (!pertanyaan){ showToast('Tulis pertanyaannya dulu.', true); return; }
+    const btn = document.getElementById('tanya-bisnis-submit-btn');
+    const jawabanEl = document.getElementById('tanya-bisnis-jawaban');
+    btn.disabled = true; btn.textContent = '…';
+    jawabanEl.style.display = 'block';
+    jawabanEl.style.color = 'var(--ink-soft)';
+    jawabanEl.textContent = 'Menganalisis data bisnismu…';
+
+    try{
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/tanya-bisnis-ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ pertanyaan }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Gagal mendapat jawaban.');
+      jawabanEl.style.color = 'var(--ink)';
+      jawabanEl.textContent = result.jawaban;
+      input.value = '';
+    } catch(err){
+      jawabanEl.style.color = 'var(--danger)';
+      jawabanEl.textContent = '⚠️ ' + err.message;
+    }
+    btn.disabled = false; btn.textContent = '➤';
   }
 
   (async () => {
