@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v67-0030</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v69-0130</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -548,6 +548,20 @@
             <button class="btn-primary" id="tanya-bisnis-submit-btn" onclick="submitTanyaBisnis()" style="padding:0 16px;">➤</button>
           </div>
           <div id="tanya-bisnis-jawaban" style="display:none; background:var(--surface-2); border-radius:10px; padding:14px; margin-top:12px; font-size:13px; line-height:1.6; white-space:pre-wrap;"></div>
+        </div>
+      </div>
+
+      <div class="panel owner-only" id="business-memory-panel" style="display:none;">
+        <div class="panel-head">
+          <div>
+            <div style="font-size:10px; font-weight:700; color:var(--brand); text-transform:uppercase; letter-spacing:.08em;">Tanyopo Intelligence</div>
+            <div class="panel-title" style="font-family:'Fraunces',serif;">📜 Riwayat Kesehatan Bisnis</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div style="height:140px; margin-bottom:14px;"><canvas id="bh-trend-chart"></canvas></div>
+          <div style="font-size:10.5px; color:var(--ink-soft); margin-bottom:8px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;">Insight Sebelumnya</div>
+          <div id="business-memory-insight-list"></div>
         </div>
       </div>
 
@@ -2471,7 +2485,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     <div class="auth-note">💡 Ini jumlah uang tunai yang ada di laci kasir sebelum mulai jualan. Nanti dipakai untuk hitung selisih kas saat tutup kasir.</div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('buka-kasir-modal')">Batal</button>
-      <button class="btn-primary" id="bk-submit-btn" onclick="submitBukaKasir()">Buka Kasir</button>
+      <button class="btn-primary" id="bks-submit-btn" onclick="submitBukaKasir()">Buka Kasir</button>
     </div>
   </div>
 </div>
@@ -3346,7 +3360,7 @@ Baca & tanda tangan kontrak kerja</textarea>
 
   async function submitBukaKasir(){
     const modalAwal = parseFloat(document.getElementById('bk-modal-awal').value) || 0;
-    const btn = document.getElementById('bk-submit-btn');
+    const btn = document.getElementById('bks-submit-btn');
     btn.disabled = true; btn.textContent = 'Membuka…';
     const { error } = await sb.from('kasir_shifts').insert({
       tenant_id: currentProfile.tenant_id, kasir_id: currentProfile.id, modal_awal: modalAwal
@@ -9101,6 +9115,54 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
         </div>`).join('');
     } else {
       panelAksi.style.display = 'none';
+    }
+
+    loadBusinessMemory();
+  }
+
+  // ================= BUSINESS MEMORY — riwayat skor & insight dari waktu ke waktu =================
+  let bhTrendChartInstance = null;
+  async function loadBusinessMemory(){
+    const panel = document.getElementById('business-memory-panel');
+    const [{ data: riwayatSkor }, { data: riwayatInsight }] = await Promise.all([
+      sb.from('business_health_snapshots').select('score, periode').eq('tenant_id', currentProfile.tenant_id).order('periode', { ascending: true }).limit(30),
+      sb.from('business_insights').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false }).limit(20),
+    ]);
+
+    if ((!riwayatSkor || riwayatSkor.length < 2) && (!riwayatInsight || riwayatInsight.length === 0)){
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'block';
+
+    // ---- Grafik tren skor ----
+    if (riwayatSkor && riwayatSkor.length >= 2){
+      const ctx = document.getElementById('bh-trend-chart').getContext('2d');
+      if (bhTrendChartInstance) bhTrendChartInstance.destroy();
+      bhTrendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: riwayatSkor.map(r => new Date(r.periode).toLocaleDateString('id-ID', { day:'numeric', month:'short' })),
+          datasets: [{ label: 'Skor Kesehatan Bisnis', data: riwayatSkor.map(r => r.score), borderColor: '#D4A24E', backgroundColor: 'rgba(212,162,78,0.12)', fill: true, tension: 0.3, pointRadius: 2 }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, ticks: { stepSize: 25 } } } },
+      });
+    } else {
+      document.getElementById('bh-trend-chart').parentElement.style.display = 'none';
+    }
+
+    // ---- Daftar insight lama (yang bukan dari periode bulan ini, biar tidak dobel sama panel AI Insights) ----
+    const listEl = document.getElementById('business-memory-insight-list');
+    const periodeBulanIni = new Date().toISOString().slice(0,7);
+    const insightLama = (riwayatInsight || []).filter(i => i.periode !== periodeBulanIni).slice(0, 8);
+    if (insightLama.length === 0){
+      listEl.innerHTML = '<div class="loading-note">Belum ada riwayat insight dari bulan sebelumnya.</div>';
+    } else {
+      listEl.innerHTML = insightLama.map(i => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px dashed var(--line);">
+          <div><div style="font-size:12px; font-weight:600;">${INSIGHT_ICON[i.kategori]||'📊'} ${i.judul}</div><div style="font-size:10px; color:var(--ink-soft);">${i.periode}</div></div>
+          <span class="pill" style="background:${SEVERITY_WARNA[i.severity]}22; color:${SEVERITY_WARNA[i.severity]}; font-size:9px;">${SEVERITY_LABEL[i.severity]}</span>
+        </div>`).join('');
     }
   }
 
