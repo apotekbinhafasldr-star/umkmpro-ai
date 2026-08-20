@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v60-2015</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v62-2100</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -1047,7 +1047,16 @@
             <label>Karyawan</label>
             <select id="idc-employee"></select>
           </div>
-          <div class="field"><label>Foto Karyawan (opsional, setengah badan/latar polos)</label><input type="file" id="idc-foto" accept="image/*"></div>
+          <div class="field"><label>Foto Karyawan (opsional, setengah badan/latar polos)</label><input type="file" id="idc-foto" accept="image/*" onchange="updatePratinjauFotoIdc()"></div>
+          <div id="idc-foto-preview-wrap" style="display:none; text-align:center; margin:8px 0;">
+            <div id="idc-foto-preview" style="width:110px; height:110px; border-radius:50%; background:var(--surface-2) center 35%/cover no-repeat; border:3px solid #D4A24E; margin:0 auto;"></div>
+            <div style="font-size:10px; color:var(--ink-soft); margin-top:4px;">Pratinjau — geser di bawah kalau wajah kepotong</div>
+          </div>
+          <div class="field">
+            <label>Geser Posisi Foto (kalau wajah kepotong di lingkaran)</label>
+            <input type="range" id="idc-foto-posisi" min="0" max="100" value="35" style="width:100%;" oninput="updatePosisiPratinjauIdc()">
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--ink-soft);"><span>Atas</span><span>Tengah</span><span>Bawah</span></div>
+          </div>
           <div class="field"><label>Aturan &amp; Tata Tertib (tampil di belakang kartu, satu baris satu poin)</label><textarea id="idc-aturan" rows="4" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12.5px; font-family:inherit;">Wajib berpakaian rapi &amp; memakai ID card selama jam kerja
 Wajib hadir tepat waktu sesuai jadwal shift
 Menjaga kerahasiaan data pelanggan &amp; apotek
@@ -9258,6 +9267,27 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     ctx.stroke();
   }
 
+  // Pratinjau lingkaran foto ID Card — foto dibaca sekali saat dipilih, geser slider cuma ubah posisi (cepat, tidak baca ulang file)
+  let idcFotoDataUrlCache = null;
+  function updatePratinjauFotoIdc(){
+    const fileInput = document.getElementById('idc-foto');
+    const preview = document.getElementById('idc-foto-preview');
+    const wrap = document.getElementById('idc-foto-preview-wrap');
+    if (!fileInput.files[0]){ idcFotoDataUrlCache = null; wrap.style.display = 'none'; return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      idcFotoDataUrlCache = e.target.result;
+      preview.style.backgroundImage = `url(${idcFotoDataUrlCache})`;
+      preview.style.backgroundPosition = `center ${document.getElementById('idc-foto-posisi').value}%`;
+      wrap.style.display = 'block';
+    };
+    reader.readAsDataURL(fileInput.files[0]);
+  }
+  function updatePosisiPratinjauIdc(){
+    if (!idcFotoDataUrlCache) return;
+    document.getElementById('idc-foto-preview').style.backgroundPosition = `center ${document.getElementById('idc-foto-posisi').value}%`;
+  }
+
   async function cetakIdCard(){
     const employeeId = document.getElementById('idc-employee').value;
     if (!employeeId){ showToast('Pilih karyawan dulu.', true); return; }
@@ -9301,21 +9331,26 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const cvFront = document.createElement('canvas'); cvFront.width = W; cvFront.height = H;
     const ctxF = cvFront.getContext('2d');
     gambarLatarKartu(ctxF, W, H);
-    if (logoImg){ ctxF.drawImage(logoImg, W - 110, 40, 64, 64); }
-    ctxF.fillStyle = '#fff'; ctxF.font = 'bold 22px Georgia, serif'; ctxF.textAlign = 'right';
-    ctxF.fillText(namaUsaha.length > 22 ? namaUsaha.slice(0,20)+'…' : namaUsaha, W - 40, logoImg ? 130 : 70);
+    ctxF.textAlign = 'center';
+    if (logoImg){ ctxF.drawImage(logoImg, W/2 - 32, 36, 64, 64); }
+    ctxF.fillStyle = '#fff'; ctxF.font = 'bold 22px Georgia, serif';
+    ctxF.fillText(namaUsaha.length > 26 ? namaUsaha.slice(0,24)+'…' : namaUsaha, W/2, logoImg ? 126 : 66);
 
     // Foto lingkaran + ring dekoratif
-    const cx = W/2, cy = 420, r = 130;
+    const cx = W/2, cy = 440, r = 130;
     ctxF.strokeStyle = 'rgba(255,255,255,.35)'; ctxF.lineWidth = 1.5;
     ctxF.beginPath(); ctxF.arc(cx, cy, r+28, 0, Math.PI*2); ctxF.stroke();
     ctxF.beginPath(); ctxF.arc(cx, cy, r+16, 0, Math.PI*2); ctxF.stroke();
     ctxF.save();
     ctxF.beginPath(); ctxF.arc(cx, cy, r, 0, Math.PI*2); ctxF.closePath(); ctxF.clip();
     if (fotoImg){
+      // Posisi crop vertikal dikontrol slider "Geser Posisi Foto" (0=tampilkan bagian atas foto, 50=tengah, 100=bawah)
       const skala = Math.max((r*2)/fotoImg.width, (r*2)/fotoImg.height);
       const w2 = fotoImg.width*skala, h2 = fotoImg.height*skala;
-      ctxF.drawImage(fotoImg, cx-w2/2, cy-h2/2, w2, h2);
+      const posisiSlider = parseInt(document.getElementById('idc-foto-posisi')?.value ?? 35);
+      const windowTop = (posisiSlider/100) * Math.max(0, h2 - r*2);
+      const imgY = cy - r - windowTop;
+      ctxF.drawImage(fotoImg, cx-w2/2, imgY, w2, h2);
     } else {
       ctxF.fillStyle = '#16233A'; ctxF.fillRect(cx-r, cy-r, r*2, r*2);
       ctxF.fillStyle = 'rgba(255,255,255,.6)'; ctxF.font = '90px sans-serif'; ctxF.textAlign = 'center'; ctxF.textBaseline = 'middle';
