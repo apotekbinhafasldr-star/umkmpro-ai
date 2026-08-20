@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v62-2100</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v63-2200</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -484,6 +484,39 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
           Absen Sekarang
         </button>
+      </div>
+
+      <div class="panel owner-only" id="business-health-panel" style="display:none; background:linear-gradient(135deg,#0F1B2E,#1E3A5F); border:none; color:#fff;">
+        <div class="panel-body" style="padding:20px 22px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+            <div>
+              <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#D4A24E;">Tanyopo Intelligence</div>
+              <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:600; margin-top:2px;">Business Health</div>
+            </div>
+            <div style="text-align:right;">
+              <div id="bh-level-label" style="font-size:11px; color:rgba(255,255,255,.7);">—</div>
+              <div id="bh-level-badge" style="font-size:10px; font-weight:700; background:rgba(212,162,78,.2); color:#D4A24E; padding:3px 9px; border-radius:12px; margin-top:3px; display:inline-block;">Level —</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+            <div id="bh-score" style="font-family:'Fraunces',serif; font-size:44px; font-weight:700; line-height:1;">—</div>
+            <div>
+              <div id="bh-status" style="font-size:14px; font-weight:700; color:#D4A24E;">Memuat…</div>
+              <div style="font-size:11px; color:rgba(255,255,255,.6);">dari 100 poin</div>
+            </div>
+          </div>
+          <div id="bh-breakdown" style="display:grid; grid-template-columns:1fr 1fr; gap:10px 16px;"></div>
+        </div>
+      </div>
+
+      <div class="panel owner-only" id="ai-insights-panel" style="display:none;">
+        <div class="panel-head">
+          <div>
+            <div style="font-size:10px; font-weight:700; color:var(--brand); text-transform:uppercase; letter-spacing:.08em;">Tanyopo Intelligence</div>
+            <div class="panel-title" style="font-family:'Fraunces',serif;">💡 AI Insights</div>
+          </div>
+        </div>
+        <div class="panel-body" id="ai-insights-list"></div>
       </div>
 
       <div class="panel owner-only" id="slip-gaji-otomatis-panel" style="display:none;">
@@ -2999,6 +3032,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     loadTugasHarian();
     if (currentProfile.role === 'owner') loadSaranTugasOtomatis();
     if (currentProfile.role === 'owner') loadSlipGajiOtomatis();
+    if (currentProfile.role === 'owner') loadTanyopoIntelligence();
 
     const { data: todayTx } = await sb.from('transactions')
       .select('total').eq('tenant_id', tenantId).gte('created_at', todayStart.toISOString());
@@ -8945,6 +8979,58 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       badge.style.display = 'flex';
     } else {
       badge.style.display = 'none';
+    }
+  }
+
+  // ================= TANYOPO INTELLIGENCE — Business Health + AI Insights =================
+  const BREAKDOWN_LABEL = { revenue_health:'Omzet', profitability:'Profitabilitas', cashflow:'Arus Kas', expense_efficiency:'Efisiensi Biaya', inventory_health:'Kesehatan Stok', sales_trend:'Tren Penjualan' };
+  const INSIGHT_ICON = { revenue:'💰', margin:'📉', inventory:'📦', expense:'💸', cashflow:'🏦', sales_trend:'📈' };
+  const SEVERITY_WARNA = { info:'var(--brand)', opportunity:'var(--good)', warning:'var(--amber)', critical:'var(--danger)' };
+  const SEVERITY_LABEL = { info:'Info', opportunity:'Peluang', warning:'Perhatian', critical:'Kritis' };
+
+  async function loadTanyopoIntelligence(){
+    const [{ data: health }, { data: insights }] = await Promise.all([
+      sb.from('business_health_snapshots').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending:false }).limit(1).maybeSingle(),
+      sb.from('business_insights').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending:false }).limit(10),
+    ]);
+
+    // ---- Business Health Score ----
+    const panelHealth = document.getElementById('business-health-panel');
+    if (health){
+      panelHealth.style.display = 'block';
+      document.getElementById('bh-score').textContent = health.score;
+      document.getElementById('bh-status').textContent = health.status_label;
+      document.getElementById('bh-level-label').textContent = 'Kematangan Bisnis';
+      document.getElementById('bh-level-badge').textContent = `Level ${health.business_level} — ${health.level_label}`;
+      const breakdownEl = document.getElementById('bh-breakdown');
+      breakdownEl.innerHTML = Object.entries(health.breakdown || {}).map(([key, val]) => `
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:10.5px; color:rgba(255,255,255,.75); margin-bottom:3px;"><span>${BREAKDOWN_LABEL[key]||key}</span><span>${val}</span></div>
+          <div style="height:5px; background:rgba(255,255,255,.15); border-radius:3px; overflow:hidden;"><div style="height:100%; width:${val}%; background:#D4A24E; border-radius:3px;"></div></div>
+        </div>`).join('');
+    } else {
+      panelHealth.style.display = 'none';
+    }
+
+    // ---- AI Insight Cards ----
+    const panelInsight = document.getElementById('ai-insights-panel');
+    const listEl = document.getElementById('ai-insights-list');
+    if (insights && insights.length > 0){
+      panelInsight.style.display = 'block';
+      const urutanSeverity = { critical:0, warning:1, opportunity:2, info:3 };
+      const terurut = [...insights].sort((a,b) => urutanSeverity[a.severity] - urutanSeverity[b.severity]).slice(0,5);
+      listEl.innerHTML = terurut.map(ins => `
+        <div style="border-left:3px solid ${SEVERITY_WARNA[ins.severity]}; background:var(--surface-2); border-radius:0 10px 10px 0; padding:12px 14px; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+            <div style="font-weight:700; font-size:13.5px;">${INSIGHT_ICON[ins.kategori]||'📊'} ${ins.judul}</div>
+            <span class="pill" style="background:${SEVERITY_WARNA[ins.severity]}22; color:${SEVERITY_WARNA[ins.severity]}; flex-shrink:0; font-size:9.5px;">${SEVERITY_LABEL[ins.severity]}</span>
+          </div>
+          <div style="font-size:12px; color:var(--ink-soft); margin-top:5px;">${ins.penjelasan}</div>
+          ${ins.rekomendasi ? `<div style="font-size:11.5px; color:var(--brand); margin-top:7px; font-weight:600;">💡 ${ins.rekomendasi}</div>` : ''}
+          ${ins.confidence === 'low' ? `<div style="font-size:9.5px; color:var(--ink-soft); margin-top:5px; font-style:italic;">Data masih sedikit — confidence rendah</div>` : ''}
+        </div>`).join('');
+    } else {
+      panelInsight.style.display = 'none';
     }
   }
 
