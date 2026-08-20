@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
   if ('serviceWorker' in navigator){
@@ -362,7 +362,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v59-2000</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v60-2015</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -9292,7 +9292,9 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       logoDataUrl ? loadImagePromise(logoDataUrl) : Promise.resolve(null),
       fotoDataUrl ? loadImagePromise(fotoDataUrl) : Promise.resolve(null),
     ]);
-    const qrDataUrl = await new Promise(resolve => QRCode.toDataURL(noId, { width: 260, margin: 1, color: { dark:'#0F1B2E', light:'#FFFFFF' } }, (err, url) => resolve(err ? null : url)));
+    const qrDataUrl = (typeof QRCode !== 'undefined')
+      ? await new Promise(resolve => QRCode.toDataURL(noId, { width: 260, margin: 1, color: { dark:'#0F1B2E', light:'#FFFFFF' } }, (err, url) => resolve(err ? null : url)))
+      : null; // kalau library QR gagal dimuat, tetap lanjut buat ID Card-nya tanpa QR code daripada gagal total
     const qrImg = qrDataUrl ? await loadImagePromise(qrDataUrl) : null;
 
     // ===== KARTU DEPAN =====
