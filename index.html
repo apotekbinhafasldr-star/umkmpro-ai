@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v82-0745</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v83-0800</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -8692,7 +8692,8 @@ Baca & tanda tangan kontrak kerja</textarea>
 
     const today = new Date();
     wrap.innerHTML = `
-      <table>
+      <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+      <table style="min-width:760px;">
         <thead><tr><th>Produk</th><th>Kategori</th><th>Batch / Kedaluwarsa</th><th>Stok</th><th>Status</th><th>Supplier</th><th></th></tr></thead>
         <tbody>
           ${data.map((p, idx) => {
@@ -8722,7 +8723,8 @@ Baca & tanda tangan kontrak kerja</textarea>
               </tr>`;
           }).join('')}
         </tbody>
-      </table>`;
+      </table>
+      </div>`;
     applyRoleAccess(currentProfile.role);
   }
 
@@ -8928,7 +8930,8 @@ Baca & tanda tangan kontrak kerja</textarea>
       return;
     }
     listEl.innerHTML = `
-      <table>
+      <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+      <table style="min-width:680px;">
         <thead><tr><th>No. Transaksi</th><th>Item</th><th>Metode</th><th>Waktu</th><th>Total</th><th></th></tr></thead>
         <tbody>
           ${data.map(t => `
@@ -8944,7 +8947,8 @@ Baca & tanda tangan kontrak kerja</textarea>
               </td>
             </tr>`).join('')}
         </tbody>
-      </table>`;
+      </table>
+      </div>`;
   }
 
   // Susun data transaksi jadi titik-titik grafik per hari/jam/bulan, lalu gambar pakai Chart.js
