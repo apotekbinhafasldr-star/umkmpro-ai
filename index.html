@@ -363,7 +363,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v73-0330</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v75-0500</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -824,6 +824,7 @@
         <div class="tab" data-sub="pareto" onclick="setStokTab('pareto', this)">Analisis Pareto</div>
         <div class="tab owner-only" data-sub="aktivitas" onclick="setStokTab('aktivitas', this)">Log Aktivitas</div>
         <div class="tab" data-sub="nilailabel" onclick="setStokTab('nilailabel', this)">🏷️ Nilai &amp; Label</div>
+        <div class="tab owner-only" data-sub="migrasi" onclick="setStokTab('migrasi', this)">🚀 Migrasi Toko</div>
       </div>
       <div class="sub-page active" id="substok-produk">
       <div class="panel">
@@ -1008,6 +1009,48 @@
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Riwayat Stok Rusak/Kedaluwarsa</div></div>
           <div class="panel-body" id="riwayat-writeoff-list"><div class="loading-note">Memuat…</div></div>
+        </div>
+      </div>
+
+      <!-- LIVE STORE MIGRATION — Smart Onboarding Mode -->
+      <div class="sub-page" id="substok-migrasi">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">🚀 Status Migrasi Toko</div></div>
+          <div class="panel-body">
+            <div style="font-size:12px; color:var(--ink-soft); margin-bottom:12px;">Kalau toko kamu punya banyak barang lama yang belum semua terdaftar di sistem, aktifkan mode ini — toko tetap bisa jualan seperti biasa sambil produk dilengkapi bertahap.</div>
+            <div class="field">
+              <label>Status Migrasi</label>
+              <select id="migrasi-status-select" onchange="ubahStatusMigrasi(this.value)">
+                <option value="completed">Sudah Lengkap (tidak sedang migrasi)</option>
+                <option value="not_started">Belum Mulai — baru mau pindah ke UMKMpro AI</option>
+                <option value="migrating">Sedang Migrasi — input produk bertahap</option>
+                <option value="partially_active">Sebagian Besar Sudah Lengkap</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel owner-only" id="migrasi-dashboard-panel" style="display:none;">
+          <div class="panel-head"><div class="panel-title">📊 Progres Setup Toko</div></div>
+          <div class="panel-body">
+            <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);">
+              <div class="kpi-card"><div class="kpi-label">Produk Terdaftar</div><div class="kpi-value num" id="mg-total-produk">0</div></div>
+              <div class="kpi-card"><div class="kpi-label">Sudah Aktif</div><div class="kpi-value num" id="mg-aktif">0</div></div>
+              <div class="kpi-card"><div class="kpi-label">Perlu Dicek</div><div class="kpi-value num" id="mg-perlu-cek" style="color:var(--danger);">0</div></div>
+            </div>
+            <div id="mg-progress-note" style="font-size:11.5px; color:var(--ink-soft); margin-top:8px; text-align:center;"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">
+              <button class="btn-secondary" style="justify-content:center; font-size:12px;" onclick="bukaQuickAdd('')">⚡ Tambah Cepat</button>
+              <button class="btn-secondary" style="justify-content:center; font-size:12px;" onclick="goPage('stok'); setTimeout(()=>setStokTab('opname', document.querySelector('[data-sub=opname]')), 100);">📋 Stock Count</button>
+              <button class="btn-secondary" style="justify-content:center; font-size:12px;" onclick="showBulkEntryModal()">📊 Input Banyak Sekaligus</button>
+              <button class="btn-secondary" style="justify-content:center; font-size:12px;" onclick="document.getElementById('migrasi-review-panel').scrollIntoView({behavior:'smooth'})">🔍 Lihat yang Perlu Dicek</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel owner-only" id="migrasi-review-panel" style="display:none;">
+          <div class="panel-head"><div class="panel-title">Produk Perlu Dicek (dari Tambah Cepat)</div></div>
+          <div class="panel-body" id="migrasi-review-list"></div>
         </div>
       </div>
     </main>
@@ -1645,12 +1688,25 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
             </div>
           </div>
           <div id="pph-status-box" style="font-size:12px; line-height:1.6; background:var(--surface-2); border-radius:10px; padding:12px 14px; margin-top:6px;"></div>
-          <div id="pph-cara-lapor" style="font-size:11.5px; color:var(--ink-soft); margin-top:12px; border-top:1px dashed var(--line); padding-top:12px;"></div>
           <div style="display:flex; gap:8px; margin-top:12px;">
             <button class="btn-secondary" style="flex:1; justify-content:center;" onclick="tandaiPphSudahSetor()" id="pph-tandai-btn">✓ Tandai Sudah Disetor Bulan Ini</button>
           </div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn-secondary" style="flex:1; justify-content:center; font-size:11.5px;" onclick="scrollToPanduanPajak()">📋 Panduan Langkah-Langkah</button>
+            <button class="btn-secondary" style="flex:1; justify-content:center; font-size:11.5px;" onclick="cetakRingkasanPajak()">🖨️ Cetak Ringkasan</button>
+          </div>
           <div style="font-size:10px; color:var(--ink-soft); margin-top:10px; text-align:center;">Angka di atas hitungan otomatis dari transaksi asli di sistem — bisa jadi bukti pembanding kalau ada yang minta bayar di luar angka ini.</div>
         </div>
+      </div>
+
+      <div class="panel owner-only" id="panduan-pajak-panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">📋 Panduan Setor &amp; Lapor Pajak — Langkah demi Langkah</div>
+            <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;" id="panduan-pajak-progress">0 dari 6 langkah selesai</div>
+          </div>
+        </div>
+        <div class="panel-body" id="panduan-pajak-list"></div>
       </div>
 
       <div class="grid-2">
@@ -1900,6 +1956,72 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeProductModal()">Batal</button>
       <button class="btn-primary" id="pf-submit-btn" onclick="submitProductForm()">Simpan Produk</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BULK ENTRY — input banyak produk sekaligus, ada preview sebelum simpan -->
+<div class="modal-overlay" id="bulk-entry-modal">
+  <div class="modal-card" style="max-width:600px;">
+    <div class="modal-title">📊 Input Banyak Produk Sekaligus</div>
+    <div id="bulk-entry-step-form">
+      <div style="font-size:12px; color:var(--ink-soft); margin-bottom:12px;">Isi tiap baris — kosongkan yang tidak perlu. Nama &amp; Harga Jual wajib diisi.</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px; min-width:520px;" id="bulk-entry-table">
+          <thead><tr style="text-align:left; color:var(--ink-soft);">
+            <th style="padding:4px;">Nama Produk*</th><th style="padding:4px;">Harga Jual*</th><th style="padding:4px;">Stok Awal</th><th style="padding:4px;">Harga Modal</th><th style="padding:4px;">Kode/Barcode</th>
+          </tr></thead>
+          <tbody id="bulk-entry-rows"></tbody>
+        </table>
+      </div>
+      <button class="btn-secondary" style="width:100%; justify-content:center; margin-top:10px; font-size:12px;" onclick="tambahBarisBulkEntry()">+ Tambah Baris</button>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('bulk-entry-modal')">Batal</button>
+        <button class="btn-primary" onclick="previewBulkEntry()">Lihat Preview</button>
+      </div>
+    </div>
+    <div id="bulk-entry-step-preview" style="display:none;">
+      <div style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">Cek dulu sebelum disimpan — <span id="bulk-preview-count"></span> produk akan ditambahkan.</div>
+      <div id="bulk-preview-list" style="max-height:300px; overflow-y:auto;"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="document.getElementById('bulk-entry-step-preview').style.display='none'; document.getElementById('bulk-entry-step-form').style.display='block';">← Kembali Edit</button>
+        <button class="btn-primary" id="bulk-entry-submit-btn" onclick="submitBulkEntry()">✓ Simpan Semua</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL QUICK ADD PRODUK — dipicu saat kasir tidak menemukan produk di tengah transaksi -->
+<div class="modal-overlay" id="quick-add-modal">
+  <div class="modal-card">
+    <div class="modal-title">⚡ Tambah Cepat</div>
+    <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Produk belum terdaftar — isi seperlunya biar transaksi bisa lanjut. Detail lain bisa dilengkapi nanti.</div>
+    <div id="qa-duplicate-warning" style="display:none; background:var(--amber-tint); border-radius:8px; padding:10px 12px; font-size:11.5px; margin-bottom:12px;"></div>
+    <div class="field"><label>Nama Produk</label><input type="text" id="qa-nama" placeholder="Contoh: Paracetamol 500mg" oninput="cekDuplikatQuickAdd()"></div>
+    <div class="field-row">
+      <div class="field"><label>Harga Jual (Rp)</label><input type="number" id="qa-harga" placeholder="0"></div>
+      <div class="field"><label>Stok Awal</label><input type="number" id="qa-stok" placeholder="0" value="1"></div>
+    </div>
+    <div style="text-align:center; margin:4px 0 10px;"><button onclick="document.getElementById('qa-detail-lanjutan').style.display = document.getElementById('qa-detail-lanjutan').style.display==='none'?'block':'none';" style="background:none; border:none; color:var(--brand); font-size:11.5px; font-weight:700; cursor:pointer;">+ Detail lainnya (opsional)</button></div>
+    <div id="qa-detail-lanjutan" style="display:none;">
+      <div class="field-row">
+        <div class="field"><label>Kode/Barcode</label><input type="text" id="qa-barcode" placeholder="Opsional"></div>
+        <div class="field"><label>Harga Modal (Rp)</label><input type="number" id="qa-harga-modal" placeholder="Opsional"></div>
+      </div>
+      <div class="field">
+        <label>Kategori</label>
+        <select id="qa-kategori">
+          <option value="obat_bebas">Obat Bebas</option>
+          <option value="obat_resep">Obat Resep</option>
+          <option value="herbal">Herbal</option>
+          <option value="skincare">Skincare</option>
+          <option value="alat_kesehatan">Alat Kesehatan</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('quick-add-modal')">Batal</button>
+      <button class="btn-primary" id="qa-submit-btn" onclick="submitQuickAdd()">Simpan &amp; Lanjut Transaksi</button>
     </div>
   </div>
 </div>
@@ -3346,7 +3468,10 @@ Baca & tanda tangan kontrak kerja</textarea>
     const filtered = products.filter(p => p.nama.toLowerCase().includes(q))
       .sort((a,b) => (b.favorit === true) - (a.favorit === true));
     if (filtered.length === 0){
-      grid.innerHTML = '<div class="loading-note">Tidak ada produk ditemukan.</div>';
+      grid.innerHTML = `<div class="loading-note" style="grid-column:1/-1;">Tidak ada produk ditemukan.</div>
+        <div style="grid-column:1/-1; text-align:center; margin-top:8px;">
+          <button class="btn-primary" style="padding:10px 20px; font-size:12.5px;" onclick="bukaQuickAdd('${(document.getElementById('pos-search').value||'').replace(/'/g,"\\'")}')">⚡ Tambah Cepat "${q}"</button>
+        </div>`;
       return;
     }
     grid.innerHTML = filtered.map(p => `
@@ -3955,6 +4080,214 @@ Baca & tanda tangan kontrak kerja</textarea>
     document.getElementById('scan-modal').classList.remove('show');
   }
 
+  // ================= QUICK ADD PRODUK (Live Store Migration — produk belum terdaftar saat transaksi) =================
+  function bukaQuickAdd(namaAwal, barcodeAwal){
+    document.getElementById('qa-nama').value = namaAwal || '';
+    document.getElementById('qa-harga').value = '';
+    document.getElementById('qa-stok').value = 1;
+    document.getElementById('qa-barcode').value = barcodeAwal || '';
+    document.getElementById('qa-harga-modal').value = '';
+    document.getElementById('qa-duplicate-warning').style.display = 'none';
+    document.getElementById('qa-detail-lanjutan').style.display = barcodeAwal ? 'block' : 'none';
+    document.getElementById('quick-add-modal').classList.add('show');
+    if (namaAwal) cekDuplikatQuickAdd();
+    setTimeout(() => document.getElementById(namaAwal ? 'qa-harga' : 'qa-nama').focus(), 100);
+  }
+
+  function normalisasiNamaProduk(s){
+    return (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  }
+
+  function cekDuplikatQuickAdd(){
+    const nama = normalisasiNamaProduk(document.getElementById('qa-nama').value);
+    const warnEl = document.getElementById('qa-duplicate-warning');
+    if (nama.length < 3){ warnEl.style.display = 'none'; return; }
+    const mirip = products.find(p => normalisasiNamaProduk(p.nama) === nama || (nama.length > 4 && normalisasiNamaProduk(p.nama).includes(nama)));
+    if (mirip){
+      warnEl.style.display = 'block';
+      warnEl.innerHTML = `⚠️ Kemungkinan produk ini sudah ada: <b>"${mirip.nama}"</b> (stok saat ini: ${mirip.stok}). <button onclick="pakaiProdukExisting('${mirip.id}')" style="margin-left:6px; background:none; border:none; color:var(--brand); font-weight:700; text-decoration:underline; cursor:pointer; font-size:11.5px;">Pakai produk ini</button>`;
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+
+  function pakaiProdukExisting(productId){
+    closeModal('quick-add-modal');
+    handleProductTapKasir(productId);
+  }
+
+  async function submitQuickAdd(){
+    const nama = document.getElementById('qa-nama').value.trim();
+    const harga = parseFloat(document.getElementById('qa-harga').value);
+    const stok = parseInt(document.getElementById('qa-stok').value) || 0;
+    if (!nama){ showToast('Isi nama produk dulu.', true); return; }
+    if (!harga || harga <= 0){ showToast('Isi harga jual dulu.', true); return; }
+
+    const btn = document.getElementById('qa-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+
+    const barcode = document.getElementById('qa-barcode').value.trim() || null;
+    const hargaModal = parseFloat(document.getElementById('qa-harga-modal').value) || 0;
+    const kategori = document.getElementById('qa-kategori').value || 'obat_bebas';
+
+    const { data: produkBaru, error } = await sb.from('products').insert({
+      tenant_id: currentProfile.tenant_id, nama, harga, harga_modal: hargaModal, stok,
+      stok_minimum: 5, kategori, kode_produk: barcode, satuan: 'Pcs',
+      inventory_status: 'needs_review', migration_source: 'quick_add_pos',
+    }).select().single();
+
+    if (error){
+      showToast('Gagal menyimpan: ' + error.message, true);
+      btn.disabled = false; btn.textContent = 'Simpan & Lanjut Transaksi';
+      return;
+    }
+
+    if (stok > 0){
+      await sb.from('opening_stock_log').insert({
+        tenant_id: currentProfile.tenant_id, product_id: produkBaru.id, opening_quantity: stok,
+        created_by: currentProfile.id, source: 'quick_add_pos',
+      });
+    }
+
+    products.push(produkBaru);
+    closeModal('quick-add-modal');
+    showToast(`✓ "${nama}" ditambahkan — lanjut transaksi`);
+    handleProductTapKasir(produkBaru.id);
+    btn.disabled = false; btn.textContent = 'Simpan & Lanjut Transaksi';
+  }
+
+  // ================= LIVE STORE MIGRATION — Migration Dashboard =================
+  async function loadMigrasiDashboard(){
+    const { data: tenantData } = await sb.from('tenants').select('migration_status').eq('id', currentProfile.tenant_id).single();
+    const status = tenantData?.migration_status || 'completed';
+    document.getElementById('migrasi-status-select').value = status;
+
+    const dashPanel = document.getElementById('migrasi-dashboard-panel');
+    const reviewPanel = document.getElementById('migrasi-review-panel');
+    if (status === 'completed'){
+      dashPanel.style.display = 'none';
+      reviewPanel.style.display = 'none';
+      return;
+    }
+    dashPanel.style.display = 'block';
+
+    const { data: produk } = await sb.from('products').select('id, nama, stok, inventory_status, created_at').eq('tenant_id', currentProfile.tenant_id);
+    const total = (produk||[]).length;
+    const aktif = (produk||[]).filter(p => p.inventory_status === 'active').length;
+    const perluCek = (produk||[]).filter(p => p.inventory_status === 'needs_review').length;
+
+    document.getElementById('mg-total-produk').textContent = total;
+    document.getElementById('mg-aktif').textContent = aktif;
+    document.getElementById('mg-perlu-cek').textContent = perluCek;
+    document.getElementById('mg-progress-note').textContent = total > 0
+      ? `${total} produk terdaftar sejauh ini — migrasi masih berjalan, jumlah pastinya belum diketahui sampai semua selesai.`
+      : `Belum ada produk terdaftar — mulai dengan produk yang paling laku dulu, bukan mesti semua sekaligus.`;
+
+    if (perluCek > 0){
+      reviewPanel.style.display = 'block';
+      const daftar = (produk||[]).filter(p => p.inventory_status === 'needs_review').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      document.getElementById('migrasi-review-list').innerHTML = daftar.map(p => `
+        <div class="row-item">
+          <div><div class="row-name">${p.nama}</div><div class="row-meta">Stok: ${p.stok} · Ditambahkan cepat, belum dicek lengkap</div></div>
+          <div class="row-right"><button class="btn-secondary" style="padding:6px 12px; font-size:11px;" onclick="tandaiProdukSudahDicek('${p.id}')">✓ Sudah OK</button></div>
+        </div>`).join('');
+    } else {
+      reviewPanel.style.display = 'none';
+    }
+  }
+
+  async function ubahStatusMigrasi(status){
+    await sb.from('tenants').update({ migration_status: status }).eq('id', currentProfile.tenant_id);
+    showToast('✓ Status migrasi diperbarui');
+    await loadMigrasiDashboard();
+  }
+
+  async function tandaiProdukSudahDicek(productId){
+    await sb.from('products').update({ inventory_status: 'active' }).eq('id', productId);
+    const p = products.find(x => x.id === productId);
+    if (p) p.inventory_status = 'active';
+    showToast('✓ Produk ditandai sudah lengkap');
+    await loadMigrasiDashboard();
+  }
+
+  // ================= BULK ENTRY — input banyak produk sekaligus =================
+  function showBulkEntryModal(){
+    document.getElementById('bulk-entry-rows').innerHTML = '';
+    for (let i=0; i<5; i++) tambahBarisBulkEntry();
+    document.getElementById('bulk-entry-step-form').style.display = 'block';
+    document.getElementById('bulk-entry-step-preview').style.display = 'none';
+    document.getElementById('bulk-entry-modal').classList.add('show');
+  }
+  function tambahBarisBulkEntry(){
+    const tbody = document.getElementById('bulk-entry-rows');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td style="padding:3px;"><input type="text" class="be-nama" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:6px; font-size:11.5px;"></td>
+      <td style="padding:3px;"><input type="number" class="be-harga" style="width:90px; border:1px solid var(--line); border-radius:6px; padding:6px; font-size:11.5px;"></td>
+      <td style="padding:3px;"><input type="number" class="be-stok" style="width:70px; border:1px solid var(--line); border-radius:6px; padding:6px; font-size:11.5px;"></td>
+      <td style="padding:3px;"><input type="number" class="be-modal" style="width:90px; border:1px solid var(--line); border-radius:6px; padding:6px; font-size:11.5px;"></td>
+      <td style="padding:3px;"><input type="text" class="be-kode" style="width:100px; border:1px solid var(--line); border-radius:6px; padding:6px; font-size:11.5px;"></td>`;
+    tbody.appendChild(row);
+  }
+
+  let bulkEntryPreviewData = [];
+  function previewBulkEntry(){
+    const rows = document.querySelectorAll('#bulk-entry-rows tr');
+    bulkEntryPreviewData = [];
+    let adaError = false;
+    rows.forEach(r => {
+      const nama = r.querySelector('.be-nama').value.trim();
+      const harga = parseFloat(r.querySelector('.be-harga').value);
+      if (!nama && !harga) return;
+      if (!nama || !harga){ adaError = true; return; }
+      bulkEntryPreviewData.push({
+        nama, harga, stok: parseInt(r.querySelector('.be-stok').value) || 0,
+        harga_modal: parseFloat(r.querySelector('.be-modal').value) || 0,
+        kode_produk: r.querySelector('.be-kode').value.trim() || null,
+      });
+    });
+    if (adaError) showToast('Ada baris yang cuma isi Nama atau Harga saja — baris itu dilewati. Lengkapi dulu kalau perlu.', true);
+    if (bulkEntryPreviewData.length === 0){ showToast('Belum ada baris yang lengkap (Nama + Harga wajib).', true); return; }
+
+    bulkEntryPreviewData.forEach(item => {
+      const mirip = products.find(p => normalisasiNamaProduk(p.nama) === normalisasiNamaProduk(item.nama));
+      item.kemungkinanDuplikat = mirip ? mirip.nama : null;
+    });
+
+    document.getElementById('bulk-preview-count').textContent = bulkEntryPreviewData.length;
+    document.getElementById('bulk-preview-list').innerHTML = bulkEntryPreviewData.map(item => `
+      <div class="row-item" style="${item.kemungkinanDuplikat ? 'background:var(--amber-tint);' : ''}">
+        <div><div class="row-name">${item.nama}</div><div class="row-meta">Rp${item.harga.toLocaleString('id-ID')} · Stok ${item.stok}${item.kemungkinanDuplikat ? ` · ⚠️ Mirip: "${item.kemungkinanDuplikat}"` : ''}</div></div>
+      </div>`).join('');
+    document.getElementById('bulk-entry-step-form').style.display = 'none';
+    document.getElementById('bulk-entry-step-preview').style.display = 'block';
+  }
+
+  async function submitBulkEntry(){
+    if (bulkEntryPreviewData.length === 0) return;
+    const btn = document.getElementById('bulk-entry-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+
+    const payload = bulkEntryPreviewData.map(item => ({
+      tenant_id: currentProfile.tenant_id, nama: item.nama, harga: item.harga, harga_modal: item.harga_modal,
+      stok: item.stok, stok_minimum: 5, kategori: 'obat_bebas', kode_produk: item.kode_produk, satuan: 'Pcs',
+      inventory_status: 'needs_review', migration_source: 'bulk_entry',
+    }));
+    const { data: hasil, error } = await sb.from('products').insert(payload).select();
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); btn.disabled = false; btn.textContent = '✓ Simpan Semua'; return; }
+
+    const openingLogs = hasil.filter(p => p.stok > 0).map(p => ({
+      tenant_id: currentProfile.tenant_id, product_id: p.id, opening_quantity: p.stok, created_by: currentProfile.id, source: 'bulk_entry',
+    }));
+    if (openingLogs.length > 0) await sb.from('opening_stock_log').insert(openingLogs);
+
+    products.push(...hasil);
+    closeModal('bulk-entry-modal');
+    showToast(`✓ ${hasil.length} produk berhasil ditambahkan`);
+    btn.disabled = false; btn.textContent = '✓ Simpan Semua';
+    await loadMigrasiDashboard();
+  }
+
   let sharedAudioCtx = null;
   function playBeepSound(){
     try{
@@ -4076,7 +4409,8 @@ Baca & tanda tangan kontrak kerja</textarea>
       }
       updateScanConfirmHarga();
     } else {
-      document.getElementById('scan-status').innerHTML = `⚠️ Kode "${kode}" tidak ditemukan di produk kamu.`;
+      document.getElementById('scan-status').innerHTML = `⚠️ Kode "${kode}" tidak ditemukan di produk kamu. <br><button class="btn-primary" style="margin-top:10px; padding:8px 16px; font-size:12px;" onclick="closeScanModal(); bukaQuickAdd('', '${kode.replace(/'/g,"\\'")}')">⚡ Tambah Cepat</button>`;
+      if (scanDetectorInterval) clearInterval(scanDetectorInterval);
     }
   }
 
@@ -5433,6 +5767,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     if (sub === 'aktivitas') loadLogAktivitas();
     if (sub === 'produk') loadApprovalToggleStatus();
     if (sub === 'nilailabel'){ loadNilaiStok(); isiDropdownProdukLabel(); loadRiwayatWriteoff(); }
+    if (sub === 'migrasi') loadMigrasiDashboard();
   }
 
   // ================= TOGGLE APPROVAL STOK & LOG AKTIVITAS =================
@@ -6406,6 +6741,7 @@ Baca & tanda tangan kontrak kerja</textarea>
 
     await loadTaxDeadlines();
     if (currentProfile.role === 'owner') await loadPphFinalCalculator();
+    if (currentProfile.role === 'owner') await loadPanduanPajak();
   }
   async function simpanProfilUsaha(){
     const namaUsaha = document.getElementById('pu-nama-usaha').value.trim();
@@ -9327,13 +9663,34 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
   const BATAS_BEBAS_PPH_FINAL = 500000000; // Rp500 juta/tahun, khusus perorangan
   const BATAS_MAX_OMZET_SKEMA_UMKM = 4800000000; // Rp4,8 miliar/tahun
 
+  // Batas waktu pakai skema PPh Final UMKM per bentuk usaha, sesuai PP 20/2026:
+  // Perorangan = tanpa batas waktu (permanen). PT = maks 3 tahun sejak terdaftar. CV/Firma/Koperasi = maks 4 tahun.
+  const BATAS_TAHUN_SKEMA_FINAL = { perorangan: null, pt: 3, cv: 4 };
+
+  function hitungPphBadanNormal(labaBersihTahunIni, omzetTahunIni){
+    // Fasilitas Pasal 31E UU PPh: diskon 50% dari tarif 22% (jadi efektif 11%) untuk bagian
+    // Penghasilan Kena Pajak yang proporsional dengan omzet sampai Rp4,8 miliar. Berlaku untuk badan
+    // dengan omzet setahun sampai Rp50 miliar. Di atas itu, tarif penuh 22%.
+    if (labaBersihTahunIni <= 0) return { pajak: 0, catatan: 'Rugi tahun ini — PPh Badan = Rp0. Kerugian ini bisa dikompensasi (dikurangkan) ke penghasilan kena pajak tahun-tahun berikutnya.' };
+    let pajak;
+    if (omzetTahunIni <= BATAS_MAX_OMZET_SKEMA_UMKM){
+      pajak = labaBersihTahunIni * 0.11; // seluruhnya kena tarif efektif 11%
+    } else if (omzetTahunIni <= 50000000000){
+      const porsiKena11 = BATAS_MAX_OMZET_SKEMA_UMKM / omzetTahunIni;
+      pajak = (labaBersihTahunIni * porsiKena11 * 0.11) + (labaBersihTahunIni * (1-porsiKena11) * 0.22);
+    } else {
+      pajak = labaBersihTahunIni * 0.22; // omzet di atas Rp50 miliar, tarif penuh
+    }
+    return { pajak, catatan: null };
+  }
+
   async function loadPphFinalCalculator(){
     const panel = document.getElementById('pph-final-panel');
     if (!panel) return;
     const tenantId = currentProfile.tenant_id;
     const [{ data: taxProfile }, { data: tenantData }] = await Promise.all([
-      sb.from('tax_profiles').select('skema_pajak').eq('tenant_id', tenantId).maybeSingle(),
-      sb.from('tenants').select('bentuk_badan_usaha').eq('id', tenantId).single(),
+      sb.from('tax_profiles').select('skema_pajak, tanggal_pendirian').eq('tenant_id', tenantId).maybeSingle(),
+      sb.from('tenants').select('bentuk_badan_usaha, nama_usaha').eq('id', tenantId).single(),
     ]);
     const skema = taxProfile?.skema_pajak || 'pph_final_umkm';
     const bentukUsaha = tenantData?.bentuk_badan_usaha || 'perorangan';
@@ -9350,10 +9707,24 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const awalBulanIni = new Date(sekarang.getFullYear(), sekarang.getMonth(), 1);
     const periodeBulanIni = sekarang.toISOString().slice(0,7);
 
-    const [{ data: txSebelumBulanIni }, { data: txBulanIni }, { data: sudahSetor }] = await Promise.all([
+    // ---- Cek batas waktu skema PPh Final untuk badan usaha (PT/CV), sesuai PP 20/2026 ----
+    const batasTahun = BATAS_TAHUN_SKEMA_FINAL[bentukUsaha];
+    let skemaSudahHabis = false;
+    let tanggalHabisSkema = null;
+    if (batasTahun !== null && taxProfile?.tanggal_pendirian){
+      const tglPendirian = new Date(taxProfile.tanggal_pendirian);
+      tanggalHabisSkema = new Date(tglPendirian);
+      tanggalHabisSkema.setFullYear(tanggalHabisSkema.getFullYear() + batasTahun);
+      skemaSudahHabis = sekarang >= tanggalHabisSkema;
+    }
+
+    const [{ data: txSebelumBulanIni }, { data: txBulanIni }, { data: sudahSetor },
+           { data: biayaTahunIni }, { data: itemTahunIni }] = await Promise.all([
       sb.from('transactions').select('total').eq('tenant_id', tenantId).neq('status_transaksi','dibatalkan').gte('created_at', awalTahun.toISOString()).lt('created_at', awalBulanIni.toISOString()),
       sb.from('transactions').select('total').eq('tenant_id', tenantId).neq('status_transaksi','dibatalkan').gte('created_at', awalBulanIni.toISOString()),
       sb.from('pph_final_setoran').select('*').eq('tenant_id', tenantId).eq('periode', periodeBulanIni).maybeSingle(),
+      bentukUsaha !== 'perorangan' ? sb.from('biaya_operasional').select('jumlah').eq('tenant_id', tenantId).gte('tanggal', awalTahun.toISOString().slice(0,10)) : Promise.resolve({data:[]}),
+      bentukUsaha !== 'perorangan' ? sb.from('transaction_items').select('subtotal, total_hpp, transactions!inner(tenant_id, created_at, status_transaksi)').eq('transactions.tenant_id', tenantId).neq('transactions.status_transaksi','dibatalkan').gte('transactions.created_at', awalTahun.toISOString()) : Promise.resolve({data:[]}),
     ]);
 
     const omzetSebelumBulanIni = (txSebelumBulanIni||[]).reduce((s,t)=>s+parseFloat(t.total),0);
@@ -9366,11 +9737,20 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const statusBox = document.getElementById('pph-status-box');
     const jumlahSetorEl = document.getElementById('pph-jumlah-setor');
     let jumlahHarusSetor = 0;
+    let ringkasanCetak = { bentukUsaha, tahunIni, omzetBulanIni, kumulatifTahunIni, namaUsaha: tenantData?.nama_usaha };
 
-    if (kumulatifTahunIni > BATAS_MAX_OMZET_SKEMA_UMKM){
-      statusBox.innerHTML = `⚠️ <b>Perhatian:</b> Omzet kumulatif tahun ${tahunIni} sudah tembus Rp${(BATAS_MAX_OMZET_SKEMA_UMKM/1000000000)} miliar (Rp${Math.round(kumulatifTahunIni).toLocaleString('id-ID')}). Sesuai aturan, usaha ini <b>sudah tidak boleh lagi pakai skema PPh Final UMKM 0,5%</b> — wajib pindah ke skema PPh Normal. Sebaiknya konsultasi ke konsultan pajak/petugas pajak resmi untuk proses pindah skemanya.`;
+    // ---- Badan usaha yang masa PPh Final-nya SUDAH HABIS: wajib PPh Badan Normal, bukan pilihan lagi ----
+    if (skemaSudahHabis){
+      const labaKotorTahunIni = (itemTahunIni||[]).reduce((s,i)=>s+(parseFloat(i.subtotal||0)-parseFloat(i.total_hpp||0)),0);
+      const totalBiayaTahunIni = (biayaTahunIni||[]).reduce((s,b)=>s+parseFloat(b.jumlah),0);
+      const labaBersihTahunIni = labaKotorTahunIni - totalBiayaTahunIni;
+      const { pajak, catatan } = hitungPphBadanNormal(labaBersihTahunIni, kumulatifTahunIni);
+      statusBox.innerHTML = `⚠️ <b>Masa pakai PPh Final UMKM sudah habis</b> sejak ${tanggalHabisSkema.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} (${bentukUsaha.toUpperCase()} maks. ${batasTahun} tahun sejak berdiri, sesuai PP 20/2026). Usaha ini <b>wajib pakai PPh Badan Normal</b>, bukan pilihan lagi.<br><br>
+        Estimasi PPh Badan tahun ${tahunIni} (dari Laba Bersih Rp${Math.round(labaBersihTahunIni).toLocaleString('id-ID')}): <b>Rp${Math.round(pajak).toLocaleString('id-ID')}</b>${catatan ? ' — ' + catatan : ''}
+        <div style="font-size:10px; opacity:0.75; margin-top:6px;">*Ini estimasi dari Laba Bersih akuntansi, BELUM termasuk koreksi fiskal (item yang boleh/tidak boleh dikurangkan menurut UU PPh). Angka final wajib dicek konsultan pajak sebelum lapor SPT Tahunan Badan.</div>`;
       jumlahHarusSetor = null;
       jumlahSetorEl.textContent = '—';
+      ringkasanCetak.mode = 'badan_normal_wajib'; ringkasanCetak.pphBadanNormal = pajak; ringkasanCetak.labaBersihTahunIni = labaBersihTahunIni;
     } else if (bentukUsaha === 'perorangan'){
       // Pembebasan Rp500jt pertama, khusus perorangan
       if (kumulatifTahunIni <= BATAS_BEBAS_PPH_FINAL){
@@ -9378,7 +9758,6 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
         const sisaBebas = BATAS_BEBAS_PPH_FINAL - kumulatifTahunIni;
         statusBox.innerHTML = `✅ <b>Masih bebas pajak.</b> Omzet kumulatif tahun ${tahunIni} sampai bulan ini: Rp${Math.round(kumulatifTahunIni).toLocaleString('id-ID')} — masih di bawah batas bebas pajak Rp500 juta/tahun (khusus usaha perorangan). Sisa jatah bebas pajak: <b>Rp${Math.round(sisaBebas).toLocaleString('id-ID')}</b>. Kalau omzet segini terus, <b>PPh Final = Rp0, tidak perlu setor.</b>`;
       } else {
-        // Sudah lewat batas bebas — hitung porsi omzet BULAN INI yang kena pajak
         const bagianKenaPajakSebelumBulanIni = Math.max(0, omzetSebelumBulanIni - BATAS_BEBAS_PPH_FINAL);
         const bagianKenaPajakSampaiBulanIni = Math.max(0, kumulatifTahunIni - BATAS_BEBAS_PPH_FINAL);
         const omzetBulanIniKenaPajak = bagianKenaPajakSampaiBulanIni - bagianKenaPajakSebelumBulanIni;
@@ -9390,15 +9769,33 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
         }
       }
       jumlahSetorEl.textContent = 'Rp ' + Math.round(jumlahHarusSetor).toLocaleString('id-ID');
+      ringkasanCetak.mode = 'perorangan'; ringkasanCetak.pphFinal = jumlahHarusSetor;
     } else {
-      // Badan usaha (CV/PT/Koperasi) — TIDAK dapat pembebasan Rp500jt, kena 0,5% dari rupiah pertama
+      // Badan usaha (PT/CV) MASIH dalam masa berlaku PPh Final — tampilkan PPh Final, TAPI juga bandingkan
+      // dengan PPh Badan Normal (Pasal 31E) supaya Owner bisa lihat mana yang legal lebih hemat.
       jumlahHarusSetor = omzetBulanIni * 0.005;
-      statusBox.innerHTML = `Bentuk usaha <b>${bentukUsaha.toUpperCase()}</b> tidak mendapat fasilitas bebas pajak Rp500 juta (fasilitas itu cuma untuk usaha perorangan) — PPh Final 0,5% dihitung dari <b>seluruh omzet bulan ini</b>.`;
+      const pphFinalTahunIni = kumulatifTahunIni * 0.005;
+      const labaKotorTahunIni = (itemTahunIni||[]).reduce((s,i)=>s+(parseFloat(i.subtotal||0)-parseFloat(i.total_hpp||0)),0);
+      const totalBiayaTahunIni = (biayaTahunIni||[]).reduce((s,b)=>s+parseFloat(b.jumlah),0);
+      const labaBersihTahunIni = labaKotorTahunIni - totalBiayaTahunIni;
+      const { pajak: pphBadanNormalTahunIni, catatan } = hitungPphBadanNormal(labaBersihTahunIni, kumulatifTahunIni);
+      const lebihHemat = pphBadanNormalTahunIni < pphFinalTahunIni ? 'normal' : 'final';
+      const selisih = Math.abs(pphFinalTahunIni - pphBadanNormalTahunIni);
+
+      statusBox.innerHTML = `Bentuk usaha <b>${bentukUsaha.toUpperCase()}</b> tidak dapat fasilitas bebas pajak Rp500 juta (khusus perorangan) — PPh Final 0,5% bulan ini dihitung dari seluruh omzet bulan ini.
+        <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);">
+          <b>📊 Perbandingan skema (estimasi tahun ${tahunIni}) — masih boleh pilih, masa berlaku sampai ${tanggalHabisSkema ? tanggalHabisSkema.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '—'}:</b><br>
+          • PPh Final 0,5% dari omzet: <b>Rp${Math.round(pphFinalTahunIni).toLocaleString('id-ID')}</b><br>
+          • PPh Badan Normal (Pasal 31E) dari Laba Bersih Rp${Math.round(labaBersihTahunIni).toLocaleString('id-ID')}: <b>Rp${Math.round(pphBadanNormalTahunIni).toLocaleString('id-ID')}</b>${catatan ? ' — ' + catatan : ''}<br>
+          ${lebihHemat === 'normal' ? `<span style="color:var(--good);">💡 Skema <b>PPh Badan Normal lebih hemat Rp${Math.round(selisih).toLocaleString('id-ID')}/tahun</b> secara legal — pertimbangkan pindah skema (konsultasi ke konsultan pajak dulu untuk proses resminya).</span>` : `<span style="color:var(--good);">💡 Skema <b>PPh Final 0,5% masih lebih hemat</b> — tetap pakai skema ini sampai masa berlakunya habis.</span>`}
+          <div style="font-size:10px; opacity:0.75; margin-top:6px;">*Perbandingan dari Laba Bersih akuntansi, BELUM koreksi fiskal — konsultasikan ke konsultan pajak sebelum pindah skema.</div>
+        </div>`;
       jumlahSetorEl.textContent = 'Rp ' + Math.round(jumlahHarusSetor).toLocaleString('id-ID');
+      ringkasanCetak.mode = 'badan_masih_final'; ringkasanCetak.pphFinal = pphFinalTahunIni; ringkasanCetak.pphBadanNormal = pphBadanNormalTahunIni; ringkasanCetak.labaBersihTahunIni = labaBersihTahunIni; ringkasanCetak.lebihHemat = lebihHemat;
     }
 
     const caraLaporEl = document.getElementById('pph-cara-lapor');
-    caraLaporEl.innerHTML = `<b>Cara setor & lapor:</b> 1) Buka <a href="https://coretaxdjp.pajak.go.id" target="_blank" style="color:var(--brand);">coretaxdjp.pajak.go.id</a>, login pakai NIK & password kamu sendiri. 2) Buat Kode Billing untuk jenis setoran PPh Final Pasal 4 ayat (2) dengan jumlah yang tertera di atas. 3) Bayar Kode Billing itu lewat bank/ATM/m-banking. 4) Lapor SPT Masa PPh Final di Coretax pakai angka omzet yang sama seperti di atas. Simpan bukti setor & lapor sebagai arsip.<br><span style="opacity:0.7;">*Ini panduan umum berdasarkan aturan PP 20/2026 — bukan nasihat pajak resmi. Kalau ragu, tunjukkan angka ini ke petugas pajak/konsultan sebagai pembanding.</span>`;
+    caraLaporEl.innerHTML = `<b>Cara setor & lapor:</b> 1) Buka <a href="https://coretaxdjp.pajak.go.id" target="_blank" style="color:var(--brand);">coretaxdjp.pajak.go.id</a>, login pakai NIK & password kamu sendiri. 2) Buat Kode Billing untuk jenis setoran yang sesuai dengan jumlah yang tertera di atas. 3) Bayar Kode Billing itu lewat bank/ATM/m-banking. 4) Lapor SPT di Coretax pakai angka yang sama seperti di atas. Simpan bukti setor & lapor sebagai arsip.<br><span style="opacity:0.7;">*Ini panduan umum berdasarkan aturan PP 20/2026 — bukan nasihat pajak resmi. Kalau ragu, tunjukkan angka ini ke petugas pajak/konsultan sebagai pembanding.</span>`;
 
     const btn = document.getElementById('pph-tandai-btn');
     if (sudahSetor){
@@ -9409,6 +9806,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       btn.disabled = jumlahHarusSetor === null;
     }
     window.__pphJumlahHarusSetor = jumlahHarusSetor;
+    window.__pphRingkasanCetak = ringkasanCetak;
   }
 
   async function tandaiPphSudahSetor(){
@@ -9421,6 +9819,90 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     if (error){ showToast('Gagal: ' + error.message, true); return; }
     showToast('✓ Tercatat sudah disetor bulan ini');
     await loadPphFinalCalculator();
+  }
+
+  function cetakRingkasanPajak(){
+    const r = window.__pphRingkasanCetak;
+    if (!r){ showToast('Data belum siap, coba lagi sesaat.', true); return; }
+    const rp = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+    let baris = '';
+    if (r.mode === 'perorangan'){
+      baris = `<tr><td>Omzet kumulatif tahun ${r.tahunIni}</td><td style="text-align:right;">${rp(r.kumulatifTahunIni)}</td></tr>
+        <tr><td>PPh Final yang harus disetor bulan ini</td><td style="text-align:right; font-weight:700;">${rp(r.pphFinal)}</td></tr>`;
+    } else if (r.mode === 'badan_masih_final'){
+      baris = `<tr><td>Omzet kumulatif tahun ${r.tahunIni}</td><td style="text-align:right;">${rp(r.kumulatifTahunIni)}</td></tr>
+        <tr><td>Laba Bersih (akuntansi) tahun ${r.tahunIni}</td><td style="text-align:right;">${rp(r.labaBersihTahunIni)}</td></tr>
+        <tr><td>Estimasi PPh Final 0,5% (setahun)</td><td style="text-align:right;">${rp(r.pphFinal)}</td></tr>
+        <tr><td>Estimasi PPh Badan Normal Pasal 31E (setahun)</td><td style="text-align:right;">${rp(r.pphBadanNormal)}</td></tr>
+        <tr><td colspan="2" style="padding-top:10px; font-weight:700;">Rekomendasi: skema ${r.lebihHemat === 'normal' ? 'PPh Badan Normal' : 'PPh Final 0,5%'} lebih hemat secara legal</td></tr>`;
+    } else {
+      baris = `<tr><td>Omzet kumulatif tahun ${r.tahunIni}</td><td style="text-align:right;">${rp(r.kumulatifTahunIni)}</td></tr>
+        <tr><td>Laba Bersih (akuntansi) tahun ${r.tahunIni}</td><td style="text-align:right;">${rp(r.labaBersihTahunIni)}</td></tr>
+        <tr><td>Estimasi PPh Badan Normal Pasal 31E (setahun)</td><td style="text-align:right; font-weight:700;">${rp(r.pphBadanNormal)}</td></tr>`;
+    }
+    const win = window.open('', '_blank', 'width=480,height=700');
+    if (!win){ showToast('Popup diblokir browser — izinkan popup dulu.', true); return; }
+    win.document.write(`<html><head><title>Ringkasan Pajak - ${r.namaUsaha}</title>
+      <style>body{font-family:sans-serif; padding:24px; font-size:13px;} table{width:100%; border-collapse:collapse;} td{padding:6px 0; border-bottom:1px dashed #ccc;} h2{margin-bottom:2px;} .no-print{text-align:center; margin-top:20px;} @media print{.no-print{display:none;}}</style>
+      </head><body>
+      <h2>${r.namaUsaha}</h2>
+      <div style="color:#666; margin-bottom:16px;">Ringkasan Pajak — Bentuk Usaha: ${r.bentukUsaha.toUpperCase()} — Dicetak ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
+      <table>${baris}</table>
+      <div style="margin-top:20px; font-size:11px; color:#666; line-height:1.6;">
+        <b>Catatan penting:</b><br>
+        • Angka di atas dihitung otomatis dari data transaksi &amp; laporan keuangan asli di sistem UMKMpro AI.<br>
+        • Perbandingan skema (kalau ada) berdasarkan Laba Bersih akuntansi, BELUM termasuk koreksi fiskal menurut UU PPh Pasal 6 &amp; 9.<br>
+        • Ini panduan umum berdasarkan PP Nomor 20 Tahun 2026, BUKAN nasihat pajak resmi. Konsultasikan ke konsultan pajak/petugas pajak sebelum lapor, terutama untuk perpindahan skema.<br>
+        • Dokumen ini untuk referensi pribadi — input manual angkanya ke form SPT di coretaxdjp.pajak.go.id, bukan file yang diunggah langsung.
+      </div>
+      <div class="no-print"><button onclick="window.print()" style="padding:8px 20px;">🖨️ Cetak / Simpan PDF</button></div>
+      </body></html>`);
+    win.document.close();
+  }
+
+  // ================= PANDUAN LANGKAH-LANGKAH SETOR & LAPOR PAJAK =================
+  const LANGKAH_PAJAK = [
+    { judul: 'Login ke Coretax', detail: 'Buka <a href="https://coretaxdjp.pajak.go.id" target="_blank">coretaxdjp.pajak.go.id</a>, login pakai NIK/NPWP 16 digit & password kamu sendiri. Jangan pernah kasih password ini ke siapa pun, termasuk yang mengaku "petugas pajak".' },
+    { judul: 'Cek angka di kalkulator', detail: 'Lihat kembali panel kalkulator PPh di atas — catat jumlah yang harus disetor bulan/tahun ini. Angka ini yang jadi acuan, bukan angka dari orang lain.' },
+    { judul: 'Buat Kode Billing', detail: 'Di Coretax, buka menu "Bayar" → pilih jenis pajak sesuai skema kamu (PPh Final Pasal 4 ayat 2, atau PPh Pasal 25/29 kalau sudah pakai PPh Badan Normal) → masukkan jumlah sesuai kalkulator → sistem akan buatkan Kode Billing (15 digit).' },
+    { judul: 'Bayar Kode Billing', detail: 'Bayar Kode Billing itu lewat ATM, m-banking, internet banking, atau teller bank — pilih menu "Pajak/Penerimaan Negara", masukkan Kode Billing-nya. Simpan struk/bukti bayar.' },
+    { judul: 'Lapor SPT di Coretax', detail: 'Balik ke Coretax, buka menu "Lapor" → pilih jenis SPT sesuai skema (SPT Masa PPh Final atau SPT Tahunan Badan) → isi data omzet/laba sesuai angka yang sama dengan kalkulator → submit.' },
+    { judul: 'Simpan Bukti Penerimaan Elektronik (BPE)', detail: 'Setelah submit berhasil, Coretax akan kasih BPE (Bukti Penerimaan Elektronik) — unduh dan simpan sebagai arsip resmi. Ini bukti sah kalau nanti ada yang menanyakan status lapor pajak kamu.' },
+  ];
+
+  async function loadPanduanPajak(){
+    const listEl = document.getElementById('panduan-pajak-list');
+    if (!listEl) return;
+    const periodeBulanIni = new Date().toISOString().slice(0,7);
+    const { data } = await sb.from('pajak_checklist_progress').select('langkah_selesai').eq('tenant_id', currentProfile.tenant_id).eq('periode', periodeBulanIni).maybeSingle();
+    const selesai = new Set(data?.langkah_selesai || []);
+    renderPanduanPajak(selesai);
+  }
+  function renderPanduanPajak(selesai){
+    const listEl = document.getElementById('panduan-pajak-list');
+    document.getElementById('panduan-pajak-progress').textContent = `${selesai.size} dari ${LANGKAH_PAJAK.length} langkah selesai`;
+    listEl.innerHTML = LANGKAH_PAJAK.map((l, i) => `
+      <div style="display:flex; gap:10px; align-items:flex-start; padding:10px 0; ${i < LANGKAH_PAJAK.length-1 ? 'border-bottom:1px dashed var(--line);' : ''}">
+        <input type="checkbox" ${selesai.has(i) ? 'checked' : ''} onchange="toggleLangkahPajak(${i}, this.checked)" style="width:20px; height:20px; margin-top:1px; flex-shrink:0; accent-color:var(--brand);">
+        <div>
+          <div style="font-size:13px; font-weight:700; ${selesai.has(i) ? 'text-decoration:line-through; color:var(--ink-soft);' : ''}">${i+1}. ${l.judul}</div>
+          <div style="font-size:11.5px; color:var(--ink-soft); margin-top:3px; line-height:1.5;">${l.detail}</div>
+        </div>
+      </div>`).join('');
+  }
+  async function toggleLangkahPajak(index, sudahSelesai){
+    const periodeBulanIni = new Date().toISOString().slice(0,7);
+    const { data: existing } = await sb.from('pajak_checklist_progress').select('langkah_selesai').eq('tenant_id', currentProfile.tenant_id).eq('periode', periodeBulanIni).maybeSingle();
+    let selesai = new Set(existing?.langkah_selesai || []);
+    if (sudahSelesai) selesai.add(index); else selesai.delete(index);
+    await sb.from('pajak_checklist_progress').upsert({
+      tenant_id: currentProfile.tenant_id, periode: periodeBulanIni, langkah_selesai: Array.from(selesai), updated_at: new Date().toISOString(),
+    }, { onConflict: 'tenant_id,periode' });
+    renderPanduanPajak(selesai);
+    if (selesai.size === LANGKAH_PAJAK.length) showToast('🎉 Semua langkah selesai — pajak bulan ini sudah beres!');
+  }
+  function scrollToPanduanPajak(){
+    document.getElementById('panduan-pajak-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // ================= NILAI TOTAL STOK =================
