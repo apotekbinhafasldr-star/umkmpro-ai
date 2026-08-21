@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v86-1000</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v87-1030</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -8926,7 +8926,17 @@ Baca & tanda tangan kontrak kerja</textarea>
     const baris = (l,v,bold,warna) => `<div style="display:flex; justify-content:space-between; padding:6px 0; ${bold?'font-weight:800; border-top:1.5px solid var(--line); margin-top:4px; padding-top:10px;':''}"><span style="${warna?'color:'+warna+';':''}">${l}</span><span class="num" style="${warna?'color:'+warna+';':''}">Rp ${Math.round(v).toLocaleString('id-ID')}</span></div>`;
     const biayaPerKategori = (biaya||[]).reduce((acc,b)=>{ acc[b.kategori]=(acc[b.kategori]||0)+parseFloat(b.jumlah); return acc; },{});
     const barisBiayaPerKategori = Object.entries(biayaPerKategori).map(([k,v]) => baris('　' + KATEGORI_BIAYA_LABEL[k], -v, false, 'var(--ink-soft)')).join('');
-    rugi.innerHTML = baris('Omzet Penjualan', total) + baris('HPP (Modal Barang Terjual)', -totalHPP, false, 'var(--danger)') + baris('Laba Kotor', labaKotor, true) +
+
+    // Deteksi produk yang terjual tapi HPP-nya Rp0 (kemungkinan Harga Modal belum diisi) — biar laba tidak menyesatkan
+    const produkHppNolSet = new Set();
+    dataAktif.forEach(t => (t.transaction_items||[]).forEach(i => {
+      if (parseFloat(i.total_hpp||0) === 0 && i.qty > 0) produkHppNolSet.add(i.nama_produk);
+    }));
+    const peringatanHppNol = produkHppNolSet.size > 0
+      ? `<div style="background:var(--amber-tint); color:var(--amber-deep,#7A4B1C); font-size:11px; border-radius:9px; padding:9px 11px; margin-bottom:10px; line-height:1.5;">⚠️ <b>${produkHppNolSet.size} produk</b> yang terjual periode ini belum ada Harga Modal-nya (dianggap Rp0) — Laba Kotor/Bersih di bawah kemungkinan <b>lebih tinggi dari sebenarnya</b>. Lengkapi Harga Modal produk ini: ${Array.from(produkHppNolSet).slice(0,4).join(', ')}${produkHppNolSet.size>4 ? ` +${produkHppNolSet.size-4} lainnya` : ''}.</div>`
+      : '';
+
+    rugi.innerHTML = peringatanHppNol + baris('Omzet Penjualan', total) + baris('HPP (Modal Barang Terjual)', -totalHPP, false, 'var(--danger)') + baris('Laba Kotor', labaKotor, true) +
       barisBiayaPerKategori +
       baris('Total Biaya Operasional', -totalBiaya, false, 'var(--danger)') + baris('Laba Bersih', labaBersih, true, labaBersih>=0?'var(--good)':'var(--danger)');
 
