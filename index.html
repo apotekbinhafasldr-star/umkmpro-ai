@@ -367,7 +367,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v100-1800</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v101-1830</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -2071,6 +2071,11 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       <label>Apa yang terjadi?</label>
       <textarea id="lm-deskripsi" rows="5" placeholder="Contoh: Waktu saya tap tombol Cetak Struk, halaman jadi putih polos..." style="width:100%; border:1.5px solid var(--line); border-radius:11px; padding:10px 13px; font-size:13.5px; background:var(--surface-2); font-family:inherit; resize:vertical;"></textarea>
     </div>
+    <div class="field">
+      <label>Screenshot (opsional, tapi sangat membantu)</label>
+      <input type="file" id="lm-screenshot" accept="image/*" onchange="previewLmScreenshot(this)" style="width:100%; border:1.5px solid var(--line); border-radius:11px; padding:9px 12px; font-size:12.5px; background:var(--surface-2);">
+      <img id="lm-screenshot-preview" style="display:none; width:100%; max-height:180px; object-fit:contain; border-radius:10px; margin-top:8px; border:1px solid var(--line);">
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('laporan-masalah-modal')">Batal</button>
       <button class="btn-primary" id="lm-submit-btn" onclick="submitLaporanMasalah()">Kirim Laporan</button>
@@ -3270,9 +3275,21 @@ Baca & tanda tangan kontrak kerja</textarea>
   }
 
   // ================= LAPORKAN MASALAH (support/bug report — lintas semua klien nanti) =================
+  let lmScreenshotFile = null;
   function openLaporanMasalahModal(){
     document.getElementById('lm-deskripsi').value = '';
+    document.getElementById('lm-screenshot').value = '';
+    document.getElementById('lm-screenshot-preview').style.display = 'none';
+    lmScreenshotFile = null;
     document.getElementById('laporan-masalah-modal').classList.add('show');
+  }
+  function previewLmScreenshot(input){
+    const file = input.files[0];
+    if (!file) return;
+    lmScreenshotFile = file;
+    const preview = document.getElementById('lm-screenshot-preview');
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
   }
   async function submitLaporanMasalah(){
     const deskripsi = document.getElementById('lm-deskripsi').value.trim();
@@ -3283,11 +3300,21 @@ Baca & tanda tangan kontrak kerja</textarea>
 
     const halamanAktif = document.querySelector('.nav-item.active')?.textContent?.trim() || document.querySelector('.page.active')?.id || 'tidak diketahui';
 
+    let screenshotUrl = null;
+    if (lmScreenshotFile){
+      const path = `${currentProfile.tenant_id}/${Date.now()}-${lmScreenshotFile.name}`;
+      const { error: errUpload } = await sb.storage.from('laporan-masalah').upload(path, lmScreenshotFile);
+      if (!errUpload){
+        const { data: urlData } = sb.storage.from('laporan-masalah').getPublicUrl(path);
+        screenshotUrl = urlData.publicUrl;
+      }
+    }
+
     // Simpan ke database DULU — ini yang menjamin laporan tidak pernah hilang, apa pun status WA-nya
     const { error } = await sb.from('laporan_masalah').insert({
       tenant_id: currentProfile.tenant_id, dilaporkan_oleh: currentProfile.id,
       nama_pelapor: currentProfile.nama, role_pelapor: currentProfile.role,
-      halaman_aktif: halamanAktif, deskripsi,
+      halaman_aktif: halamanAktif, deskripsi, screenshot_url: screenshotUrl,
     });
     btn.disabled = false; btn.textContent = 'Kirim Laporan';
     if (error){ showToast('Gagal menyimpan laporan: ' + error.message, true); return; }
@@ -3298,7 +3325,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     // Coba buka WA kalau developer sudah pasang nomor kontak
     const { data: config } = await sb.from('dev_support_config').select('whatsapp_number').eq('id', 1).maybeSingle();
     if (config?.whatsapp_number){
-      const teks = `🐞 Laporan Masalah UMKMpro AI\n\nUsaha: ${document.getElementById('sidebar-tenant')?.textContent || '-'}\nPelapor: ${currentProfile.nama} (${currentProfile.role})\nHalaman: ${halamanAktif}\n\nMasalah:\n${deskripsi}`;
+      const teks = `🐞 Laporan Masalah UMKMpro AI\n\nUsaha: ${document.getElementById('sidebar-tenant')?.textContent || '-'}\nPelapor: ${currentProfile.nama} (${currentProfile.role})\nHalaman: ${halamanAktif}\n\nMasalah:\n${deskripsi}${screenshotUrl ? `\n\n📷 Screenshot: ${screenshotUrl}` : ''}`;
       window.open(`https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(teks)}`, '_blank');
     }
   }
