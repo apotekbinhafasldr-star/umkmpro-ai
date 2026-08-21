@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v92-1330</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v98-1700</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -431,7 +431,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1.4"/><circle cx="18" cy="21" r="1.4"/><path d="M1 1h3l2.6 13.2a2 2 0 002 1.8h9.8a2 2 0 002-1.6L22 6H6"/></svg>
             Kasir / POS
           </button>
-          <button class="nav-item" data-page="stok" onclick="goPage('stok', this)">
+          <button class="nav-item" data-page="stok" onclick="window.__stokFilterAktif=null; goPage('stok', this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
             Stok &amp; Gudang
           </button>
@@ -459,6 +459,15 @@
           <button class="nav-item" data-page="langganan" onclick="goPage('langganan', this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             Langganan
+          </button>
+          <div style="border-top:1px dashed var(--line); margin:8px 0;"></div>
+          <button class="nav-item" style="color:var(--danger);" onclick="document.getElementById('nav-dropdown').classList.remove('show'); openLaporanMasalahModal();">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            🐞 Laporkan Masalah
+          </button>
+          <button class="nav-item" style="color:var(--gold-deep);" onclick="document.getElementById('nav-dropdown').classList.remove('show'); openSaranFiturModal();">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0012 2z"/></svg>
+            💡 Saran &amp; Kritik
           </button>
         </nav>
       </div>
@@ -593,22 +602,22 @@
       </div>
 
       <div class="kpi-row">
-        <div class="kpi-card">
+        <div class="kpi-card" style="cursor:pointer;" onclick="goPage('pos', document.querySelector('[data-page=pos]'))">
           <div class="kpi-label">Omzet hari ini</div>
           <div class="kpi-value num" id="kpi-omzet">Rp 0</div>
           <div class="kpi-delta">dari database sungguhan</div>
         </div>
-        <div class="kpi-card">
+        <div class="kpi-card" style="cursor:pointer;" onclick="goPage('keuangan', document.querySelector('[data-page=keuangan]'))">
           <div class="kpi-label">Transaksi hari ini</div>
           <div class="kpi-value num" id="kpi-trx">0</div>
           <div class="kpi-delta">real-time</div>
         </div>
-        <div class="kpi-card">
+        <div class="kpi-card" style="cursor:pointer;" onclick="goKeStokDenganFilter('kedaluwarsa')">
           <div class="kpi-label">Obat mendekati kedaluwarsa</div>
           <div class="kpi-value num" id="kpi-expiry">0 item</div>
           <div class="kpi-delta">&lt; 30 hari</div>
         </div>
-        <div class="kpi-card">
+        <div class="kpi-card" style="cursor:pointer;" onclick="goKeStokDenganFilter('menipis')">
           <div class="kpi-label">Stok menipis</div>
           <div class="kpi-value num" id="kpi-lowstock">0 item</div>
           <div class="kpi-delta">di bawah minimum</div>
@@ -616,12 +625,12 @@
       </div>
 
       <div class="kpi-row owner-only">
-        <div class="kpi-card">
+        <div class="kpi-card" style="cursor:pointer;" onclick="goPage('keuangan', document.querySelector('[data-page=keuangan]'))">
           <div class="kpi-label">Laba hari ini</div>
           <div class="kpi-value num" id="kpi-laba-hari-ini">Rp 0</div>
           <div class="kpi-delta">omzet dikurangi HPP</div>
         </div>
-        <div class="kpi-card">
+        <div class="kpi-card" style="cursor:pointer;" onclick="goPage('keuangan', document.querySelector('[data-page=keuangan]'))">
           <div class="kpi-label">Posisi Kas (estimasi)</div>
           <div class="kpi-value num" id="kpi-posisi-kas">Rp 0</div>
           <div class="kpi-delta">total omzet − total biaya operasional</div>
@@ -993,9 +1002,21 @@
         <div class="panel">
           <div class="panel-head"><div class="panel-title">🏷️ Cetak Barcode/Label Produk</div></div>
           <div class="panel-body">
-            <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:12px;">Buat label sendiri buat produk yang belum ada barcode dari pabrik (misal racikan, produk repack).</div>
+            <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:12px;">Buat label sendiri buat produk yang belum ada barcode dari pabrik (misal racikan, produk repack), atau buat price tag rak.</div>
             <div class="field"><label>Produk</label><select id="label-produk-select"></select></div>
-            <div class="field"><label>Jumlah Label</label><input type="number" id="label-jumlah" value="10" min="1" max="100"></div>
+            <div class="field-row">
+              <div class="field"><label>Jumlah Label</label><input type="number" id="label-jumlah" value="10" min="1" max="100"></div>
+              <div class="field">
+                <label>Tipe Kode</label>
+                <select id="label-tipe-kode">
+                  <option value="barcode">Barcode</option>
+                  <option value="qrcode">QR Code</option>
+                </select>
+              </div>
+            </div>
+            <label style="display:flex; align-items:center; gap:8px; font-size:12px; margin-bottom:14px; cursor:pointer;">
+              <input type="checkbox" id="label-pakai-logo" checked style="width:18px; height:18px;"> Sertakan logo usaha di label
+            </label>
             <button class="btn-primary" style="width:100%; justify-content:center;" onclick="cetakLabelBarcode()">🖨️ Cetak Label</button>
           </div>
         </div>
@@ -1918,7 +1939,10 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <label>Kontak Sales Produk Ini (WA)</label>
         <input type="text" id="pf-supplier-kontak" placeholder="Contoh: 0812xxxx (Anto)">
       </div>
-      <div class="field"></div>
+      <div class="field">
+        <label>📍 Lokasi Rak</label>
+        <input type="text" id="pf-lokasi-rak" placeholder="Contoh: Rak A2, Laci 3">
+      </div>
     </div>
     <div style="font-size:10.5px; color:var(--ink-soft); margin:-10px 0 12px; line-height:1.4;">💡 Kalau 1 distributor punya beberapa sales beda per lini produk (misal RPN: Anto pegang Caplang, Wira pegang Pampers), isi nomor sales yang pegang produk INI — biar PO produk ini otomatis kekirim ke orang yang benar.</div>
     <div class="field-row" >
@@ -2009,6 +2033,38 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <button class="btn-secondary" onclick="document.getElementById('bulk-entry-step-preview').style.display='none'; document.getElementById('bulk-entry-step-form').style.display='block';">← Kembali Edit</button>
         <button class="btn-primary" id="bulk-entry-submit-btn" onclick="submitBulkEntry()">✓ Simpan Semua</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SARAN & KRITIK -->
+<div class="modal-overlay" id="saran-fitur-modal">
+  <div class="modal-card">
+    <div class="modal-title">💡 Saran &amp; Kritik</div>
+    <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Ada fitur yang kamu rasa masih kurang, atau ide biar aplikasi ini lebih pas buat usahamu? Ceritakan di sini.</div>
+    <div class="field">
+      <label>Saran/kritiknya apa?</label>
+      <textarea id="sf-deskripsi" rows="5" placeholder="Contoh: Tolong dibuatkan fitur X, soalnya usaha saya butuh..." style="width:100%; border:1.5px solid var(--line); border-radius:11px; padding:10px 13px; font-size:13.5px; background:var(--surface-2); font-family:inherit; resize:vertical;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('saran-fitur-modal')">Batal</button>
+      <button class="btn-primary" id="saf-submit-btn" onclick="submitSaranFitur()">Kirim Saran</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LAPORKAN MASALAH -->
+<div class="modal-overlay" id="laporan-masalah-modal">
+  <div class="modal-card">
+    <div class="modal-title">🐞 Laporkan Masalah</div>
+    <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Nemu bug, error, atau ada yang aneh di aplikasi? Ceritakan di sini — tim developer akan cek secepatnya.</div>
+    <div class="field">
+      <label>Apa yang terjadi?</label>
+      <textarea id="lm-deskripsi" rows="5" placeholder="Contoh: Waktu saya tap tombol Cetak Struk, halaman jadi putih polos..." style="width:100%; border:1.5px solid var(--line); border-radius:11px; padding:10px 13px; font-size:13.5px; background:var(--surface-2); font-family:inherit; resize:vertical;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('laporan-masalah-modal')">Batal</button>
+      <button class="btn-primary" id="lm-submit-btn" onclick="submitLaporanMasalah()">Kirim Laporan</button>
     </div>
   </div>
 </div>
@@ -2859,7 +2915,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       <video id="scan-video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
       <div style="position:absolute; inset:0; border:3px solid rgba(255,255,255,0.5); margin:20%; border-radius:8px; pointer-events:none;"></div>
     </div>
-    <div id="scan-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Arahkan kamera ke barcode produk…</div>
+    <div id="scan-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Arahkan kamera ke barcode/QR code produk…</div>
     <div id="scan-confirm-box" style="display:none; background:var(--good-tint); border-radius:10px; padding:14px; margin-bottom:14px;">
       <div style="font-weight:700; font-size:13.5px; margin-bottom:10px;" id="scan-confirm-nama"></div>
       <div id="scan-confirm-satuan-wrap" style="display:none; margin-bottom:10px;">
@@ -2974,7 +3030,7 @@ Baca & tanda tangan kontrak kerja</textarea>
         <video id="tb-video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
         <div style="position:absolute; inset:0; border:3px solid rgba(255,255,255,0.5); margin:15%; border-radius:8px; pointer-events:none;"></div>
       </div>
-      <div id="tb-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Arahkan kamera ke barcode di dus/kemasan…</div>
+      <div id="tb-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Arahkan kamera ke barcode/QR code di dus/kemasan…</div>
       <div class="field">
         <label>Atau ketik barcode manual</label>
         <input type="text" id="tb-manual-input" placeholder="Ketik lalu tekan Enter" onkeydown="if(event.key==='Enter') processTerimaBarangScan(this.value)">
@@ -3203,6 +3259,71 @@ Baca & tanda tangan kontrak kerja</textarea>
       });
     }
   }
+
+  // ================= LAPORKAN MASALAH (support/bug report — lintas semua klien nanti) =================
+  function openLaporanMasalahModal(){
+    document.getElementById('lm-deskripsi').value = '';
+    document.getElementById('laporan-masalah-modal').classList.add('show');
+  }
+  async function submitLaporanMasalah(){
+    const deskripsi = document.getElementById('lm-deskripsi').value.trim();
+    if (!deskripsi){ showToast('Ceritakan dulu masalahnya.', true); return; }
+
+    const btn = document.getElementById('lm-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+
+    const halamanAktif = document.querySelector('.nav-item.active')?.textContent?.trim() || document.querySelector('.page.active')?.id || 'tidak diketahui';
+
+    // Simpan ke database DULU — ini yang menjamin laporan tidak pernah hilang, apa pun status WA-nya
+    const { error } = await sb.from('laporan_masalah').insert({
+      tenant_id: currentProfile.tenant_id, dilaporkan_oleh: currentProfile.id,
+      nama_pelapor: currentProfile.nama, role_pelapor: currentProfile.role,
+      halaman_aktif: halamanAktif, deskripsi,
+    });
+    btn.disabled = false; btn.textContent = 'Kirim Laporan';
+    if (error){ showToast('Gagal menyimpan laporan: ' + error.message, true); return; }
+
+    closeModal('laporan-masalah-modal');
+    showToast('✓ Laporan terkirim, terima kasih!');
+
+    // Coba buka WA kalau developer sudah pasang nomor kontak
+    const { data: config } = await sb.from('dev_support_config').select('whatsapp_number').eq('id', 1).maybeSingle();
+    if (config?.whatsapp_number){
+      const teks = `🐞 Laporan Masalah UMKMpro AI\n\nUsaha: ${document.getElementById('sidebar-tenant')?.textContent || '-'}\nPelapor: ${currentProfile.nama} (${currentProfile.role})\nHalaman: ${halamanAktif}\n\nMasalah:\n${deskripsi}`;
+      window.open(`https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(teks)}`, '_blank');
+    }
+  }
+
+  function openSaranFiturModal(){
+    document.getElementById('sf-deskripsi').value = '';
+    document.getElementById('saran-fitur-modal').classList.add('show');
+  }
+  async function submitSaranFitur(){
+    const deskripsi = document.getElementById('sf-deskripsi').value.trim();
+    if (!deskripsi){ showToast('Tulis dulu saran/kritiknya.', true); return; }
+
+    const btn = document.getElementById('saf-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+
+    const { data: tenantData } = await sb.from('tenants').select('jenis_usaha').eq('id', currentProfile.tenant_id).single();
+
+    const { error } = await sb.from('saran_fitur').insert({
+      tenant_id: currentProfile.tenant_id, diajukan_oleh: currentProfile.id,
+      nama_pengaju: currentProfile.nama, jenis_usaha: tenantData?.jenis_usaha || null, deskripsi,
+    });
+    btn.disabled = false; btn.textContent = 'Kirim Saran';
+    if (error){ showToast('Gagal mengirim: ' + error.message, true); return; }
+
+    closeModal('saran-fitur-modal');
+    showToast('✓ Terima kasih atas sarannya!');
+
+    const { data: config } = await sb.from('dev_support_config').select('whatsapp_number').eq('id', 1).maybeSingle();
+    if (config?.whatsapp_number){
+      const teks = `💡 Saran & Kritik UMKMpro AI\n\nUsaha: ${document.getElementById('sidebar-tenant')?.textContent || '-'} (${tenantData?.jenis_usaha || '-'})\nPengaju: ${currentProfile.nama}\n\nSaran:\n${deskripsi}`;
+      window.open(`https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(teks)}`, '_blank');
+    }
+  }
+
   let currentTenant = null;
   let products = [];
   let selectedPaymentMethod = 'tunai';
@@ -3523,6 +3644,7 @@ Baca & tanda tangan kontrak kerja</textarea>
         <div class="prod-icon" style="${p.gambar_url ? `background-image:url(${p.gambar_url}); background-size:cover; background-position:center;` : ''}">${p.gambar_url ? '' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/></svg>'}</div>
         <div class="prod-name">${p.nama}</div>
         <div class="prod-meta">${p.produsen || p.satuan} · Stok ${p.stok < p.stok_minimum ? '<span style="color:var(--danger)">rendah</span>' : 'cukup'}</div>
+        ${p.lokasi_rak ? `<div style="font-size:10.5px; font-weight:700; color:var(--brand); background:var(--brand-tint); border-radius:6px; padding:2px 7px; display:inline-block; margin:2px 0;">📍 ${p.lokasi_rak}</div>` : ''}
         <div class="prod-foot">
           <span class="prod-price num">Rp ${parseFloat(p.harga).toLocaleString('id-ID')}</span>
           <span class="prod-stock ${p.stok < p.stok_minimum ? 'low' : ''}">${p.is_racikan ? 'Racikan' : 'Stok ' + p.stok + ' ' + (p.satuan || '')}</span>
@@ -4097,9 +4219,9 @@ Baca & tanda tangan kontrak kerja</textarea>
       const video = document.getElementById('scan-video');
       video.srcObject = scanStream;
       await video.play();
-      document.getElementById('scan-status').textContent = 'Arahkan kamera ke barcode produk…';
+      document.getElementById('scan-status').textContent = 'Arahkan kamera ke barcode/QR code produk…';
 
-      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e'] });
+      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e','qr_code'] });
       scanDetectorInterval = setInterval(async () => {
         try{
           const barcodes = await detector.detect(video);
@@ -4486,7 +4608,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     if (!scanFoundProduct) return;
     const multiplier = parseInt(document.getElementById('scan-confirm-satuan')?.value) || 1;
     const hargaPerUnit = parseFloat(scanFoundProduct.harga) * multiplier;
-    document.getElementById('scan-confirm-nama').textContent = `✓ Ditemukan: ${scanFoundProduct.nama} — Rp ${hargaPerUnit.toLocaleString('id-ID')}`;
+    document.getElementById('scan-confirm-nama').innerHTML = `✓ Ditemukan: ${scanFoundProduct.nama} — Rp ${hargaPerUnit.toLocaleString('id-ID')}${scanFoundProduct.lokasi_rak ? ` <span style="background:rgba(255,255,255,.5); border-radius:6px; padding:2px 7px; font-size:11px;">📍 ${scanFoundProduct.lokasi_rak}</span>` : ''}`;
   }
 
   function scanChangeQty(delta){
@@ -4537,11 +4659,11 @@ Baca & tanda tangan kontrak kerja</textarea>
       return;
     }
 
-    document.getElementById('scan-status').textContent = 'Arahkan kamera ke barcode produk…';
+    document.getElementById('scan-status').textContent = 'Arahkan kamera ke barcode/QR code produk…';
     // Lanjutkan scan lagi
     if (('BarcodeDetector' in window) && !scanDetectorInterval){
       const video = document.getElementById('scan-video');
-      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e'] });
+      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e','qr_code'] });
       scanDetectorInterval = setInterval(async () => {
         try{
           const barcodes = await detector.detect(video);
@@ -7697,7 +7819,7 @@ Baca & tanda tangan kontrak kerja</textarea>
         <div style="position:relative; width:100%; aspect-ratio:4/3; background:#000; border-radius:12px; overflow:hidden; margin-bottom:14px;">
           <video id="opname-scan-video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
         </div>
-        <div id="opname-scan-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Arahkan kamera ke barcode…</div>
+        <div id="opname-scan-status" style="font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:10px;">Arahkan kamera ke barcode/QR code…</div>
         <div class="modal-actions"><button class="btn-secondary" onclick="closeOpnameScan()">Tutup</button></div>
       </div>`;
     document.body.appendChild(overlay);
@@ -7711,7 +7833,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       const video = document.getElementById('opname-scan-video');
       video.srcObject = opnameScanStream;
       await video.play();
-      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e'] });
+      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e','qr_code'] });
       opnameScanInterval = setInterval(async () => {
         try{
           const barcodes = await detector.detect(video);
@@ -7893,7 +8015,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     editingProductId = null;
     document.getElementById('pf-modal-title').textContent = 'Tambah Produk Baru';
     document.getElementById('pf-submit-btn').textContent = 'Simpan Produk';
-    ['pf-nama','pf-kode','pf-produsen','pf-harga-modal','pf-harga','pf-harga-grosir','pf-min-grosir','pf-harga-jual-kemasan','pf-stok','pf-batch','pf-expired','pf-supplier','pf-supplier-kontak'].forEach(id => document.getElementById(id).value = '');
+    ['pf-nama','pf-kode','pf-produsen','pf-harga-modal','pf-harga','pf-harga-grosir','pf-min-grosir','pf-harga-jual-kemasan','pf-stok','pf-batch','pf-expired','pf-supplier','pf-supplier-kontak','pf-lokasi-rak'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('pf-kategori').value = 'obat_bebas';
     document.getElementById('pf-satuan').value = 'Pcs';
     document.getElementById('pf-satuan-kemasan').value = '';
@@ -7969,6 +8091,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     document.getElementById('pf-batch').value = p.batch_number || '';
     document.getElementById('pf-expired').value = p.tanggal_kedaluwarsa || '';
     document.getElementById('pf-supplier').value = p.supplier || '';
+    document.getElementById('pf-lokasi-rak').value = p.lokasi_rak || '';
     document.getElementById('pf-supplier-kontak').value = '';
     if (p.supplier){
       sb.from('product_suppliers').select('kontak').eq('product_id', p.id).eq('nama_supplier', p.supplier).maybeSingle()
@@ -8018,7 +8141,8 @@ Baca & tanda tangan kontrak kerja</textarea>
       stok_minimum: parseInt(document.getElementById('pf-stok-min').value) || 10,
       batch_number: document.getElementById('pf-batch').value.trim() || null,
       tanggal_kedaluwarsa: document.getElementById('pf-expired').value || null,
-      supplier: document.getElementById('pf-supplier').value.trim() || null
+      supplier: document.getElementById('pf-supplier').value.trim() || null,
+      lokasi_rak: document.getElementById('pf-lokasi-rak').value.trim() || null
     };
 
     let error, savedProductId = editingProductId;
@@ -8297,7 +8421,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       const video = document.getElementById('tb-video');
       video.srcObject = tbStream;
       await video.play();
-      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e'] });
+      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e','qr_code'] });
       tbDetectorInterval = setInterval(async () => {
         try{
           const barcodes = await detector.detect(video);
@@ -8319,7 +8443,7 @@ Baca & tanda tangan kontrak kerja</textarea>
   function resetTerimaBarangScan(){
     tbMatchedProduct = null;
     document.getElementById('tb-manual-input').value = '';
-    document.getElementById('tb-status').textContent = 'Arahkan kamera ke barcode di dus/kemasan…';
+    document.getElementById('tb-status').textContent = 'Arahkan kamera ke barcode/QR code di dus/kemasan…';
     document.getElementById('tb-scan-view').style.display = 'block';
     document.getElementById('tb-hasil-view').style.display = 'none';
     document.getElementById('tb-tidak-ketemu-view').style.display = 'none';
@@ -8743,6 +8867,11 @@ Baca & tanda tangan kontrak kerja</textarea>
     await loadStokPage();
   }
 
+  function goKeStokDenganFilter(tipe){
+    window.__stokFilterAktif = tipe;
+    goPage('stok', document.querySelector('[data-page=stok]'));
+  }
+
   function goPage(name, btn){
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + name).classList.add('active');
@@ -8838,13 +8967,24 @@ Baca & tanda tangan kontrak kerja</textarea>
     await loadApprovalToggleStatus();
     const wrap = document.getElementById('stok-table-wrap');
     wrap.innerHTML = '<div class="loading-note">Memuat data stok…</div>';
-    const { data, error } = await sb.from('products').select('*').eq('tenant_id', currentProfile.tenant_id).order('nama');
+    const { data: dataAsli, error } = await sb.from('products').select('*').eq('tenant_id', currentProfile.tenant_id).order('nama');
     if (error){ wrap.innerHTML = '<div class="loading-note">Gagal memuat data.</div>'; return; }
-    if (!data || data.length === 0){ wrap.innerHTML = '<div class="loading-note">Belum ada produk.</div>'; return; }
-    window.__stokData = data;
+    if (!dataAsli || dataAsli.length === 0){ wrap.innerHTML = '<div class="loading-note">Belum ada produk.</div>'; return; }
+    window.__stokData = dataAsli;
 
     const today = new Date();
-    wrap.innerHTML = `
+    let data = dataAsli;
+    let banerFilter = '';
+    if (window.__stokFilterAktif === 'kedaluwarsa'){
+      data = dataAsli.filter(p => p.tanggal_kedaluwarsa && Math.ceil((new Date(p.tanggal_kedaluwarsa) - today) / 86400000) <= 30);
+      banerFilter = `<div style="background:var(--amber-tint); color:var(--amber); font-size:11.5px; padding:9px 12px; border-radius:9px; margin-bottom:10px;">🔍 Menampilkan produk mendekati kedaluwarsa saja (&lt; 30 hari). <button onclick="window.__stokFilterAktif=null; loadStokPage();" style="background:none; border:none; text-decoration:underline; font-weight:700; cursor:pointer; color:inherit;">Tampilkan Semua</button></div>`;
+    } else if (window.__stokFilterAktif === 'menipis'){
+      data = dataAsli.filter(p => p.stok < p.stok_minimum);
+      banerFilter = `<div style="background:var(--danger-tint); color:var(--danger); font-size:11.5px; padding:9px 12px; border-radius:9px; margin-bottom:10px;">🔍 Menampilkan produk stok menipis saja. <button onclick="window.__stokFilterAktif=null; loadStokPage();" style="background:none; border:none; text-decoration:underline; font-weight:700; cursor:pointer; color:inherit;">Tampilkan Semua</button></div>`;
+    }
+    if (data.length === 0){ wrap.innerHTML = banerFilter + '<div class="loading-note">Tidak ada produk yang cocok filter ini.</div>'; return; }
+
+    wrap.innerHTML = banerFilter + `
       <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
       <table style="min-width:760px;">
         <thead><tr><th>Produk</th><th>Kategori</th><th>Batch / Kedaluwarsa</th><th>Stok</th><th>Status</th><th>Supplier</th><th></th></tr></thead>
@@ -10144,15 +10284,28 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
   async function cetakLabelBarcode(){
     const produkId = document.getElementById('label-produk-select').value;
     const jumlah = Math.min(100, Math.max(1, parseInt(document.getElementById('label-jumlah').value) || 1));
+    const tipeKode = document.getElementById('label-tipe-kode').value;
+    const pakaiLogo = document.getElementById('label-pakai-logo').checked;
     const produk = (window.__daftarProdukLabel||[]).find(p => p.id === produkId);
     if (!produk){ showToast('Pilih produk dulu.', true); return; }
 
-    // Kalau produk belum punya kode, buat otomatis dan simpan biar konsisten tiap dicetak ulang
     let kode = produk.kode_produk;
     if (!kode){
       kode = 'P' + produk.id.replace(/-/g,'').slice(0,11).toUpperCase();
       await sb.from('products').update({ kode_produk: kode }).eq('id', produkId);
       produk.kode_produk = kode;
+    }
+
+    let logoDataUrl = '';
+    if (pakaiLogo){
+      const { data: tenantData } = await sb.from('tenants').select('logo_url').eq('id', currentProfile.tenant_id).single();
+      if (tenantData?.logo_url){
+        try {
+          const resp = await fetch(tenantData.logo_url);
+          const blob = await resp.blob();
+          logoDataUrl = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result); r.readAsDataURL(blob); });
+        } catch(e){ logoDataUrl = ''; }
+      }
     }
 
     const win = window.open('', '_blank', 'width=420,height=600');
@@ -10163,8 +10316,10 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
         body{ font-family:sans-serif; margin:0; padding:10px; }
         .grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
         .label{ border:1px dashed #999; border-radius:4px; padding:6px; text-align:center; }
+        .label .logo{ max-width:40px; max-height:24px; object-fit:contain; margin-bottom:2px; }
         .label .nama{ font-size:10px; font-weight:700; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .label .harga{ font-size:11px; font-weight:800; margin-top:2px; }
+        .label .qr{ width:52px; height:52px; margin:0 auto; }
         .no-print{ text-align:center; margin:14px 0; }
         @media print{ .no-print{ display:none; } }
       </style></head>
@@ -10172,14 +10327,21 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
         <div class="grid" id="label-grid"></div>
         <div class="no-print"><button onclick="window.print()" style="padding:8px 18px; font-size:12px;">Cetak</button></div>
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"><\/script>
         <script>
           const grid = document.getElementById('label-grid');
           for (let i = 0; i < ${jumlah}; i++){
             const div = document.createElement('div');
             div.className = 'label';
-            div.innerHTML = '<div class="nama">${produk.nama.replace(/'/g,"\\'")}</div><svg class="bc"></svg><div class="harga">Rp ${Math.round(produk.harga).toLocaleString('id-ID')}</div>';
+            div.innerHTML = '${logoDataUrl ? `<img src="${logoDataUrl}" class="logo">` : ''}<div class="nama">${produk.nama.replace(/'/g,"\\'")}</div>' +
+              ('${tipeKode}' === 'qrcode' ? '<canvas class="qr"></canvas>' : '<svg class="bc"></svg>') +
+              '<div class="harga">Rp ${Math.round(produk.harga).toLocaleString('id-ID')}</div>';
             grid.appendChild(div);
-            JsBarcode(div.querySelector('.bc'), '${kode}', { format:'CODE128', width:1.4, height:32, fontSize:9, margin:2 });
+            if ('${tipeKode}' === 'qrcode'){
+              QRCode.toCanvas(div.querySelector('.qr'), '${kode}', { width: 52, margin: 0 });
+            } else {
+              JsBarcode(div.querySelector('.bc'), '${kode}', { format:'CODE128', width:1.4, height:32, fontSize:9, margin:2 });
+            }
           }
         <\/script>
       </body></html>`);
