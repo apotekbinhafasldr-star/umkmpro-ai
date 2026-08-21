@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v89-1130</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v90-1200</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -1909,7 +1909,8 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       </div>
       <div class="field">
         <label>Supplier</label>
-        <input type="text" id="pf-supplier" placeholder="Contoh: RPN">
+        <input type="text" id="pf-supplier" list="daftar-nama-supplier" placeholder="Contoh: RPN" autocomplete="off">
+        <datalist id="daftar-nama-supplier"></datalist>
       </div>
     </div>
     <div class="field-row">
@@ -6218,6 +6219,13 @@ Baca & tanda tangan kontrak kerja</textarea>
   }
 
   // ---- Utang Supplier ----
+  // ================= AUTOCOMPLETE NAMA SUPPLIER (cegah typo bikin nama supplier dobel-dobel) =================
+  async function isiDaftarNamaSupplier(){
+    const { data } = await sb.from('product_suppliers').select('nama_supplier').eq('tenant_id', currentProfile.tenant_id);
+    const namaUnik = [...new Set((data||[]).map(d => d.nama_supplier))].sort();
+    document.getElementById('daftar-nama-supplier').innerHTML = namaUnik.map(n => `<option value="${n}">`).join('');
+  }
+
   // ================= KELOLA KONTAK SALES/SUPPLIER (update massal per nama supplier) =================
   async function loadKontakSupplier(){
     const el = document.getElementById('daftar-kontak-supplier');
@@ -7876,7 +7884,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     pendingProductPhotoUrl = null;
     document.getElementById('pf-foto-preview').style.backgroundImage = '';
     document.getElementById('pf-foto-preview').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>';
-    updateStokSatuanHelper(); document.getElementById('pf-stok-kemasan').value = ''; document.getElementById('product-modal').classList.add('show');
+    updateStokSatuanHelper(); document.getElementById('pf-stok-kemasan').value = ''; isiDaftarNamaSupplier(); document.getElementById('product-modal').classList.add('show');
   }
 
   function toggleRacikanHint(){
@@ -7945,7 +7953,7 @@ Baca & tanda tangan kontrak kerja</textarea>
         .then(({ data }) => { if (data?.kontak) document.getElementById('pf-supplier-kontak').value = data.kontak; });
     }
     updateMarginPreview();
-    updateStokSatuanHelper(); document.getElementById('pf-stok-kemasan').value = ''; document.getElementById('product-modal').classList.add('show');
+    updateStokSatuanHelper(); document.getElementById('pf-stok-kemasan').value = ''; isiDaftarNamaSupplier(); document.getElementById('product-modal').classList.add('show');
   }
 
   function updateMarginPreview(){
