@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v83-0800</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v85-0930</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -779,7 +779,7 @@
           <div class="greeting-eyebrow">Stok &amp; Gudang</div>
           <h1 class="greeting">Semua Produk</h1>
         </div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn-secondary" style="background:var(--brand-tint); color:var(--brand); border-color:var(--brand);" onclick="openTerimaBarangScan()">
             📷 Scan Barang Masuk
           </button>
@@ -6573,6 +6573,7 @@ Baca & tanda tangan kontrak kerja</textarea>
           <div class="row-right">
             <div class="num" style="font-size:13px;">Rp ${parseFloat(o.total || 0).toLocaleString('id-ID')}</div>
             <span class="pill ${o.status === 'selesai' ? 'ok' : 'warn'}">${STATUS_LABEL[o.status] || o.status}</span>
+            ${o.transaction_id ? '<div style="font-size:9.5px; color:var(--good); margin-top:2px;">✓ Masuk Laporan Keuangan</div>' : ''}
           </div>
         </div>
         ${o.mengandung_resep ? `
@@ -6593,6 +6594,31 @@ Baca & tanda tangan kontrak kerja</textarea>
   }
 
   async function updateOnlineOrderStatus(id, status){
+    if (status === 'selesai'){
+      const { data: order } = await sb.from('online_orders').select('*').eq('id', id).single();
+      if (order && !order.transaction_id){
+        // Catat sebagai transaksi resmi supaya masuk Laporan Keuangan, PPh Final, dan Tanyopo Intelligence.
+        // Item dicatat sebagai satu baris ringkasan (bukan per-produk) karena pesanan online belum
+        // menyimpan data keranjang terstruktur per-produk.
+        const nomorTransaksi = 'ONL-' + Date.now().toString().slice(-8);
+        const { data: trx, error: errTrx } = await sb.from('transactions').insert({
+          tenant_id: currentProfile.tenant_id, kasir_id: currentProfile.id,
+          nomor_transaksi: nomorTransaksi, subtotal: order.total, diskon: 0, total: order.total,
+          metode_bayar: 'online', nama_pelanggan: order.nama, whatsapp_pelanggan: order.whatsapp,
+          status_transaksi: 'selesai', mengandung_resep: order.mengandung_resep || false,
+        }).select().single();
+        if (errTrx){ showToast('Gagal mencatat ke keuangan: ' + errTrx.message, true); return; }
+        const { error: errItem } = await sb.from('transaction_items').insert({
+          transaction_id: trx.id, product_id: null, nama_produk: `Pesanan Online: ${order.items || '—'}`,
+          harga_satuan: order.total, qty: 1, subtotal: order.total,
+        });
+        if (errItem){ showToast('Gagal mencatat item: ' + errItem.message, true); return; }
+        await sb.from('online_orders').update({ status, transaction_id: trx.id }).eq('id', id);
+        showToast('✓ Selesai — omzet sudah masuk Laporan Keuangan');
+        await loadOnlineOrders();
+        return;
+      }
+    }
     const { error } = await sb.from('online_orders').update({ status }).eq('id', id);
     if (error){ showToast('Gagal memperbarui: ' + error.message, true); return; }
     showToast('✓ Status pesanan diperbarui');
