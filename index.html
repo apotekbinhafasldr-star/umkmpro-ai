@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v80-0700</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v81-0715</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -2009,7 +2009,12 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     <div style="text-align:center; margin:4px 0 10px;"><button onclick="document.getElementById('qa-detail-lanjutan').style.display = document.getElementById('qa-detail-lanjutan').style.display==='none'?'block':'none';" style="background:none; border:none; color:var(--brand); font-size:11.5px; font-weight:700; cursor:pointer;">+ Detail lainnya (opsional)</button></div>
     <div id="qa-detail-lanjutan" style="display:none;">
       <div class="field-row">
-        <div class="field"><label>Kode/Barcode</label><input type="text" id="qa-barcode" placeholder="Opsional"></div>
+        <div class="field"><label>Kode/Barcode</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="qa-barcode" placeholder="Opsional" style="flex:1;">
+            <button type="button" class="btn-secondary" style="padding:0 12px; flex-shrink:0;" onclick="openScanModal('qa-barcode')">📷</button>
+          </div>
+        </div>
         <div class="field"><label>Harga Modal (Rp)</label><input type="number" id="qa-harga-modal" placeholder="Opsional"></div>
       </div>
       <div class="field">
