@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v90-1200</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v91-1230</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -5522,7 +5522,14 @@ Baca & tanda tangan kontrak kerja</textarea>
     document.getElementById('af-lokasi-status').textContent = '📍 Mendeteksi lokasi…';
 
     // Cari data karyawan yang cocok dengan akun yang sedang login
-    const { data: emp } = await sb.from('employees').select('id, nama, jabatan').eq('profile_id', currentProfile.id).eq('tenant_id', currentProfile.tenant_id).maybeSingle();
+    let { data: emp } = await sb.from('employees').select('id, nama, jabatan').eq('profile_id', currentProfile.id).eq('tenant_id', currentProfile.tenant_id).maybeSingle();
+    if (!emp && currentProfile.role === 'owner'){
+      // Owner biasanya tidak pernah lewat "Tambah Karyawan" buat dirinya sendiri — buatkan otomatis biar tidak dead-end
+      const { data: empBaru } = await sb.from('employees').insert({
+        tenant_id: currentProfile.tenant_id, nama: currentProfile.nama, jabatan: 'owner', status: 'aktif', profile_id: currentProfile.id,
+      }).select('id, nama, jabatan').single();
+      emp = empBaru;
+    }
     if (!emp){
       document.getElementById('af-employee-info').innerHTML = '<span style="color:var(--danger);">Akun kamu belum terhubung ke data karyawan. Minta Owner hubungkan dulu.</span>';
       document.getElementById('attendance-modal').classList.add('show');
