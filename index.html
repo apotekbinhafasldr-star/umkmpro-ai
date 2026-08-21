@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v91-1230</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v92-1330</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -3189,6 +3189,20 @@ Baca & tanda tangan kontrak kerja</textarea>
 
   let isSignupMode = false;
   let currentProfile = null;
+
+  // Perbaikan menyeluruh: Owner yang akunnya dibuat langsung waktu setup awal (bukan lewat "Tambah Karyawan")
+  // tidak akan punya baris di tabel employees — bikin banyak fitur (Absen, Profil Saya, Kontrak, dll) mentok
+  // dengan pesan "belum terhubung ke data karyawan". Dicek & dibetulkan otomatis sekali di sini, sekali untuk
+  // semua fitur, bukan ditambal satu-satu di tiap fitur.
+  async function ensureOwnerEmployeeRecord(){
+    if (!currentProfile || currentProfile.role !== 'owner') return;
+    const { data: existing } = await sb.from('employees').select('id').eq('profile_id', currentProfile.id).eq('tenant_id', currentProfile.tenant_id).maybeSingle();
+    if (!existing){
+      await sb.from('employees').insert({
+        tenant_id: currentProfile.tenant_id, nama: currentProfile.nama, jabatan: 'owner', status: 'aktif', profile_id: currentProfile.id,
+      });
+    }
+  }
   let currentTenant = null;
   let products = [];
   let selectedPaymentMethod = 'tunai';
@@ -3291,6 +3305,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       const tenantName = tenantsData ? tenantsData.nama_usaha : 'Usaha Anda';
 
       currentProfile = profile;
+      await ensureOwnerEmployeeRecord();
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('app-shell').classList.add('show');
 
