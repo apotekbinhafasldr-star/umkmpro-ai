@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v81-0715</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v82-0745</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -4372,6 +4372,29 @@ Baca & tanda tangan kontrak kerja</textarea>
     document.getElementById('scan-modal').classList.add('show');
   }
 
+  function renderScanNotFoundResults(query, kodeBaru){
+    const el = document.getElementById('scan-notfound-results');
+    if (!el) return;
+    const q = normalisasiNamaProduk(query);
+    if (q.length < 2){ el.innerHTML = ''; return; }
+    const hasil = products.filter(p => normalisasiNamaProduk(p.nama).includes(q)).slice(0, 5);
+    if (hasil.length === 0){ el.innerHTML = '<div style="font-size:11.5px; color:var(--ink-soft); padding:6px 0;">Tidak ketemu — kemungkinan memang belum terdaftar.</div>'; return; }
+    el.innerHTML = hasil.map(p => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 9px; background:var(--surface-2); border-radius:9px; margin-top:5px;">
+        <span style="font-size:12px;">${p.nama} <span style="color:var(--ink-soft); font-size:10.5px;">(kode lama: ${p.kode_produk || '—'})</span></span>
+        <button class="btn-secondary" style="padding:5px 10px; font-size:10.5px; flex-shrink:0;" onclick="perbaikiBarcodeProduk('${p.id}', '${kodeBaru.replace(/'/g,"\\'")}')">Ini dia, betulkan kode</button>
+      </div>`).join('');
+  }
+
+  async function perbaikiBarcodeProduk(productId, kodeBaru){
+    const { error } = await sb.from('products').update({ kode_produk: kodeBaru }).eq('id', productId);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    const p = products.find(x => x.id === productId);
+    if (p) p.kode_produk = kodeBaru;
+    showToast('✓ Kode barcode diperbarui — coba scan lagi buat lanjut transaksi');
+    closeScanModal();
+  }
+
   function searchByBarcode(kode){
     if (!kode || scanFoundProduct) return; // sudah ada produk terkonfirmasi, jangan proses scan baru dulu
 
@@ -4418,7 +4441,10 @@ Baca & tanda tangan kontrak kerja</textarea>
       }
       updateScanConfirmHarga();
     } else {
-      document.getElementById('scan-status').innerHTML = `⚠️ Kode "${kode}" tidak ditemukan di produk kamu. <br><button class="btn-primary" style="margin-top:10px; padding:8px 16px; font-size:12px;" onclick="closeScanModal(); bukaQuickAdd('', '${kode.replace(/'/g,"\\'")}')">⚡ Tambah Cepat</button>`;
+      document.getElementById('scan-status').innerHTML = `⚠️ Kode "${kode}" tidak ditemukan. Hasil scan dari kaleng/botol melengkung kadang salah baca 1-2 digit — coba cek dulu barangkali produknya sudah ada:
+        <br><input type="text" id="scan-notfound-search" placeholder="Cari nama produk dulu…" style="width:100%; margin-top:8px; border:1.5px solid var(--line); border-radius:11px; padding:8px 12px; font-size:12.5px;" oninput="renderScanNotFoundResults(this.value, '${kode.replace(/'/g,"\\'")}')">
+        <div id="scan-notfound-results" style="margin-top:6px; text-align:left;"></div>
+        <button class="btn-primary" style="margin-top:10px; padding:8px 16px; font-size:12px;" onclick="closeScanModal(); bukaQuickAdd('', '${kode.replace(/'/g,"\\'")}')">⚡ Tidak Ada, Tambah Cepat</button>`;
       if (scanDetectorInterval) clearInterval(scanDetectorInterval);
     }
   }
