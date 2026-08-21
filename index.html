@@ -145,6 +145,7 @@
     position:absolute; top:66px; left:16px; right:16px; max-width:320px;
     background:var(--surface); border-radius:20px; box-shadow:0 20px 50px rgba(0,0,0,0.28);
     padding:10px; display:flex; flex-direction:column; gap:2px;
+    max-height:calc(100vh - 90px); overflow-y:auto; -webkit-overflow-scrolling:touch;
   }
   nav{ display:contents; }
   .nav-item{
@@ -366,7 +367,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v98-1700</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v100-1800</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -382,6 +383,10 @@
     <div class="field" id="field-nama-usaha" style="display:none;">
       <label>Nama Usaha</label>
       <input type="text" id="input-nama-usaha" placeholder="Contoh: Apotek Sehat Jaya">
+    </div>
+    <div class="field" id="field-kode-referral" style="display:none;">
+      <label>Kode Referral (opsional)</label>
+      <input type="text" id="input-kode-referral" placeholder="Ada kode dari yang ajak kamu?" style="text-transform:uppercase;">
     </div>
     <div class="field">
       <label>Email</label>
@@ -1799,6 +1804,10 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div class="panel-body" id="langganan-status-box" style="padding:20px;">
           <div class="loading-note">Memuat status langganan…</div>
         </div>
+      </div>
+      <div class="panel" style="max-width:480px; margin-top:16px;">
+        <div class="panel-head"><h3>🎁 Referral — Ajak Usaha Lain Pakai UMKMpro AI</h3></div>
+        <div class="panel-body" id="referral-platform-box"><div class="loading-note">Memuat…</div></div>
       </div>
       <div class="panel" style="max-width:480px; margin-top:16px;">
         <div class="panel-head"><h3>Riwayat Tagihan</h3></div>
@@ -3340,6 +3349,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     isSignupMode = !isSignupMode;
     document.getElementById('field-nama').style.display = isSignupMode ? 'block' : 'none';
     document.getElementById('field-nama-usaha').style.display = isSignupMode ? 'block' : 'none';
+    document.getElementById('field-kode-referral').style.display = isSignupMode ? 'block' : 'none';
     document.getElementById('auth-title').textContent = isSignupMode ? 'Daftar akun baru' : 'Masuk ke akun kamu';
     document.getElementById('auth-submit-btn').textContent = isSignupMode ? 'Daftar' : 'Masuk';
     document.getElementById('auth-switch').innerHTML = isSignupMode
@@ -3371,7 +3381,8 @@ Baca & tanda tangan kontrak kerja</textarea>
 
     try{
       if (isSignupMode){
-        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nama, nama_usaha: namaUsaha } } });
+        const kodeReferral = document.getElementById('input-kode-referral').value.trim();
+        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nama, nama_usaha: namaUsaha, kode_referral: kodeReferral } } });
         if (error) throw error;
         if (!data.session){
           showAuthError('Akun dibuat! Jika email konfirmasi diaktifkan, cek email kamu lalu masuk kembali.');
@@ -8899,7 +8910,41 @@ Baca & tanda tangan kontrak kerja</textarea>
   };
   const NAMA_PAKET = { kasir_keuangan: 'Kasir & Keuangan', lengkap: 'Lengkap', hr: 'Kasir + HR', pajak_ai: 'Kasir + Pajak AI' };
 
+  // ================= REFERRAL PLATFORM (ajak usaha lain pakai UMKMpro AI) =================
+  async function loadReferralPlatform(){
+    const box = document.getElementById('referral-platform-box');
+    const { data: tenant } = await sb.from('tenants').select('kode_referral_platform, saldo_dompet_referral, nama_usaha').eq('id', currentProfile.tenant_id).single();
+    if (!tenant) return;
+
+    const { data: riwayat } = await sb.from('referral_platform_log').select('*, tenant_penerima:tenant_penerima_id(nama_usaha)').eq('tenant_pemberi_id', currentProfile.tenant_id).order('created_at', { ascending: false });
+    const jumlahCair = (riwayat || []).filter(r => r.status === 'cair').length;
+    const jumlahMenunggu = (riwayat || []).filter(r => r.status === 'menunggu_upgrade').length;
+
+    const teksAjak = `Halo! Aku pakai UMKMpro AI buat kelola usaha (kasir, stok, keuangan, HR, semua otomatis). Coba juga yuk, gratis trial 30 hari — pas daftar masukin kode referral aku: ${tenant.kode_referral_platform}`;
+
+    box.innerHTML = `
+      <div class="kpi-row" style="grid-template-columns:1fr 1fr;">
+        <div class="kpi-card">
+          <div class="kpi-label">Saldo Dompet Referral</div>
+          <div class="kpi-value num" style="color:var(--good);">Rp ${Math.round(tenant.saldo_dompet_referral).toLocaleString('id-ID')}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Sudah Upgrade</div>
+          <div class="kpi-value num">${jumlahCair} orang</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--ink-soft); margin:10px 0 4px;">Kode Referral Kamu</div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div style="flex:1; background:var(--surface-2); border:1.5px dashed var(--brand); border-radius:10px; padding:10px 14px; font-size:17px; font-weight:800; letter-spacing:0.05em; text-align:center; color:var(--brand);">${tenant.kode_referral_platform}</div>
+        <button class="btn-secondary" style="flex-shrink:0;" onclick="navigator.clipboard.writeText('${tenant.kode_referral_platform}'); showToast('✓ Kode disalin')">📋</button>
+      </div>
+      <a class="btn-primary" style="width:100%; justify-content:center; margin-top:10px; background:linear-gradient(150deg,#25D366,#1DA851);" href="https://wa.me/?text=${encodeURIComponent(teksAjak)}" target="_blank">📱 Bagikan via WhatsApp</a>
+      <div style="font-size:10.5px; color:var(--ink-soft); margin-top:10px; line-height:1.5;">Dapat <b>Rp20.000</b> per usaha yang kamu ajak, begitu mereka upgrade dari trial jadi langganan berbayar. Saldo ini <b>tidak bisa dicairkan tunai</b>, cuma bisa dipakai buat potong tagihan langganan UMKMpro AI kamu sendiri.${jumlahMenunggu > 0 ? ` Ada <b>${jumlahMenunggu} orang</b> yang daftar pakai kode kamu tapi belum upgrade.` : ''}</div>
+    `;
+  }
+
   async function loadLanggananPage(){
+    loadReferralPlatform();
     const box = document.getElementById('langganan-status-box');
     const { data: tenant, error } = await sb.from('tenants').select('status_langganan, paket, trial_berakhir_pada, langganan_berakhir_pada').eq('id', currentProfile.tenant_id).single();
     if (error || !tenant){ box.innerHTML = '<div class="loading-note">Gagal memuat status langganan.</div>'; return; }
