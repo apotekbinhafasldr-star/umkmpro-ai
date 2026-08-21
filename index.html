@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v85-0930</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v86-1000</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -7195,12 +7195,25 @@ Baca & tanda tangan kontrak kerja</textarea>
     await sb.from('purchase_order_items').insert(poItems);
 
     showToast(`✓ PO ${nomorPO} dibuat untuk ${namaSupplier}`);
-    tampilkanDokumenPO(po, items, totalEstimasi);
+    await tampilkanDokumenPO(po, items, totalEstimasi);
     await loadPOHistory();
   }
 
-  function tampilkanDokumenPO(po, items, totalEstimasi){
+  async function tampilkanDokumenPO(po, items, totalEstimasi){
     const tenantName = document.getElementById('sidebar-tenant').textContent || 'Usaha';
+
+    // Cari nomor kontak supplier ini dari data harga supplier yang sudah pernah diisi (kolom "kontak")
+    const { data: kontakData } = await sb.from('product_suppliers')
+      .select('kontak').eq('tenant_id', currentProfile.tenant_id).eq('nama_supplier', po.nama_supplier)
+      .not('kontak', 'is', null).limit(1).maybeSingle();
+    let nomorWaSupplier = '';
+    if (kontakData?.kontak){
+      let n = kontakData.kontak.replace(/[^\d]/g, '');
+      if (n.startsWith('0')) n = '62' + n.slice(1);
+      else if (!n.startsWith('62')) n = '62' + n;
+      nomorWaSupplier = n;
+    }
+
     const win = window.open('', '_blank', 'width=380,height=650');
     if (!win){ showToast('Popup diblokir browser — izinkan popup untuk lihat PO.', true); return; }
 
@@ -7235,7 +7248,8 @@ Baca & tanda tangan kontrak kerja</textarea>
         <hr>
         <div>Estimasi Total: Rp ${totalEstimasi.toLocaleString('id-ID')}</div>
         <div style="font-size:9.5px; color:#555; margin-top:6px;">*Estimasi harga, bisa beda dengan harga aktual saat barang datang.</div>
-        <a class="no-print wa-btn" href="https://wa.me/?text=${encodeURIComponent(teksWA)}" target="_blank">📱 Kirim via WhatsApp</a>
+        <a class="no-print wa-btn" href="https://wa.me/${nomorWaSupplier}?text=${encodeURIComponent(teksWA)}" target="_blank">📱 Kirim via WhatsApp${nomorWaSupplier ? '' : ' (pilih kontak manual)'}</a>
+        ${!nomorWaSupplier ? `<div class="no-print" style="font-size:9.5px; color:#AE4438; text-align:center; margin-top:4px;">Nomor WA supplier ini belum tercatat — isi di menu "Harga Supplier" produk biar lain kali otomatis.</div>` : ''}
         <div class="no-print center" style="margin-top:10px;"><button onclick="window.print()" style="padding:8px 16px; font-size:12px;">Cetak / Simpan PDF</button></div>
       </body></html>`);
     win.document.close();
