@@ -366,7 +366,7 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v87-1030</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v89-1130</div>
     <div class="auth-brand">
       <div class="brand-mark">U</div>
       <div class="auth-brand-name">UMKMpro AI</div>
@@ -852,6 +852,15 @@
       </div>
 
       <div class="sub-page" id="substok-supplier">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">📱 Kontak Sales/Supplier</div>
+          </div>
+          <div class="panel-body">
+            <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:12px;">Ganti nomor di sini kalau ada sales yang berhenti/ganti — otomatis berlaku ke SEMUA produk yang pakai nama supplier ini, tidak perlu edit satu-satu.</div>
+            <div id="daftar-kontak-supplier"><div class="loading-note">Memuat…</div></div>
+          </div>
+        </div>
         <div class="panel">
           <div class="panel-head">
             <div class="panel-title">Utang ke Supplier</div>
@@ -1900,9 +1909,17 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       </div>
       <div class="field">
         <label>Supplier</label>
-        <input type="text" id="pf-supplier" placeholder="Opsional">
+        <input type="text" id="pf-supplier" placeholder="Contoh: RPN">
       </div>
     </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Kontak Sales Produk Ini (WA)</label>
+        <input type="text" id="pf-supplier-kontak" placeholder="Contoh: 0812xxxx (Anto)">
+      </div>
+      <div class="field"></div>
+    </div>
+    <div style="font-size:10.5px; color:var(--ink-soft); margin:-10px 0 12px; line-height:1.4;">💡 Kalau 1 distributor punya beberapa sales beda per lini produk (misal RPN: Anto pegang Caplang, Wira pegang Pampers), isi nomor sales yang pegang produk INI — biar PO produk ini otomatis kekirim ke orang yang benar.</div>
     <div class="field-row" >
       <div class="field">
         <label>Harga Modal (Rp)</label>
@@ -5796,7 +5813,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     document.querySelectorAll('#page-stok .sub-page').forEach(p => p.classList.remove('active'));
     document.getElementById('substok-' + sub).classList.add('active');
     if (sub === 'bundling') loadBundles();
-    if (sub === 'supplier') loadSupplierDebts();
+    if (sub === 'supplier'){ loadSupplierDebts(); loadKontakSupplier(); }
     if (sub === 'opname') loadOpnamePage();
     if (sub === 'rekomendasi') loadRekomendasiPesanan();
     if (sub === 'pareto'){ loadAnalisisPareto(); loadRekomendasiMargin(); }
@@ -6201,6 +6218,46 @@ Baca & tanda tangan kontrak kerja</textarea>
   }
 
   // ---- Utang Supplier ----
+  // ================= KELOLA KONTAK SALES/SUPPLIER (update massal per nama supplier) =================
+  async function loadKontakSupplier(){
+    const el = document.getElementById('daftar-kontak-supplier');
+    const { data } = await sb.from('product_suppliers').select('nama_supplier, kontak').eq('tenant_id', currentProfile.tenant_id);
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada data supplier. Isi lewat form Tambah/Edit Produk dulu.</div>'; return; }
+
+    const grup = {};
+    data.forEach(r => {
+      grup[r.nama_supplier] = grup[r.nama_supplier] || { jumlahProduk: 0, kontakSet: new Set() };
+      grup[r.nama_supplier].jumlahProduk++;
+      if (r.kontak) grup[r.nama_supplier].kontakSet.add(r.kontak);
+    });
+
+    el.innerHTML = Object.entries(grup).map(([nama, info]) => {
+      const kontakList = Array.from(info.kontakSet);
+      const kontakDitampilkan = kontakList.length === 1 ? kontakList[0] : (kontakList.length > 1 ? kontakList.join(' / ') : '');
+      return `
+      <div style="display:flex; gap:8px; align-items:center; padding:9px 0; border-bottom:1px dashed var(--line);">
+        <div style="flex:1;">
+          <div style="font-size:12.5px; font-weight:700;">${nama}</div>
+          <div style="font-size:10.5px; color:var(--ink-soft);">${info.jumlahProduk} produk pakai supplier ini${kontakList.length > 1 ? ' · ⚠️ beda-beda kontak' : ''}</div>
+        </div>
+        <input type="text" value="${kontakDitampilkan}" placeholder="Nomor WA" id="ks-input-${btoa(unescape(encodeURIComponent(nama))).replace(/[^a-zA-Z0-9]/g,'')}" style="width:130px; border:1.5px solid var(--line); border-radius:10px; padding:7px 9px; font-size:12px;">
+        <button class="btn-secondary" style="padding:7px 10px; font-size:11px; flex-shrink:0;" onclick="updateKontakSupplierMassal('${nama.replace(/'/g,"\\'")}')">Update Semua</button>
+      </div>`;
+    }).join('');
+  }
+
+  async function updateKontakSupplierMassal(namaSupplier){
+    const inputId = 'ks-input-' + btoa(unescape(encodeURIComponent(namaSupplier))).replace(/[^a-zA-Z0-9]/g,'');
+    const kontakBaru = document.getElementById(inputId).value.trim();
+    if (!kontakBaru){ showToast('Isi nomor WA dulu.', true); return; }
+    const { error } = await sb.from('product_suppliers')
+      .update({ kontak: kontakBaru })
+      .eq('tenant_id', currentProfile.tenant_id).eq('nama_supplier', namaSupplier);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    showToast(`✓ Kontak "${namaSupplier}" diperbarui untuk semua produk`);
+    await loadKontakSupplier();
+  }
+
   async function loadSupplierDebts(){
     const el = document.getElementById('supplier-debt-list');
     el.innerHTML = '<div class="loading-note">Memuat data…</div>';
@@ -7806,7 +7863,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     editingProductId = null;
     document.getElementById('pf-modal-title').textContent = 'Tambah Produk Baru';
     document.getElementById('pf-submit-btn').textContent = 'Simpan Produk';
-    ['pf-nama','pf-kode','pf-produsen','pf-harga-modal','pf-harga','pf-harga-grosir','pf-min-grosir','pf-harga-jual-kemasan','pf-stok','pf-batch','pf-expired','pf-supplier'].forEach(id => document.getElementById(id).value = '');
+    ['pf-nama','pf-kode','pf-produsen','pf-harga-modal','pf-harga','pf-harga-grosir','pf-min-grosir','pf-harga-jual-kemasan','pf-stok','pf-batch','pf-expired','pf-supplier','pf-supplier-kontak'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('pf-kategori').value = 'obat_bebas';
     document.getElementById('pf-satuan').value = 'Pcs';
     document.getElementById('pf-satuan-kemasan').value = '';
@@ -7882,6 +7939,11 @@ Baca & tanda tangan kontrak kerja</textarea>
     document.getElementById('pf-batch').value = p.batch_number || '';
     document.getElementById('pf-expired').value = p.tanggal_kedaluwarsa || '';
     document.getElementById('pf-supplier').value = p.supplier || '';
+    document.getElementById('pf-supplier-kontak').value = '';
+    if (p.supplier){
+      sb.from('product_suppliers').select('kontak').eq('product_id', p.id).eq('nama_supplier', p.supplier).maybeSingle()
+        .then(({ data }) => { if (data?.kontak) document.getElementById('pf-supplier-kontak').value = data.kontak; });
+    }
     updateMarginPreview();
     updateStokSatuanHelper(); document.getElementById('pf-stok-kemasan').value = ''; document.getElementById('product-modal').classList.add('show');
   }
@@ -7929,12 +7991,33 @@ Baca & tanda tangan kontrak kerja</textarea>
       supplier: document.getElementById('pf-supplier').value.trim() || null
     };
 
-    let error;
+    let error, savedProductId = editingProductId;
     if (editingProductId){
       ({ error } = await sb.from('products').update(payload).eq('id', editingProductId));
     } else {
       payload.tenant_id = currentProfile.tenant_id;
-      ({ error } = await sb.from('products').insert(payload));
+      const { data: produkBaru, error: errInsert } = await sb.from('products').insert(payload).select().single();
+      error = errInsert;
+      if (produkBaru) savedProductId = produkBaru.id;
+    }
+
+    // Sinkron ke product_suppliers (dipakai buat PO otomatis kirim WA & perbandingan harga) —
+    // supaya tiap produk bisa punya kontak sales berbeda meski nama suppliernya sama (misal 1 distributor banyak sales per lini produk)
+    const namaSupplierInput = document.getElementById('pf-supplier').value.trim();
+    const kontakSupplierInput = document.getElementById('pf-supplier-kontak').value.trim();
+    if (!error && savedProductId && namaSupplierInput){
+      const { data: existingSupplierRow } = await sb.from('product_suppliers')
+        .select('id').eq('product_id', savedProductId).eq('nama_supplier', namaSupplierInput).maybeSingle();
+      if (existingSupplierRow){
+        await sb.from('product_suppliers').update({
+          harga_beli: payload.harga_modal, kontak: kontakSupplierInput || null,
+        }).eq('id', existingSupplierRow.id);
+      } else {
+        await sb.from('product_suppliers').insert({
+          tenant_id: currentProfile.tenant_id, product_id: savedProductId, nama_supplier: namaSupplierInput,
+          harga_beli: payload.harga_modal, kontak: kontakSupplierInput || null,
+        });
+      }
     }
 
     btn.disabled = false;
