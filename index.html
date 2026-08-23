@@ -94,7 +94,7 @@
   .brand-mark{ width:36px; height:36px; border-radius:10px; background:linear-gradient(155deg,#E4B15C 0%,var(--good) 65%); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:700; color:#132420; font-size:16px; }
   .auth-brand-name{ font-size:15px; font-weight:600; }
   .auth-title{ font-size:20px; font-weight:600; margin-bottom:4px; }
-  .auth-sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:22px; }
+  .auth-sub{ font-size:12px; color:var(--ink-soft); margin-bottom:22px; line-height:1.7; letter-spacing:0.02em; }
   .field{ margin-bottom:14px; }
   .field label{ font-size:11.5px; font-weight:600; display:block; margin-bottom:5px; }
   .field input{ width:100%; border:1.5px solid var(--line); border-radius:13px; padding:10px 13px; font-size:13.5px; background:var(--surface-2); transition:border-color .12s ease, box-shadow .12s ease; }
@@ -373,7 +373,7 @@
       <div class="auth-brand-name">UMKMpro AI</div>
     </div>
     <div id="auth-title" class="auth-title">Masuk ke akun kamu</div>
-    <div id="auth-sub" class="auth-sub">Didukung Tanyopo Intelligence · Produk dari Tanyopo Labs</div>
+    <div id="auth-sub" class="auth-sub">Powered by Tanyopo Intelligence<br>Developed by Tanyopo Labs</div>
     <div class="auth-error" id="auth-error"></div>
 
     <div class="field" id="field-nama" style="display:none;">
@@ -423,7 +423,10 @@
     </div>
     <div class="field">
       <label>Kata sandi</label>
-      <input type="password" id="input-password" placeholder="Minimal 6 karakter">
+      <div style="position:relative;">
+        <input type="password" id="input-password" placeholder="Minimal 6 karakter" style="padding-right:44px;">
+        <span onclick="const inp=document.getElementById('input-password'); const isHidden = inp.type==='password'; inp.type = isHidden ? 'text' : 'password'; this.textContent = isHidden ? '🙈' : '👁️';" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;">👁️</span>
+      </div>
     </div>
     <button class="auth-btn" id="auth-submit-btn" onclick="handleAuthSubmit()">Masuk</button>
 
