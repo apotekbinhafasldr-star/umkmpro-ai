@@ -384,6 +384,35 @@
       <label>Nama Usaha</label>
       <input type="text" id="input-nama-usaha" placeholder="Contoh: Apotek Sehat Jaya">
     </div>
+    <div class="field" id="field-jenis-usaha" style="display:none;">
+      <label>Apa jenis usaha Anda?</label>
+      <select id="input-jenis-usaha" onchange="document.getElementById('field-jenis-usaha-custom').style.display = (this.value === 'lainnya') ? 'block' : 'none';">
+        <option value="apotek">Apotek</option>
+        <option value="retail">Retail</option>
+        <option value="toko_kelontong">Toko Kelontong</option>
+        <option value="minimarket">Minimarket</option>
+        <option value="grosir">Grosir</option>
+        <option value="distributor">Distributor</option>
+        <option value="van_sales">Sales/Van Sales</option>
+        <option value="kosmetik">Kosmetik</option>
+        <option value="skincare">Skincare</option>
+        <option value="atk">ATK</option>
+        <option value="perlengkapan_bayi">Perlengkapan Bayi</option>
+        <option value="fashion">Fashion</option>
+        <option value="elektronik">Elektronik</option>
+        <option value="sparepart">Sparepart</option>
+        <option value="bengkel">Bengkel</option>
+        <option value="fnb">F&amp;B</option>
+        <option value="toko_bangunan">Toko Bangunan</option>
+        <option value="pertanian">Pertanian</option>
+        <option value="amdk">AMDK</option>
+        <option value="lainnya">+ Buat Jenis Usaha Sendiri</option>
+      </select>
+    </div>
+    <div class="field" id="field-jenis-usaha-custom" style="display:none;">
+      <label>Nama jenis usaha kamu</label>
+      <input type="text" id="input-jenis-usaha-custom" placeholder="Contoh: Laundry Kiloan">
+    </div>
     <div class="field" id="field-kode-referral" style="display:none;">
       <label>Kode Referral (opsional)</label>
       <input type="text" id="input-kode-referral" placeholder="Ada kode dari yang ajak kamu?" style="text-transform:uppercase;">
@@ -3349,6 +3378,8 @@ Baca & tanda tangan kontrak kerja</textarea>
     isSignupMode = !isSignupMode;
     document.getElementById('field-nama').style.display = isSignupMode ? 'block' : 'none';
     document.getElementById('field-nama-usaha').style.display = isSignupMode ? 'block' : 'none';
+    document.getElementById('field-jenis-usaha').style.display = isSignupMode ? 'block' : 'none';
+    if (!isSignupMode) document.getElementById('field-jenis-usaha-custom').style.display = 'none';
     document.getElementById('field-kode-referral').style.display = isSignupMode ? 'block' : 'none';
     document.getElementById('auth-title').textContent = isSignupMode ? 'Daftar akun baru' : 'Masuk ke akun kamu';
     document.getElementById('auth-submit-btn').textContent = isSignupMode ? 'Daftar' : 'Masuk';
@@ -3382,7 +3413,10 @@ Baca & tanda tangan kontrak kerja</textarea>
     try{
       if (isSignupMode){
         const kodeReferral = document.getElementById('input-kode-referral').value.trim();
-        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nama, nama_usaha: namaUsaha, kode_referral: kodeReferral } } });
+        const jenisUsahaPilihan = document.getElementById('input-jenis-usaha').value;
+        const jenisUsahaCustom = document.getElementById('input-jenis-usaha-custom').value.trim();
+        const jenisUsaha = (jenisUsahaPilihan === 'lainnya' && jenisUsahaCustom) ? jenisUsahaCustom : jenisUsahaPilihan;
+        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nama, nama_usaha: namaUsaha, kode_referral: kodeReferral, jenis_usaha: jenisUsaha } } });
         if (error) throw error;
         if (!data.session){
           showAuthError('Akun dibuat! Jika email konfirmasi diaktifkan, cek email kamu lalu masuk kembali.');
