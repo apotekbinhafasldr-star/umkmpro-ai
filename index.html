@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UMKMpro AI — Apotek Binhafas</title>
+<title>Apotek Binhafas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -33,14 +33,14 @@
 </script>
 <style>
   :root{
-    --bg:#F6F3EA; --surface:#FFFFFF; --surface-2:#FAF7EF; --line:#EBE4D3;
-    --ink:#1B1810; --ink-soft:#79705E;
-    --brand:#20402F; --brand-deep:#122318; --brand-tint:#E8EFE3;
-    --amber:#9C6428; --amber-tint:#F7E9D4;
-    --danger:#AE4438; --danger-tint:#FBEAE6;
-    --good:#357251; --good-tint:#E6F2EB;
-    --gold:#C09146; --gold-deep:#8C6A2E;
-    --radius:18px; --shadow:0 1px 2px rgba(27,24,16,0.04), 0 14px 32px rgba(27,24,16,0.10);
+    --bg:#F4F8F5; --surface:#FFFFFF; --surface-2:#EEF5F0; --line:#DCE7E0;
+    --ink:#11201A; --ink-soft:#5C6E64;
+    --brand:#1FAE5C; --brand-deep:#0B1712; --brand-tint:#E1F6E9;
+    --amber:#F2760F; --amber-tint:#FDE9DA;
+    --danger:#D8392E; --danger-tint:#FBE9E7;
+    --good:#1FAE5C; --good-tint:#E1F6E9;
+    --gold:#F2760F; --gold-deep:#C25C0C;
+    --radius:18px; --shadow:0 1px 2px rgba(11,23,18,0.05), 0 14px 32px rgba(11,23,18,0.12);
   }
   @keyframes fadeSlideUp{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:translateY(0); } }
   @media (prefers-reduced-motion: reduce){ *{ animation-duration:0.01ms !important; animation-delay:0ms !important; transition-duration:0.01ms !important; } }
@@ -91,7 +91,7 @@
   }
   .auth-card{ background:var(--surface); border-radius:18px; padding:34px 32px; width:100%; max-width:380px; box-shadow:0 20px 50px rgba(0,0,0,.3); position:relative; }
   .auth-brand{ display:flex; align-items:center; gap:10px; margin-bottom:22px; }
-  .brand-mark{ width:36px; height:36px; border-radius:10px; background:linear-gradient(155deg,#E4B15C 0%,var(--good) 65%); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:700; color:#132420; font-size:16px; }
+  .brand-mark{ width:40px; height:40px; border-radius:10px; background:linear-gradient(155deg,#E4B15C 0%,var(--good) 65%); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:700; color:#132420; font-size:17px; flex-shrink:0; }
   .auth-brand-name{ font-size:15px; font-weight:600; }
   .auth-title{ font-size:20px; font-weight:600; margin-bottom:4px; }
   .auth-sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:22px; }
@@ -110,24 +110,24 @@
   #app-shell{ display:none; }
   #app-shell.show{ display:flex; flex-direction:column; min-height:100vh; }
   .sidebar{
-    background: linear-gradient(105deg, #14261C 0%, #20402F 42%, #8C6A2E 115%);
+    background: linear-gradient(105deg, #0B1712 0%, #1FAE5C 42%, #F2760F 115%);
     color:#FFFFFF;
     padding: 14px 22px;
     display:flex;
     align-items:center;
     gap:14px;
     position:sticky; top:0; z-index:60;
-    box-shadow: 0 8px 28px rgba(18,35,24,0.35);
+    box-shadow: 0 8px 28px rgba(11,23,18,0.35);
   }
-  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand{ display:flex; align-items:center; gap:10px; min-width:0; flex:1; overflow:hidden; }
   .logo-upload-wrap{ position:relative; cursor:pointer; flex-shrink:0; }
   .logo-upload-wrap .brand-mark{ background-size:cover; background-position:center; }
   .logo-upload-badge{
     position:absolute; bottom:-3px; right:-3px; width:18px; height:18px; border-radius:50%;
-    background:#B98A3E; border:2px solid #1A2E23; display:flex; align-items:center; justify-content:center;
+    background:#F2760F; border:2px solid #1A2E23; display:flex; align-items:center; justify-content:center;
   }
-  .brand-name{ font-size:14.5px; font-weight:700; line-height:1.25; }
-  .brand-sub{ font-size:11px; color:#E8D9BC; }
+  .brand-name{ font-size:13.5px; font-weight:700; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .brand-sub{ font-size:9px; color:#EEF5F0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
   .hamburger-btn{
     width:38px; height:38px; border-radius:9px; background:rgba(255,255,255,0.14);
@@ -143,24 +143,24 @@
   .nav-dropdown.show{ display:block; }
   .nav-panel{
     position:absolute; top:66px; left:16px; right:16px; max-width:320px;
-    background:var(--surface); border-radius:20px; box-shadow:0 20px 50px rgba(0,0,0,0.28);
-    padding:10px; display:flex; flex-direction:column; gap:2px;
+    background:var(--brand-deep); border-radius:20px; box-shadow:0 20px 50px rgba(0,0,0,0.4);
+    padding:10px; display:flex; flex-direction:column; gap:4px;
     max-height:calc(100vh - 90px); overflow-y:auto; -webkit-overflow-scrolling:touch;
   }
   nav{ display:contents; }
   .nav-item{
     display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:12px;
-    font-size:13.5px; color:var(--ink); border:none; background:none; text-align:left; width:100%;
+    font-size:13.5px; color:#EAF3ED; border:none; background:none; text-align:left; width:100%;
     transition:background .12s ease;
   }
-  .nav-item svg{ opacity:.75; flex-shrink:0; color:var(--brand); }
-  .nav-item.active{ background:var(--brand-tint); color:var(--brand); font-weight:700; }
-  .nav-item.active svg{ opacity:1; }
+  .nav-item svg{ opacity:.85; flex-shrink:0; color:#EAF3ED; }
+  .nav-item.active{ background:var(--amber); color:#fff; font-weight:700; }
+  .nav-item.active svg{ opacity:1; color:#fff; }
 
   .sidebar-foot{ margin-left:auto; padding-left:16px; border-left:1px solid rgba(255,255,255,0.25); display:flex; align-items:center; gap:10px; }
   .avatar{ width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; flex-shrink:0; }
   .sidebar-foot .who{ font-size:12.5px; font-weight:700; }
-  .sidebar-foot .role{ font-size:11px; color:#E8D9BC; }
+  .sidebar-foot .role{ font-size:11px; color:#EEF5F0; }
   .logout-btn{ background:none; border:none; color:#F3EAD8; }
 
   .page{ display:none; } .page.active{ display:block; }
@@ -224,9 +224,9 @@
   .cart-title{ font-size:15.5px; font-weight:700; display:flex; align-items:center; gap:8px; }
   .rx-card{ margin:14px 20px 0; border-radius:14px; overflow:hidden; border:1.5px solid var(--amber); background:var(--amber-tint); display:none; }
   .rx-card.show{ display:block; }
-  .rx-head{ display:flex; align-items:center; gap:8px; padding:11px 14px; font-size:12.5px; font-weight:700; color:#7A4B1C; }
+  .rx-head{ display:flex; align-items:center; gap:8px; padding:11px 14px; font-size:12.5px; font-weight:700; color:#C25C0C; }
   .rx-body{ padding:0 14px 14px; }
-  .rx-verify{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:#7A4B1C; background:rgba(255,255,255,.5); border-radius:8px; padding:9px 10px; }
+  .rx-verify{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:#C25C0C; background:rgba(255,255,255,.5); border-radius:8px; padding:9px 10px; }
   .rx-verify input{ width:16px; height:16px; accent-color:var(--brand); }
   .cart-items{ flex:1; overflow-y:auto; padding:14px 16px; }
   .empty-cart{ text-align:center; color:var(--ink-soft); font-size:12.5px; padding:40px 10px; }
@@ -264,14 +264,14 @@
 
   .loading-note{ font-size:12.5px; color:var(--ink-soft); padding:20px; text-align:center; }
 
-  .btn-primary{ background:linear-gradient(150deg, #35563F 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:16px; padding:12px 20px; font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px; box-shadow:0 3px 0 rgba(0,0,0,0.16), 0 8px 20px rgba(18,35,24,0.30); letter-spacing:0.015em; transition:transform .12s ease, box-shadow .12s ease; }
+  .btn-primary{ background:linear-gradient(150deg, #1FAE5C 0%, var(--brand-deep) 100%); color:#fff; border:none; border-radius:16px; padding:12px 20px; font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px; box-shadow:0 3px 0 rgba(0,0,0,0.16), 0 8px 20px rgba(18,35,24,0.30); letter-spacing:0.015em; transition:transform .12s ease, box-shadow .12s ease; }
   .btn-primary:active{ transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,0.16), 0 4px 10px rgba(18,35,24,0.25); }
   .btn-secondary{ background:var(--surface); color:var(--ink); border:1px solid rgba(27,24,16,0.08); border-radius:15px; padding:9px 15px; font-size:12.5px; font-weight:700; box-shadow:0 1px 2px rgba(27,24,16,0.04), 0 3px 8px rgba(27,24,16,0.05); transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
   .btn-secondary:active{ background:var(--surface-2); transform:translateY(1px); box-shadow:0 1px 2px rgba(27,24,16,0.06); }
   .tabs{ display:flex; gap:6px; margin-bottom:16px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
   .tabs::-webkit-scrollbar{ display:none; }
   .tab{ font-size:12.5px; font-weight:700; padding:9px 16px; border-radius:24px; background:var(--surface); border:1px solid rgba(27,24,16,0.07); color:var(--ink-soft); cursor:pointer; transition:all .12s ease; white-space:nowrap; flex-shrink:0; box-shadow:0 1px 2px rgba(27,24,16,0.03); }
-  .tab.active{ background:linear-gradient(150deg, #35563F 0%, var(--brand-deep) 100%); border-color:var(--brand-deep); color:#fff; box-shadow:0 4px 12px rgba(18,35,24,0.32); }
+  .tab.active{ background:linear-gradient(150deg, #1FAE5C 0%, var(--brand-deep) 100%); border-color:var(--brand-deep); color:#fff; box-shadow:0 4px 12px rgba(18,35,24,0.32); }
   .calc-row{ display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:11.5px; }
   .calc-label{ color:var(--ink-soft); }
   .calc-label.main{ color:var(--ink); font-weight:600; }
@@ -367,10 +367,10 @@
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v101-1830</div>
+    <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">apotek-binhafas-pribadi-v1</div>
     <div class="auth-brand">
-      <div class="brand-mark">U</div>
-      <div class="auth-brand-name">UMKMpro AI</div>
+      <div class="brand-mark">B</div>
+      <div class="auth-brand-name">Apotek Binhafas</div>
     </div>
     <div id="auth-title" class="auth-title">Masuk ke akun kamu</div>
     <div id="auth-sub" class="auth-sub">Apotek Binhafas — kelola usaha dari sini</div>
@@ -422,11 +422,18 @@
         </div>
       </div>
       <input type="file" id="logo-upload-input" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
-      <div><div class="brand-name">UMKMpro AI</div><div class="brand-sub" id="sidebar-tenant">Apotek</div></div>
+      <div style="min-width:0; overflow:hidden;"><div class="brand-name">Apotek Binhafas</div><div class="brand-sub" style="opacity:0.65;">Powered by Tanyopo Intelligence</div><div id="sidebar-tenant" style="display:none;">Apotek</div></div>
     </div>
 
     <div class="nav-dropdown" id="nav-dropdown" onclick="if(event.target===this) toggleNavMenu()">
       <div class="nav-panel">
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 10px 14px; border-bottom:1px solid rgba(255,255,255,0.12); margin-bottom:8px;">
+          <div class="brand-mark" style="width:34px; height:34px; font-size:14px; flex-shrink:0;" id="tenant-logo-nav"></div>
+          <div style="min-width:0; overflow:hidden;">
+            <div style="font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Apotek Binhafas</div>
+            <div style="font-size:9px; color:#EAF3ED; opacity:0.65; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Powered by Tanyopo Intelligence</div>
+          </div>
+        </div>
         <nav>
           <button class="nav-item active" data-page="dashboard" onclick="goPage('dashboard', this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
@@ -465,7 +472,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             Langganan
           </button>
-          <div style="border-top:1px dashed var(--line); margin:8px 0;"></div>
+          <div style="border-top:1px dashed rgba(255,255,255,0.15); margin:8px 0;"></div>
           <button class="nav-item" style="color:var(--danger);" onclick="document.getElementById('nav-dropdown').classList.remove('show'); openLaporanMasalahModal();">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             🐞 Laporkan Masalah
@@ -504,23 +511,23 @@
         </button>
       </div>
 
-      <div class="panel owner-only" id="business-health-panel" style="display:none; position:relative; background:radial-gradient(circle at 15% -10%, rgba(212,162,78,0.35), transparent 55%), linear-gradient(145deg,#0C1626 0%,#16283F 55%,#1E3A5F 100%); border:none; color:#fff; overflow:hidden; box-shadow:0 20px 48px rgba(12,22,38,0.4), 0 2px 8px rgba(12,22,38,0.3);">
-        <div style="position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle, rgba(212,162,78,0.18), transparent 70%); pointer-events:none;"></div>
+      <div class="panel owner-only" id="business-health-panel" style="display:none; position:relative; background:radial-gradient(circle at 15% -10%, rgba(242,118,15,0.35), transparent 55%), linear-gradient(145deg,#0B1712 0%,#132A1D 55%,#1B4530 100%); border:none; color:#fff; overflow:hidden; box-shadow:0 20px 48px rgba(12,22,38,0.4), 0 2px 8px rgba(12,22,38,0.3);">
+        <div style="position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle, rgba(242,118,15,0.18), transparent 70%); pointer-events:none;"></div>
         <div class="panel-body" style="padding:22px 24px; position:relative;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
             <div>
-              <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#E4B36A;">Tanyopo Intelligence</div>
+              <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#FBB273;">Tanyopo Intelligence</div>
               <div style="font-family:'Fraunces',serif; font-size:19px; font-weight:700; margin-top:3px; letter-spacing:-0.01em;">Kesehatan Bisnis</div>
             </div>
             <div style="text-align:right;">
               <div id="bh-level-label" style="font-size:10.5px; color:rgba(255,255,255,.65);">—</div>
-              <div id="bh-level-badge" style="font-size:10px; font-weight:700; background:rgba(212,162,78,.22); border:1px solid rgba(212,162,78,.35); color:#E4B36A; padding:4px 10px; border-radius:20px; margin-top:4px; display:inline-block;">Level —</div>
+              <div id="bh-level-badge" style="font-size:10px; font-weight:700; background:rgba(242,118,15,.22); border:1px solid rgba(242,118,15,.35); color:#FBB273; padding:4px 10px; border-radius:20px; margin-top:4px; display:inline-block;">Level —</div>
             </div>
           </div>
           <div style="display:flex; align-items:flex-end; gap:16px; margin-bottom:18px;">
             <div id="bh-score" style="font-family:'Fraunces',serif; font-size:52px; font-weight:700; line-height:0.9; background:linear-gradient(180deg,#fff,#E4CBA3); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">—</div>
             <div style="padding-bottom:4px;">
-              <div id="bh-status" style="font-size:14.5px; font-weight:700; color:#E4B36A;">Memuat…</div>
+              <div id="bh-status" style="font-size:14.5px; font-weight:700; color:#FBB273;">Memuat…</div>
               <div style="font-size:11px; color:rgba(255,255,255,.55);">dari 100 poin</div>
             </div>
           </div>
@@ -538,11 +545,11 @@
         <div class="panel-body" id="ai-insights-list"></div>
       </div>
 
-      <div class="panel owner-only" id="recommended-actions-panel" style="display:none; border:1.5px solid #D4A24E; background:#FFF9EF;">
+      <div class="panel owner-only" id="recommended-actions-panel" style="display:none; border:1.5px solid #F2760F; background:#F4F8F5;">
         <div class="panel-head">
           <div>
-            <div style="font-size:10px; font-weight:700; color:#8C6A2E; text-transform:uppercase; letter-spacing:.08em;">Tanyopo Intelligence</div>
-            <div class="panel-title" style="font-family:'Fraunces',serif; color:#5C4319;">🎯 Rekomendasi Tindakan</div>
+            <div style="font-size:10px; font-weight:700; color:#C25C0C; text-transform:uppercase; letter-spacing:.08em;">Tanyopo Intelligence</div>
+            <div class="panel-title" style="font-family:'Fraunces',serif; color:#7A3908;">🎯 Rekomendasi Tindakan</div>
           </div>
         </div>
         <div class="panel-body" id="recommended-actions-list"></div>
@@ -1061,7 +1068,7 @@
               <label>Status Migrasi</label>
               <select id="migrasi-status-select" onchange="ubahStatusMigrasi(this.value)">
                 <option value="completed">Sudah Lengkap (tidak sedang migrasi)</option>
-                <option value="not_started">Belum Mulai — baru mau pindah ke UMKMpro AI</option>
+                <option value="not_started">Belum Mulai — data lama belum diinput</option>
                 <option value="migrating">Sedang Migrasi — input produk bertahap</option>
                 <option value="partially_active">Sebagian Besar Sudah Lengkap</option>
               </select>
@@ -1280,7 +1287,7 @@
           </div>
           <div class="field"><label>Foto Karyawan (opsional, setengah badan/latar polos)</label><input type="file" id="idc-foto" accept="image/*" onchange="updatePratinjauFotoIdc()"></div>
           <div id="idc-foto-preview-wrap" style="display:none; text-align:center; margin:8px 0;">
-            <div id="idc-foto-preview" style="width:110px; height:110px; border-radius:50%; background:var(--surface-2) center 35%/cover no-repeat; border:3px solid #D4A24E; margin:0 auto;"></div>
+            <div id="idc-foto-preview" style="width:110px; height:110px; border-radius:50%; background:var(--surface-2) center 35%/cover no-repeat; border:3px solid #F2760F; margin:0 auto;"></div>
             <div style="font-size:10px; color:var(--ink-soft); margin-top:4px;">Pratinjau — geser di bawah kalau wajah kepotong</div>
           </div>
           <div class="field">
@@ -1805,7 +1812,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
           <div class="loading-note">Memuat status langganan…</div>
         </div>
       </div>
-      <div class="panel" style="max-width:480px; margin-top:16px;">
+      <div class="panel" style="max-width:480px; margin-top:16px; display:none;">
         <div class="panel-head"><h3>🎁 Referral — Ajak Usaha Lain Pakai UMKMpro AI</h3></div>
         <div class="panel-body" id="referral-platform-box"><div class="loading-note">Memuat…</div></div>
       </div>
@@ -1828,7 +1835,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
 <div id="bantuan-panel" style="display:none; position:fixed; bottom:82px; left:20px; z-index:96; width:min(340px, calc(100vw - 40px)); height:min(480px, calc(100vh - 140px)); background:var(--surface); border-radius:18px; box-shadow:0 12px 40px rgba(0,0,0,.3); display:flex; flex-direction:column; overflow:hidden; border:1.5px solid var(--line);">
   <div style="background:var(--brand-deep); color:#fff; padding:14px 16px; display:flex; align-items:center; justify-content:space-between;">
     <div>
-      <div style="font-size:13px; font-weight:800;">💬 Asisten UMKMpro AI</div>
+      <div style="font-size:13px; font-weight:800;">💬 Asisten Apotek Binhafas</div>
       <div style="font-size:10.5px; opacity:0.8;">Tanya cara pakai fitur apa saja</div>
     </div>
     <span onclick="toggleBantuanChat()" style="cursor:pointer; font-size:20px; line-height:1;">×</span>
@@ -1924,11 +1931,11 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       </label>
     </div>
     <div class="field" style="background:var(--amber-tint); border-radius:10px; padding:11px 13px; margin-bottom:13px;">
-      <label style="display:flex; align-items:center; gap:8px; margin-bottom:0; color:#7A4B1C; cursor:pointer;">
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:0; color:#C25C0C; cursor:pointer;">
         <input type="checkbox" id="pf-is-racikan" style="width:16px; height:16px;" onchange="toggleRacikanHint()">
         Ini obat racikan (dibuat dari campuran bahan, bukan barang jadi bersetok)
       </label>
-      <div id="racikan-hint" style="display:none; font-size:11px; color:#7A4B1C; margin-top:6px;">
+      <div id="racikan-hint" style="display:none; font-size:11px; color:#C25C0C; margin-top:6px;">
         💡 Simpan produk ini dulu, lalu klik "Kelola Bahan" di tabel produk untuk atur bahan & takarannya.
       </div>
     </div>
@@ -2197,7 +2204,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       </select>
     </div>
     <div class="field" style="background:var(--amber-tint); border-radius:10px; padding:12px 14px;">
-      <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:#7A4B1C; cursor:pointer;">
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:#C25C0C; cursor:pointer;">
         <input type="checkbox" id="ef-keluarga" style="width:16px; height:16px;" onchange="toggleEfKeluargaFields()">
         Karyawan ini punya hubungan keluarga dengan Owner/karyawan lain
       </label>
@@ -2205,7 +2212,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div class="field"><label style="font-size:11px;">Keluarga dari siapa</label><input type="text" id="ef-keluarga-siapa" placeholder="Nama Owner/karyawan"></div>
         <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Hubungan apa</label><input type="text" id="ef-keluarga-jenis" placeholder="Contoh: anak, adik, sepupu"></div>
       </div>
-      <div style="font-size:10.5px; color:#7A4B1C; margin-top:4px;">Dicatat transparan buat catatan internal.</div>
+      <div style="font-size:10.5px; color:#C25C0C; margin-top:4px;">Dicatat transparan buat catatan internal.</div>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('employee-modal')">Batal</button>
@@ -2242,7 +2249,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       <div class="auth-note" style="margin-top:6px;">
         ✅ Akun langsung aktif — karyawan tidak perlu Daftar sendiri. Tinggal kasih tahu email &amp; password ini, mereka bisa langsung tap "Masuk".
       </div>
-      <div id="inv-error-box" style="display:none; background:#FBE4E4; color:var(--danger); border-radius:10px; padding:12px 14px; margin-top:10px; font-size:12.5px; font-weight:600;"></div>
+      <div id="inv-error-box" style="display:none; background:#FBE9E7; color:var(--danger); border-radius:10px; padding:12px 14px; margin-top:10px; font-size:12.5px; font-weight:600;"></div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal('invite-modal')">Batal</button>
         <button class="btn-primary" id="inv-submit-btn" onclick="submitInvitation()">Buat Akun</button>
@@ -2561,7 +2568,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       </select>
     </div>
     <div class="field" style="background:var(--amber-tint); border-radius:10px; padding:12px 14px;">
-      <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:#7A4B1C; cursor:pointer;">
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:#C25C0C; cursor:pointer;">
         <input type="checkbox" id="kd-keluarga" style="width:16px; height:16px;" onchange="toggleKandidatKeluargaFields()">
         Kandidat ini punya hubungan keluarga dengan Owner/karyawan lain
       </label>
@@ -2569,7 +2576,7 @@ Baca & tanda tangan kontrak kerja</textarea>
         <div class="field"><label style="font-size:11px;">Keluarga dari siapa</label><input type="text" id="kd-keluarga-siapa" placeholder="Nama Owner/karyawan"></div>
         <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Hubungan apa</label><input type="text" id="kd-keluarga-jenis" placeholder="Contoh: anak, adik, sepupu"></div>
       </div>
-      <div style="font-size:10.5px; color:#7A4B1C; margin-top:4px;">Dicatat transparan buat catatan — bukan berarti otomatis ditolak.</div>
+      <div style="font-size:10.5px; color:#C25C0C; margin-top:4px;">Dicatat transparan buat catatan — bukan berarti otomatis ditolak.</div>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('kandidat-modal')">Batal</button>
@@ -3251,8 +3258,8 @@ Baca & tanda tangan kontrak kerja</textarea>
 
 <script>
   // ================= KONFIGURASI SUPABASE =================
-  const SUPABASE_URL = 'https://wjjyqovhmwenbcvbnkgx.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indqanlxb3ZobXdlbmJjdmJua2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3NjQyMTksImV4cCI6MjEwMjM0MDIxOX0.6puBkXdH8U-olk6tRfHUt_9xayEKyDuFVIf8_bW55zU';
+  const SUPABASE_URL = 'https://kczslidqkhssdwefkais.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjenNsaWRxa2hzc2R3ZWZrYWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MzI0NDgsImV4cCI6MjEwMTQwODQ0OH0.GBZY1wYcYAhnXbpO-JT1k7_sQD6Int3mED9u9292wuM';
   const DEFAULT_TENANT_ID = 'e24a4517-0bb2-4d0b-8498-b60c97d6ad79';
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -3325,7 +3332,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     // Coba buka WA kalau developer sudah pasang nomor kontak
     const { data: config } = await sb.from('dev_support_config').select('whatsapp_number').eq('id', 1).maybeSingle();
     if (config?.whatsapp_number){
-      const teks = `🐞 Laporan Masalah UMKMpro AI\n\nUsaha: ${document.getElementById('sidebar-tenant')?.textContent || '-'}\nPelapor: ${currentProfile.nama} (${currentProfile.role})\nHalaman: ${halamanAktif}\n\nMasalah:\n${deskripsi}${screenshotUrl ? `\n\n📷 Screenshot: ${screenshotUrl}` : ''}`;
+      const teks = `🐞 Laporan Masalah Apotek Binhafas\n\nUsaha: ${document.getElementById('sidebar-tenant')?.textContent || '-'}\nPelapor: ${currentProfile.nama} (${currentProfile.role})\nHalaman: ${halamanAktif}\n\nMasalah:\n${deskripsi}${screenshotUrl ? `\n\n📷 Screenshot: ${screenshotUrl}` : ''}`;
       window.open(`https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(teks)}`, '_blank');
     }
   }
@@ -3355,7 +3362,7 @@ Baca & tanda tangan kontrak kerja</textarea>
 
     const { data: config } = await sb.from('dev_support_config').select('whatsapp_number').eq('id', 1).maybeSingle();
     if (config?.whatsapp_number){
-      const teks = `💡 Saran & Kritik UMKMpro AI\n\nUsaha: ${document.getElementById('sidebar-tenant')?.textContent || '-'} (${tenantData?.jenis_usaha || '-'})\nPengaju: ${currentProfile.nama}\n\nSaran:\n${deskripsi}`;
+      const teks = `💡 Saran & Kritik Apotek Binhafas\n\nUsaha: ${document.getElementById('sidebar-tenant')?.textContent || '-'} (${tenantData?.jenis_usaha || '-'})\nPengaju: ${currentProfile.nama}\n\nSaran:\n${deskripsi}`;
       window.open(`https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(teks)}`, '_blank');
     }
   }
@@ -3376,7 +3383,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     isSignupMode = !isSignupMode;
     document.getElementById('field-nama').style.display = isSignupMode ? 'block' : 'none';
     document.getElementById('field-nama-usaha').style.display = isSignupMode ? 'block' : 'none';
-    document.getElementById('field-kode-referral').style.display = isSignupMode ? 'block' : 'none';
+    // Kode referral disembunyikan permanen di situs pribadi ini (bukan produk yang dijual)
     document.getElementById('auth-title').textContent = isSignupMode ? 'Daftar akun baru' : 'Masuk ke akun kamu';
     document.getElementById('auth-submit-btn').textContent = isSignupMode ? 'Daftar' : 'Masuk';
     document.getElementById('auth-switch').innerHTML = isSignupMode
@@ -3476,6 +3483,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       applyTenantLogo(tenantsData?.logo_url);
       currentTenant = tenantsData;
       applyRoleAccess(profile.role);
+      await applyModuleVisibility();
       updateOfflineStatusBadge();
       syncOfflineQueue();
       document.getElementById('dash-greeting').textContent = `Selamat datang, ${namaAman.split(' ')[0]} 👋`;
@@ -5030,8 +5038,8 @@ Baca & tanda tangan kontrak kerja</textarea>
         td{ padding:3px 0; font-size:12px; font-family:'IBM Plex Mono',monospace; font-weight:600; }
         hr{ border:none; border-top:2px dashed #999; margin:9px 0; }
         .total-row td{ font-weight:800; font-size:14.5px; }
-        .preview-note{ background:#FFF6E0; color:#7A4B1C; font-size:11px; text-align:center; padding:8px 10px; border-radius:8px; margin-bottom:10px; font-family:'IBM Plex Sans',sans-serif; }
-        .cetak-btn{ width:100%; padding:13px; font-size:14px; font-weight:700; background:#2C4A3A; color:#fff; border:none; border-radius:9px; margin-top:10px; font-family:'IBM Plex Sans',sans-serif; }
+        .preview-note{ background:#F4F8F5; color:#C25C0C; font-size:11px; text-align:center; padding:8px 10px; border-radius:8px; margin-bottom:10px; font-family:'IBM Plex Sans',sans-serif; }
+        .cetak-btn{ width:100%; padding:13px; font-size:14px; font-weight:700; background:#1FAE5C; color:#fff; border:none; border-radius:9px; margin-top:10px; font-family:'IBM Plex Sans',sans-serif; }
         @media print{ .no-print{ display:none; } body{ width:auto; margin:0; } }
       </style></head>
       <body>
@@ -7156,12 +7164,15 @@ Baca & tanda tangan kontrak kerja</textarea>
 
   function applyTenantLogo(logoUrl){
     const el = document.getElementById('tenant-logo');
+    const elNav = document.getElementById('tenant-logo-nav');
     if (logoUrl){
       el.style.backgroundImage = `url(${logoUrl})`;
       el.textContent = '';
+      if (elNav){ elNav.style.backgroundImage = `url(${logoUrl})`; elNav.style.backgroundSize = 'cover'; elNav.style.backgroundPosition = 'center'; elNav.textContent = ''; }
     } else {
       el.style.backgroundImage = '';
       el.textContent = 'U';
+      if (elNav){ elNav.style.backgroundImage = ''; elNav.textContent = 'U'; }
     }
   }
 
@@ -7763,7 +7774,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     rekomendasi.sort((a,b) => Math.abs(b.marginPersen-40) - Math.abs(a.marginPersen-40));
     el.innerHTML = rekomendasi.slice(0, 15).map(r => `
       <div class="row-item">
-        <div class="emp-dot" style="${r.arah==='turun' ? 'background:var(--danger-tint,#FBE4E4); color:var(--danger);' : 'background:var(--good-tint); color:var(--good);'}">${r.arah==='turun' ? '↓' : '↑'}</div>
+        <div class="emp-dot" style="${r.arah==='turun' ? 'background:var(--danger-tint,#FBE9E7); color:var(--danger);' : 'background:var(--good-tint); color:var(--good);'}">${r.arah==='turun' ? '↓' : '↑'}</div>
         <div><div class="row-name">${r.nama} <span class="pill" style="font-size:9.5px;">${r.kecepatan}</span></div><div class="row-meta">${r.teks}</div></div>
         <div class="row-right"><div class="num" style="font-size:12.5px;">${r.marginPersen.toFixed(0)}%</div></div>
       </div>`).join('');
@@ -8910,6 +8921,48 @@ Baca & tanda tangan kontrak kerja</textarea>
     goPage('stok', document.querySelector('[data-page=stok]'));
   }
 
+  // ================== TAHAP B — Module Registry & Feature Flag ==================
+  // Aditif: tidak mengubah goPage() versi lama, hanya menambah pengecekan visibilitas menu.
+  // Fallback WAJIB: kalau tenant belum punya baris di tenant_modules (atau query gagal),
+  // semua menu tetap tampil persis seperti perilaku lama (demi kompatibilitas Apotek).
+  window.__activeModules = null; // null = tampilkan semua (perilaku lama)
+
+  const PAGE_TO_MODULE = {
+    pos: 'pos', stok: 'stok', keuangan: 'keuangan', hr: 'hr',
+    pelanggan: 'pelanggan', pajak: 'pajak', langganan: 'langganan'
+    // dashboard & profilsaya sengaja tidak dipetakan -> selalu tampil
+  };
+
+  async function applyModuleVisibility(){
+    try{
+      const tenantId = currentProfile?.tenant_id;
+      if (!tenantId) return; // aman: biarkan semua menu tampil
+
+      const { data, error } = await sb.from('tenant_modules')
+        .select('module_id, aktif')
+        .eq('tenant_id', tenantId);
+
+      if (error || !data || data.length === 0){
+        window.__activeModules = null; // fallback: tampilkan semua, seperti sebelum Tahap B
+        return;
+      }
+
+      window.__activeModules = new Set(data.filter(m => m.aktif).map(m => m.module_id));
+
+      document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+        const page = btn.getAttribute('data-page');
+        const moduleId = PAGE_TO_MODULE[page];
+        if (!moduleId) return; // dashboard/profilsaya: selalu tampil
+        const aktif = window.__activeModules.has(moduleId);
+        btn.style.display = aktif ? '' : 'none';
+      });
+    } catch(err){
+      console.error('applyModuleVisibility error (fallback ke tampilkan semua):', err);
+      window.__activeModules = null;
+    }
+  }
+  // ================== akhir Module Registry & Feature Flag ==================
+
   function goPage(name, btn){
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + name).classList.add('active');
@@ -9258,7 +9311,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       if (parseFloat(i.total_hpp||0) === 0 && i.qty > 0) produkHppNolSet.add(i.nama_produk);
     }));
     const peringatanHppNol = produkHppNolSet.size > 0
-      ? `<div style="background:var(--amber-tint); color:var(--amber-deep,#7A4B1C); font-size:11px; border-radius:9px; padding:9px 11px; margin-bottom:10px; line-height:1.5;">⚠️ <b>${produkHppNolSet.size} produk</b> yang terjual periode ini belum ada Harga Modal-nya (dianggap Rp0) — Laba Kotor/Bersih di bawah kemungkinan <b>lebih tinggi dari sebenarnya</b>. Lengkapi Harga Modal produk ini: ${Array.from(produkHppNolSet).slice(0,4).join(', ')}${produkHppNolSet.size>4 ? ` +${produkHppNolSet.size-4} lainnya` : ''}.</div>`
+      ? `<div style="background:var(--amber-tint); color:var(--amber-deep,#C25C0C); font-size:11px; border-radius:9px; padding:9px 11px; margin-bottom:10px; line-height:1.5;">⚠️ <b>${produkHppNolSet.size} produk</b> yang terjual periode ini belum ada Harga Modal-nya (dianggap Rp0) — Laba Kotor/Bersih di bawah kemungkinan <b>lebih tinggi dari sebenarnya</b>. Lengkapi Harga Modal produk ini: ${Array.from(produkHppNolSet).slice(0,4).join(', ')}${produkHppNolSet.size>4 ? ` +${produkHppNolSet.size-4} lainnya` : ''}.</div>`
       : '';
 
     rugi.innerHTML = peringatanHppNol + baris('Omzet Penjualan', total) + baris('HPP (Modal Barang Terjual)', -totalHPP, false, 'var(--danger)') + baris('Laba Kotor', labaKotor, true) +
@@ -9359,7 +9412,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       data: {
         labels,
         datasets: [
-          { label:'Omzet', data:dataOmzet, borderColor:'#2C4A3A', backgroundColor:'rgba(44,74,58,0.08)', fill:true, tension:0.3, pointRadius:2 },
+          { label:'Omzet', data:dataOmzet, borderColor:'#1FAE5C', backgroundColor:'rgba(31,174,92,0.08)', fill:true, tension:0.3, pointRadius:2 },
           { label:'Laba (perkiraan)', data:dataLaba, borderColor:'#B8860B', backgroundColor:'rgba(184,134,11,0.06)', fill:true, tension:0.3, pointRadius:2 },
         ]
       },
@@ -9559,7 +9612,7 @@ Baca & tanda tangan kontrak kerja</textarea>
   }
 
   // ================= WIDGET BANTUAN AI (asisten cara pakai aplikasi) =================
-  const PANDUAN_APLIKASI = `Kamu adalah asisten bantuan untuk aplikasi kasir & manajemen usaha "UMKMpro AI" (khusus apotek). Jawab singkat, jelas, langkah demi langkah, dalam Bahasa Indonesia santai tapi sopan. Kalau pertanyaan di luar topik aplikasi ini, arahkan balik dengan ramah. Berikut panduan tiap menu di aplikasi:
+  const PANDUAN_APLIKASI = `Kamu adalah asisten bantuan untuk aplikasi kasir & manajemen usaha Apotek Binhafas. Jawab singkat, jelas, langkah demi langkah, dalam Bahasa Indonesia santai tapi sopan. Kalau pertanyaan di luar topik aplikasi ini, arahkan balik dengan ramah. Berikut panduan tiap menu di aplikasi:
 
 **Dasbor**: ringkasan omzet hari ini, jumlah transaksi, obat mendekati kedaluwarsa, stok menipis, dan utang/piutang segera jatuh tempo (ada tombol "Ingatkan via WA" buat piutang pelanggan). Ada tombol **"Absen Sekarang"** langsung di Dashboard (bisa dipakai semua role, bukan cuma yang punya akses menu Karyawan & Shift). Ada panel **"🤖 Saran Tugas Otomatis"** (khusus Owner) — sistem otomatis deteksi masalah (stok menipis, obat mendekati kedaluwarsa, utang/piutang segera jatuh tempo) dan sarankan tugas ke role yang tepat (Admin Gudang, Apoteker, Kasir), Owner tinggal tap "✓ Setujui & Kirim", tidak perlu ngetik manual. Ada juga panel "📋 Tugas Hari Ini Untukmu" — Owner bisa kirim instruksi/tugas manual ke semua karyawan, satu role tertentu, atau karyawan tertentu (tombol "+ Kasih Tugas"), tanpa perlu briefing tatap muka tiap pagi. Karyawan lihat tugasnya sendiri di panel ini dan tap "Tandai Selesai". Owner bisa pantau siapa saja yang sudah/belum menyelesaikan tugasnya langsung dari panel yang sama. Fitur HR tambahan: **Kuota Cuti Otomatis**, **Riwayat Peringatan/SP**, **Onboarding Checklist**, **Surat Keterangan Kerja** otomatis. Ada juga **Seleksi Karyawan**: Owner bikin **Bank Soal** pilihan ganda per posisi, lalu **Tambah Kandidat** — sistem otomatis buat link tes unik yang bisa dikerjakan kandidat tanpa perlu akun/login, hasil dan skornya otomatis dihitung di server (anti-contek), Owner tinggal lihat skor dan tap Terima/Tolak. Ada juga **fitur anti-nepotisme**: form Tambah Karyawan & Tambah Kandidat punya kolom deklarasi transparan "punya hubungan keluarga dengan Owner/karyawan lain" — kalau diisi, muncul tag "👪 Keluarga" di daftar karyawan/kandidat. **Gaji pokok otomatis dipotong sesuai persentase kehadiran** — pola kerja standar **6 hari kerja/1 hari libur per minggu** (pakai data jadwal shift kalau Owner sudah isi, kalau belum diasumsikan otomatis). **Cuti Tahunan** dikecualikan dari potongan, tapi **Sakit/Izin tetap dihitung sebagai ketidakhadiran yang memotong gaji** meskipun ada surat dokter (surat dokter cuma bukti resmi, bukan pembebas potongan) — saat ajukan sakit, karyawan bisa upload foto surat dokter/resep obat. **Alpa (tidak hadir tanpa keterangan sama sekali) terdeteksi otomatis oleh sistem tiap malam** dan langsung dicatat sebagai peringatan progresif: alpa ke-1 = Teguran Lisan, ke-2 = SP1, ke-3 = SP2, ke-4 dst = SP3 — tanpa Owner perlu input manual. **Slip gaji juga dihitung otomatis tiap tanggal 1**, muncul di Dashboard panel "🧾 Slip Gaji Otomatis Siap Dikirim", Owner tinggal tap "Kirim WA" per karyawan. **Potongan BPJS bersifat opsional** (toggle di menu HR → panel "🏥 Potongan BPJS") — wajar dimatikan untuk UMKM yang belum daftarkan karyawan ke BPJS; kalau dimatikan, slip gaji dan surat kontrak otomatis tidak menyebut BPJS sama sekali. Menu di sidebar sekarang bernama **"HR"** (Human Resource) — isinya sub-fitur Karyawan & Shift lengkap. Kalau ada komplain gaji baru yang belum dibalas, muncul **badge angka merah** di menu HR (tanpa perlu buka menunya dulu buat tahu). Karyawan yang kurang puas sama slip gajinya bisa tap **"💬 Komplain"** di riwayat gaji-nya (Profil Saya), Owner/HR lihat & balas di menu HR panel "💬 Komplain Gaji". Setiap karyawan bisa lihat & cetak/simpan **kontrak kerjanya sendiri kapan saja dalam bentuk digital** (panel "📄 Kontrak Kerja Saya" di Profil Saya, tap "Lihat & Cetak" lalu simpan sebagai PDF lewat menu Print HP) — jadi karyawan tetap pegang versi fisik yang ditandatangani, sekaligus punya salinan digital yang bisa diakses ulang kapan saja tanpa minta ke Owner.
 
@@ -9922,8 +9975,8 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       const breakdownEl = document.getElementById('bh-breakdown');
       breakdownEl.innerHTML = Object.entries(health.breakdown || {}).map(([key, val]) => `
         <div>
-          <div style="display:flex; justify-content:space-between; font-size:10.5px; color:rgba(255,255,255,.72); margin-bottom:4px;"><span>${BREAKDOWN_LABEL[key]||key}</span><span style="font-weight:700; color:#E4B36A;">${val}</span></div>
-          <div style="height:6px; background:rgba(255,255,255,.12); border-radius:6px; overflow:hidden;"><div style="height:100%; width:${val}%; background:linear-gradient(90deg,#B98A3E,#E4B36A); border-radius:6px;"></div></div>
+          <div style="display:flex; justify-content:space-between; font-size:10.5px; color:rgba(255,255,255,.72); margin-bottom:4px;"><span>${BREAKDOWN_LABEL[key]||key}</span><span style="font-weight:700; color:#FBB273;">${val}</span></div>
+          <div style="height:6px; background:rgba(255,255,255,.12); border-radius:6px; overflow:hidden;"><div style="height:100%; width:${val}%; background:linear-gradient(90deg,#F2760F,#FBB273); border-radius:6px;"></div></div>
         </div>`).join('');
     } else {
       panelHealth.style.display = 'none';
@@ -9977,11 +10030,11 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     if (daftarAksi.length > 0){
       panelAksi.style.display = 'block';
       listAksi.innerHTML = daftarAksi.map((a, i) => `
-        <div style="display:flex; gap:10px; align-items:flex-start; padding:9px 0; ${i < daftarAksi.length-1 ? 'border-bottom:1px dashed #E8D9BC;' : ''}">
-          <div style="width:22px; height:22px; border-radius:50%; background:#D4A24E; color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${i+1}</div>
+        <div style="display:flex; gap:10px; align-items:flex-start; padding:9px 0; ${i < daftarAksi.length-1 ? 'border-bottom:1px dashed #EEF5F0;' : ''}">
+          <div style="width:22px; height:22px; border-radius:50%; background:#F2760F; color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${i+1}</div>
           <div>
-            <div style="font-size:12.5px; font-weight:700; color:#5C4319;">${a.rekomendasi}</div>
-            <div style="font-size:10.5px; color:#8C6A2E; margin-top:2px;">Terkait: ${a.judul}</div>
+            <div style="font-size:12.5px; font-weight:700; color:#7A3908;">${a.rekomendasi}</div>
+            <div style="font-size:10.5px; color:#C25C0C; margin-top:2px;">Terkait: ${a.judul}</div>
           </div>
         </div>`).join('');
     } else {
@@ -10014,7 +10067,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
         type: 'line',
         data: {
           labels: riwayatSkor.map(r => new Date(r.periode).toLocaleDateString('id-ID', { day:'numeric', month:'short' })),
-          datasets: [{ label: 'Skor Kesehatan Bisnis', data: riwayatSkor.map(r => r.score), borderColor: '#D4A24E', backgroundColor: 'rgba(212,162,78,0.12)', fill: true, tension: 0.3, pointRadius: 2 }],
+          datasets: [{ label: 'Skor Kesehatan Bisnis', data: riwayatSkor.map(r => r.score), borderColor: '#F2760F', backgroundColor: 'rgba(242,118,15,0.12)', fill: true, tension: 0.3, pointRadius: 2 }],
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, ticks: { stepSize: 25 } } } },
       });
@@ -10267,7 +10320,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       <table>${baris}</table>
       <div style="margin-top:20px; font-size:11px; color:#666; line-height:1.6;">
         <b>Catatan penting:</b><br>
-        • Angka di atas dihitung otomatis dari data transaksi &amp; laporan keuangan asli di sistem UMKMpro AI.<br>
+        • Angka di atas dihitung otomatis dari data transaksi &amp; laporan keuangan asli.<br>
         • Perbandingan skema (kalau ada) berdasarkan Laba Bersih akuntansi, BELUM termasuk koreksi fiskal menurut UU PPh Pasal 6 &amp; 9.<br>
         • Ini panduan umum berdasarkan PP Nomor 20 Tahun 2026, BUKAN nasihat pajak resmi. Konsultasikan ke konsultan pajak/petugas pajak sebelum lapor, terutama untuk perpindahan skema.<br>
         • Dokumen ini untuk referensi pribadi — input manual angkanya ke form SPT di coretaxdjp.pajak.go.id, bukan file yang diunggah langsung.
@@ -10711,7 +10764,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const ROLE_LABEL_SINGKAT = { admin_gudang:'Admin Gudang', apoteker:'Apoteker', kasir:'Kasir', hr:'HR', marketing:'Marketing' };
     el.innerHTML = saran.map((s, idx) => `
       <div class="row-item">
-        <div class="emp-dot" style="background:${s.prioritas==='tinggi'?'var(--danger-tint,#FBE4E4)':'var(--amber-tint)'}; color:${s.prioritas==='tinggi'?'var(--danger)':'var(--amber)'};">!</div>
+        <div class="emp-dot" style="background:${s.prioritas==='tinggi'?'var(--danger-tint,#FBE9E7)':'var(--amber-tint)'}; color:${s.prioritas==='tinggi'?'var(--danger)':'var(--amber)'};">!</div>
         <div><div class="row-name">${s.judul}</div><div class="row-meta">Untuk: ${ROLE_LABEL_SINGKAT[s.role]} · ${s.deskripsi}</div></div>
         <div class="row-right"><button class="btn-secondary" style="font-size:10.5px; padding:5px 10px;" onclick="setujuiSaranTugas(${idx})">✓ Setujui &amp; Kirim</button></div>
       </div>`).join('');
@@ -10765,12 +10818,12 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
   function gambarLatarKartu(ctx, W, H){
     const grad = ctx.createLinearGradient(0, 0, W, H);
     grad.addColorStop(0, '#0F1B2E');
-    grad.addColorStop(1, '#1E3A5F');
+    grad.addColorStop(1, '#0B1712');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
     // Pola titik halus di pojok kanan atas, dekoratif tapi tidak ramai
-    ctx.fillStyle = 'rgba(212,162,78,0.18)';
+    ctx.fillStyle = 'rgba(242,118,15,0.18)';
     for (let row = 0; row < 6; row++){
       for (let col = 0; col < 6; col++){
         if (row + col < 7){
@@ -10782,7 +10835,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     }
 
     // Garis aksen emas tipis melengkung di bagian bawah
-    ctx.strokeStyle = 'rgba(212,162,78,0.35)';
+    ctx.strokeStyle = 'rgba(242,118,15,0.35)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, H - 70);
@@ -10880,13 +10933,13 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       ctxF.fillText('👤', cx, cy);
     }
     ctxF.restore();
-    ctxF.strokeStyle = '#D4A24E'; ctxF.lineWidth = 6;
+    ctxF.strokeStyle = '#F2760F'; ctxF.lineWidth = 6;
     ctxF.beginPath(); ctxF.arc(cx, cy, r, 0, Math.PI*2); ctxF.stroke();
 
     ctxF.textAlign = 'center'; ctxF.textBaseline = 'alphabetic';
     ctxF.fillStyle = '#fff'; ctxF.font = 'bold 40px "IBM Plex Sans", sans-serif';
     ctxF.fillText(emp.nama, cx, cy + r + 80);
-    ctxF.font = '26px "IBM Plex Sans", sans-serif'; ctxF.fillStyle = '#F0D9A8';
+    ctxF.font = '26px "IBM Plex Sans", sans-serif'; ctxF.fillStyle = '#FDE9DA';
     ctxF.fillText(`${JABATAN_ICON[emp.jabatan]||'👤'}  ${JABATAN_LABEL[emp.jabatan] || emp.jabatan}`, cx, cy + r + 122);
 
     ctxF.strokeStyle = 'rgba(255,255,255,.25)'; ctxF.lineWidth = 1;
@@ -10907,7 +10960,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     ctxB.fillText(namaUsaha, logoImg ? 110 : 40, 75);
 
     let y = 170;
-    ctxB.font = 'bold 26px "IBM Plex Sans", sans-serif'; ctxB.fillStyle = '#F0D9A8';
+    ctxB.font = 'bold 26px "IBM Plex Sans", sans-serif'; ctxB.fillStyle = '#FDE9DA';
     ctxB.fillText('ATURAN & TATA TERTIB', 40, y); y += 40;
     ctxB.font = '19px "IBM Plex Sans", sans-serif'; ctxB.fillStyle = 'rgba(255,255,255,.92)';
     aturanList.forEach(poin => {
@@ -10938,7 +10991,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
         img.kartu{ width:100%; max-width:340px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.25); margin-bottom:10px; }
         .label{ font-size:11px; font-weight:800; color:#555; letter-spacing:.08em; margin:14px 0 6px; }
         .btn{ display:inline-block; background:#1B3A2A; color:#fff; padding:10px 22px; border-radius:10px; text-decoration:none; font-size:13px; font-weight:700; margin-bottom:6px; }
-        .btn-print{ background:#D4A24E; color:#0F1B2E; margin-top:16px; border:none; cursor:pointer; font-family:inherit; }
+        .btn-print{ background:#F2760F; color:#0F1B2E; margin-top:16px; border:none; cursor:pointer; font-family:inherit; }
         @media print{ .no-print{ display:none; } body{ background:#fff; } img.kartu{ max-width:100%; page-break-after:always; } }
       </style></head>
       <body>
@@ -11007,8 +11060,8 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       <html><head><title>Surat Kontrak Kerja - ${kontrak.employees?.nama}</title>
       <style>
         *{ box-sizing:border-box; }
-        body{ font-family:'Times New Roman',serif; font-size:13px; line-height:1.7; max-width:680px; margin:0 auto; color:#1a1a1a; background:#faf7f2; }
-        .header{ background:linear-gradient(120deg,#B8763E,#8C4A2F); color:#fff; padding:26px 20px 22px; text-align:center; }
+        body{ font-family:'Times New Roman',serif; font-size:13px; line-height:1.7; max-width:680px; margin:0 auto; color:#1a1a1a; background:#F4F8F5; }
+        .header{ background:linear-gradient(120deg,#B8763E,#C25C0C); color:#fff; padding:26px 20px 22px; text-align:center; }
         .header img{ width:56px; height:56px; border-radius:12px; object-fit:cover; margin-bottom:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); }
         .header .nama-usaha{ font-family:Georgia,serif; font-size:19px; font-weight:700; letter-spacing:.02em; }
         .header .detail-usaha{ font-size:11px; opacity:.92; margin-top:4px; }
@@ -11018,7 +11071,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
         .pasal{ margin-bottom:14px; }
         table{ width:100%; margin:8px 0; border-collapse:collapse; }
         td{ padding:3px 6px; vertical-align:top; font-size:12.5px; }
-        .footer{ background:#8C4A2F; color:#f0e4d8; text-align:center; padding:12px 20px; font-size:10px; }
+        .footer{ background:#C25C0C; color:#EEF5F0; text-align:center; padding:12px 20px; font-size:10px; }
         .no-print{ text-align:center; margin:20px 0; }
         @media print{ .no-print{ display:none; } body{ background:#fff; } }
       </style></head>
