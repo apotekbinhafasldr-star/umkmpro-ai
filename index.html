@@ -3449,6 +3449,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       applyTenantLogo(tenantsData?.logo_url);
       currentTenant = tenantsData;
       applyRoleAccess(profile.role);
+      await applyModuleVisibility();
       updateOfflineStatusBadge();
       syncOfflineQueue();
       document.getElementById('dash-greeting').textContent = `Selamat datang, ${namaAman.split(' ')[0]} 👋`;
@@ -8882,6 +8883,48 @@ Baca & tanda tangan kontrak kerja</textarea>
     window.__stokFilterAktif = tipe;
     goPage('stok', document.querySelector('[data-page=stok]'));
   }
+
+  // ================== TAHAP B — Module Registry & Feature Flag ==================
+  // Aditif: tidak mengubah goPage() versi lama, hanya menambah pengecekan visibilitas menu.
+  // Fallback WAJIB: kalau tenant belum punya baris di tenant_modules (atau query gagal),
+  // semua menu tetap tampil persis seperti perilaku lama (demi kompatibilitas Apotek).
+  window.__activeModules = null; // null = tampilkan semua (perilaku lama)
+
+  const PAGE_TO_MODULE = {
+    pos: 'pos', stok: 'stok', keuangan: 'keuangan', hr: 'hr',
+    pelanggan: 'pelanggan', pajak: 'pajak', langganan: 'langganan'
+    // dashboard & profilsaya sengaja tidak dipetakan -> selalu tampil
+  };
+
+  async function applyModuleVisibility(){
+    try{
+      const tenantId = currentProfile?.tenant_id;
+      if (!tenantId) return; // aman: biarkan semua menu tampil
+
+      const { data, error } = await sb.from('tenant_modules')
+        .select('module_id, aktif')
+        .eq('tenant_id', tenantId);
+
+      if (error || !data || data.length === 0){
+        window.__activeModules = null; // fallback: tampilkan semua, seperti sebelum Tahap B
+        return;
+      }
+
+      window.__activeModules = new Set(data.filter(m => m.aktif).map(m => m.module_id));
+
+      document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+        const page = btn.getAttribute('data-page');
+        const moduleId = PAGE_TO_MODULE[page];
+        if (!moduleId) return; // dashboard/profilsaya: selalu tampil
+        const aktif = window.__activeModules.has(moduleId);
+        btn.style.display = aktif ? '' : 'none';
+      });
+    } catch(err){
+      console.error('applyModuleVisibility error (fallback ke tampilkan semua):', err);
+      window.__activeModules = null;
+    }
+  }
+  // ================== akhir Module Registry & Feature Flag ==================
 
   function goPage(name, btn){
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
