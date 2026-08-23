@@ -22,8 +22,13 @@
           const newWorker = reg.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'activated'){
-              // Ada versi baru aktif -> reload sekali supaya halaman pakai versi terbaru
-              window.location.reload();
+              // Ada versi baru aktif -> reload sekali supaya halaman pakai versi terbaru.
+              // Pakai flag sessionStorage supaya tidak reload berulang-ulang (infinite loop)
+              // kalau ada beberapa update terpasang berturut-turut dalam waktu singkat.
+              if (!sessionStorage.getItem('umkmpro_reloaded_for_update')){
+                sessionStorage.setItem('umkmpro_reloaded_for_update', '1');
+                window.location.reload();
+              }
             }
           });
         });
