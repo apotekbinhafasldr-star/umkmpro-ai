@@ -758,9 +758,10 @@
             </div>
           </div>
           <div class="field-row" style="margin-bottom:10px;">
-            <div class="field">
+            <div class="field" style="position:relative;">
               <label>Nama Pelanggan (opsional)</label>
-              <input type="text" id="cart-nama-pelanggan" placeholder="Umum" onchange="getActiveCart().namaPelanggan = this.value">
+              <input type="text" id="cart-nama-pelanggan" placeholder="Umum" onchange="getActiveCart().namaPelanggan = this.value" oninput="cariPelangganByNama(this.value)" onblur="setTimeout(()=>document.getElementById('nama-pelanggan-saran').style.display='none', 200)">
+              <div id="nama-pelanggan-saran" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; margin-top:2px; z-index:20; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
             </div>
             <div class="field">
               <label>No. WA (opsional)</label>
@@ -3825,7 +3826,19 @@ Baca & tanda tangan kontrak kerja</textarea>
         </div>`;
       return;
     }
-    grid.innerHTML = filtered.map(p => `
+    // Supaya sales/kasir bisa langsung jawab "harganya berapa" ke pelanggan SEBELUM produk ditambah ke keranjang,
+    // tampilkan harga yang sudah memperhitungkan harga khusus/grosir pelanggan yang sedang aktif di transaksi ini.
+    const activeCart = getActiveCart();
+    const hargaKhususMap = activeCart?.hargaKhususMap || {};
+    const isResellerAktif = activeCart?.isResellerCustomer;
+    const hitungHargaTampil = (p) => {
+      if (hargaKhususMap[p.id] !== undefined) return { harga: hargaKhususMap[p.id], label: '💰 Harga Khusus' };
+      if (p.harga_grosir && isResellerAktif) return { harga: parseFloat(p.harga_grosir), label: 'Harga Grosir' };
+      return { harga: parseFloat(p.harga), label: null };
+    };
+    grid.innerHTML = filtered.map(p => {
+      const hargaTampil = hitungHargaTampil(p);
+      return `
       <div class="prod-card" onclick="handleProductTapKasir('${p.id}')" style="${p.favorit ? 'border-color:var(--good); border-width:1.5px;' : ''}">
         ${p.favorit ? '<span style="position:absolute; top:8px; left:8px; font-size:13px;">⭐</span>' : ''}
         <span class="prod-tag ${p.kategori}">${p.is_racikan ? 'Racikan' : (KATEGORI_LABEL[p.kategori] || p.kategori)}</span>
@@ -3833,11 +3846,13 @@ Baca & tanda tangan kontrak kerja</textarea>
         <div class="prod-name">${p.nama}</div>
         <div class="prod-meta">${p.produsen || p.satuan} · Stok ${p.stok < p.stok_minimum ? '<span style="color:var(--danger)">rendah</span>' : 'cukup'}</div>
         ${p.lokasi_rak ? `<div style="font-size:10.5px; font-weight:700; color:var(--brand); background:var(--brand-tint); border-radius:6px; padding:2px 7px; display:inline-block; margin:2px 0;">📍 ${p.lokasi_rak}</div>` : ''}
+        ${hargaTampil.label ? `<div style="font-size:10px; font-weight:700; color:var(--good);">${hargaTampil.label}</div>` : ''}
         <div class="prod-foot">
-          <span class="prod-price num">${p.is_induk_varian ? 'Pilih Varian' : 'Rp ' + parseFloat(p.harga).toLocaleString('id-ID')}</span>
+          <span class="prod-price num">${p.is_induk_varian ? 'Pilih Varian' : 'Rp ' + hargaTampil.harga.toLocaleString('id-ID')}</span>
           <span class="prod-stock ${p.stok < p.stok_minimum ? 'low' : ''}">${p.is_racikan ? 'Racikan' : (p.is_induk_varian ? '🎨 Ada varian' : 'Stok ' + p.stok + ' ' + (p.satuan || ''))}</span>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   let carts = [{ id: 1, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '' }];
@@ -4992,6 +5007,35 @@ Baca & tanda tangan kontrak kerja</textarea>
   }
 
   // ================= TEBUS POIN DI KASIR =================
+  // Sales/kasir lapangan sering ingat nama toko/klien tapi tidak hafal nomor WA-nya —
+  // cari otomatis dari nama, begitu dipilih WA-nya otomatis terisi & harga khusus langsung aktif.
+  let cariPelangganTimeout = null;
+  function cariPelangganByNama(q){
+    clearTimeout(cariPelangganTimeout);
+    const el = document.getElementById('nama-pelanggan-saran');
+    if (!q || q.trim().length < 2){ el.style.display = 'none'; return; }
+    cariPelangganTimeout = setTimeout(async () => {
+      const { data } = await sb.from('customer_points').select('nama, whatsapp, tipe_pelanggan').eq('tenant_id', currentProfile.tenant_id).ilike('nama', `%${q}%`).limit(6);
+      if (!data || data.length === 0){ el.style.display = 'none'; return; }
+      const TIPE_LABEL = { reseller:'Reseller', dokter:'Dokter', bidan:'Bidan', perawat:'Perawat' };
+      el.innerHTML = data.map(p => `
+        <div style="padding:9px 12px; font-size:12.5px; cursor:pointer; border-bottom:1px solid var(--line);" onmousedown="pilihPelangganDariSaran('${(p.nama||'').replace(/'/g,"\\'")}','${p.whatsapp}')">
+          <b>${p.nama || 'Tanpa nama'}</b>${p.tipe_pelanggan && p.tipe_pelanggan !== 'umum' ? ` <span style="color:var(--good);">· ${TIPE_LABEL[p.tipe_pelanggan]}</span>` : ''}
+          <div style="font-size:11px; color:var(--ink-soft);">${p.whatsapp}</div>
+        </div>`).join('');
+      el.style.display = 'block';
+    }, 300);
+  }
+
+  function pilihPelangganDariSaran(nama, wa){
+    document.getElementById('cart-nama-pelanggan').value = nama;
+    document.getElementById('cart-wa-pelanggan').value = wa;
+    getActiveCart().namaPelanggan = nama;
+    getActiveCart().waPelanggan = wa;
+    document.getElementById('nama-pelanggan-saran').style.display = 'none';
+    checkPoinPelanggan();
+  }
+
   async function checkPoinPelanggan(){
     const wa = document.getElementById('cart-wa-pelanggan').value.trim();
     const box = document.getElementById('poin-tebus-box');
@@ -4999,7 +5043,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     getActiveCart().resellerNama = null;
     getActiveCart().hargaKhususMap = {};
 
-    if (!wa){ box.style.display = 'none'; applyGrosirPricing(getActiveCart().items); renderCart(); return; }
+    if (!wa){ box.style.display = 'none'; applyGrosirPricing(getActiveCart().items); renderCart(); renderProducts(); return; }
 
     // TAHAP C — Harga Khusus per Pelanggan: prefetch sekali saat WA diisi, dipakai applyGrosirPricing
     const { data: hargaKhususList } = await sb.from('customer_product_prices').select('product_id, harga').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa);
@@ -5031,6 +5075,7 @@ Baca & tanda tangan kontrak kerja</textarea>
 
     applyGrosirPricing(getActiveCart().items);
     renderCart();
+    renderProducts();
   }
 
   // ================= SPLIT PAYMENT =================
@@ -5512,8 +5557,12 @@ Baca & tanda tangan kontrak kerja</textarea>
       }
     }
 
+    const namaPelangganAwal = document.getElementById('cart-nama-pelanggan').value.trim();
+    const waPelangganAwal = document.getElementById('cart-wa-pelanggan').value.trim();
+
     const isSplit = document.getElementById('cart-split-payment').checked;
     let uangDiterima = null, kembalian = 0, detailPembayaran = null, metodeFinal = selectedPaymentMethod;
+    let piutangDariCheckout = null; // diisi kalau bayar sebagian & langsung dicatat jadi piutang
 
     if (isSplit){
       const tunai = parseFloat(document.getElementById('split-tunai').value) || 0;
@@ -5529,16 +5578,25 @@ Baca & tanda tangan kontrak kerja</textarea>
         kembalian = 0;
       } else {
         uangDiterima = parseFloat(inputMentah) || 0;
-        if (uangDiterima < total){ showToast('Uang diterima kurang dari total belanja.', true); return; }
-        kembalian = uangDiterima - total;
+        if (uangDiterima < total){
+          // Bayar sebagian (DP) — cuma boleh kalau nama & WA pelanggan sudah diisi, biar bisa dilacak sebagai piutang
+          if (!namaPelangganAwal || !waPelangganAwal){
+            showToast('Bayar sebagian? Isi dulu Nama & No. WA pelanggan di atas, biar sisanya otomatis tercatat sebagai piutang.', true);
+            return;
+          }
+          piutangDariCheckout = { jumlah: total, dibayarSekarang: uangDiterima };
+          kembalian = 0;
+        } else {
+          kembalian = uangDiterima - total;
+        }
       }
     }
 
     btn.disabled = true; btn.textContent = 'Menyimpan…';
 
     const nomorTransaksi = 'TX-' + Date.now();
-    const namaPelanggan = document.getElementById('cart-nama-pelanggan').value.trim() || 'Umum';
-    const waPelanggan = document.getElementById('cart-wa-pelanggan').value.trim() || null;
+    const namaPelanggan = namaPelangganAwal || 'Umum';
+    const waPelanggan = waPelangganAwal || null;
     const poinDitebus = document.getElementById('cart-tebus-poin').checked ? parseInt(document.getElementById('cart-tebus-poin').dataset.poin) || 0 : 0;
     const meta = {
       nomorTransaksi, namaPelanggan, waPelanggan, subtotal: subtotalKotor, diskon, total,
@@ -5576,7 +5634,32 @@ Baca & tanda tangan kontrak kerja</textarea>
     }
 
     try{
-      await executeCheckoutOnServer(cart, meta);
+      const tx = await executeCheckoutOnServer(cart, meta);
+
+      // Kalau checkout ini bayar sebagian (DP), otomatis catat sisanya sebagai piutang, terhubung ke transaksi ini
+      if (piutangDariCheckout){
+        const sisaPiutang = piutangDariCheckout.jumlah - piutangDariCheckout.dibayarSekarang;
+        const { data: piutangBaru } = await sb.from('receivables').insert({
+          tenant_id: currentProfile.tenant_id, nama: namaPelanggan, whatsapp: waPelanggan,
+          jumlah: piutangDariCheckout.jumlah, sisa: sisaPiutang,
+          status: sisaPiutang <= 0 ? 'lunas' : 'belum_lunas', kasir_id: currentProfile.id,
+          referensi_transaksi_id: tx?.id || null
+        }).select().single();
+        if (piutangBaru && piutangDariCheckout.dibayarSekarang > 0){
+          await sb.from('receivable_payments').insert({
+            receivable_id: piutangBaru.id, tenant_id: currentProfile.tenant_id,
+            jumlah: piutangDariCheckout.dibayarSekarang, catatan: `DP saat transaksi ${nomorTransaksi}`, dicatat_oleh: currentProfile.id
+          });
+        }
+        showToast(`✓ Transaksi tersimpan — DP Rp ${piutangDariCheckout.dibayarSekarang.toLocaleString('id-ID')} diterima, sisa piutang Rp ${sisaPiutang.toLocaleString('id-ID')} otomatis tercatat`);
+        printReceipt({ nomorTransaksi, namaPelanggan, waPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
+        bersihkanKeranjang();
+        await loadProducts();
+        await loadDashboard();
+        btn.textContent = 'Checkout Sekarang';
+        updateCheckoutState();
+        return;
+      }
 
       // Kalau ada poin yang ditebus, kurangi poin pelanggan
       if (poinDitebus > 0 && waPelanggan){
@@ -9188,7 +9271,13 @@ Baca & tanda tangan kontrak kerja</textarea>
     }
 
     const qtyDasarTotal = qtyInput * faktor; // qty SEBENARNYA dalam satuan dasar — dipakai untuk stok & trigger
-    const hargaPerSatuanDasar = hargaTotalPerUnitBesar / faktor; // supaya subtotal (harga x qty) tetap benar
+    let hargaPerSatuanDasar = hargaTotalPerUnitBesar / faktor; // supaya subtotal (harga x qty) tetap benar
+
+    // Harga khusus pelanggan (kalau ada) menang di atas harga satuan besar/kecil manapun
+    const hargaKhususMap = getActiveCart().hargaKhususMap || {};
+    if (hargaKhususMap[prod.id] !== undefined){
+      hargaPerSatuanDasar = hargaKhususMap[prod.id];
+    }
 
     if (prod.stok < qtyDasarTotal){ showToast(`Stok tidak cukup (tersedia ${prod.stok} ${prod.satuan || 'Pcs'}).`, true); return; }
 
