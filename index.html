@@ -9500,6 +9500,17 @@ Baca & tanda tangan kontrak kerja</textarea>
         const el = document.getElementById(id);
         if (el) el.placeholder = placeholderNamaProduk;
       });
+
+      // Dropdown Tipe Pelanggan: sembunyikan istilah medis (Dokter/Bidan/Perawat) untuk non-Apotek
+      if (!isApotek){
+        ['dm-tipe','dpk-tipe'].forEach(id => {
+          const sel = document.getElementById(id);
+          if (!sel) return;
+          sel.innerHTML = `
+            <option value="umum">Member Biasa (dapat poin tiap belanja)</option>
+            <option value="reseller">Reseller (harga grosir otomatis)</option>`;
+        });
+      }
     } catch(err){
       console.error('applyBusinessTerminology error (dibiarkan default Apotek):', err);
     }
