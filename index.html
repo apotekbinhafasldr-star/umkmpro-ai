@@ -1982,6 +1982,13 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         ⭐ Tandai sebagai favorit (dipin paling atas di Kasir, biar cepat diakses)
       </label>
     </div>
+    <div class="field" id="pf-varian-wrap" style="display:none; background:var(--brand-tint); border-radius:10px; padding:11px 13px; margin-bottom:13px;">
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:0; color:var(--brand); cursor:pointer;">
+        <input type="checkbox" id="pf-punya-varian" style="width:16px; height:16px;">
+        🎨 Produk ini punya beberapa varian (ukuran/rasa/warna, dll)
+      </label>
+      <div style="font-size:11px; color:var(--ink-soft); margin-top:6px;">Setelah disimpan, kamu bisa tambahkan varian satu-satu (misal: S, M, L — masing-masing punya stok & harga sendiri).</div>
+    </div>
     <div class="field" style="background:var(--amber-tint); border-radius:10px; padding:11px 13px; margin-bottom:13px;">
       <label style="display:flex; align-items:center; gap:8px; margin-bottom:0; color:#7A4B1C; cursor:pointer;">
         <input type="checkbox" id="pf-is-racikan" style="width:16px; height:16px;" onchange="toggleRacikanHint()">
@@ -2664,7 +2671,8 @@ Baca & tanda tangan kontrak kerja</textarea>
     <div class="modal-title">Catat Piutang Baru</div>
     <div class="field"><label>Nama Pelanggan</label><input type="text" id="rf-nama" placeholder="Nama pelanggan"></div>
     <div class="field"><label>No. WhatsApp</label><input type="text" id="rf-wa" placeholder="08xxxxxxxxxx"></div>
-    <div class="field"><label>Jumlah Piutang (Rp)</label><input type="number" id="rf-jumlah" placeholder="0"></div>
+    <div class="field"><label>Total Bon (Rp)</label><input type="number" id="rf-jumlah" placeholder="0"></div>
+    <div class="field"><label>Sudah Dibayar Sekarang (Rp, opsional)</label><input type="number" id="rf-dibayar" placeholder="0"></div>
     <div class="field"><label>Tanggal Jatuh Tempo</label><input type="date" id="rf-jatuh-tempo"></div>
     <div class="field"><label>Alamat</label><input type="text" id="rf-alamat" placeholder="Opsional"></div>
     <div class="modal-actions">
@@ -2674,7 +2682,105 @@ Baca & tanda tangan kontrak kerja</textarea>
   </div>
 </div>
 
-<!-- MODAL CATAT RETUR -->
+<!-- MODAL BAYAR SEBAGIAN PIUTANG -->
+<div class="modal-overlay" id="bayar-sebagian-modal">
+  <div class="modal-card">
+    <div class="modal-title">Catat Pembayaran</div>
+    <div id="bs-info" style="font-size:12.5px; color:var(--ink-soft); margin-bottom:12px;"></div>
+    <input type="hidden" id="bs-receivable-id">
+    <div class="field"><label>Jumlah Dibayar Sekarang (Rp)</label><input type="number" id="bs-jumlah" placeholder="0"></div>
+    <div class="field"><label>Catatan (opsional)</label><input type="text" id="bs-catatan" placeholder="Contoh: Transfer BCA"></div>
+    <div id="bs-riwayat" style="margin-top:14px;"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('bayar-sebagian-modal')">Batal</button>
+      <button class="btn-primary" id="bs-submit-btn" onclick="submitBayarSebagian()">Simpan Pembayaran</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KELOLA MULTI-SATUAN (Dynamic Unit Engine — non-Apotek) -->
+<div class="modal-overlay" id="multi-satuan-modal">
+  <div class="modal-card">
+    <div class="modal-title">Kelola Multi-Satuan — <span id="ms-nama-produk"></span></div>
+    <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Satuan dasar produk ini: <b id="ms-satuan-dasar"></b>. Tambahkan satuan lain (misal Dus, Box) beserta isinya dalam satuan dasar.</div>
+    <input type="hidden" id="ms-product-id">
+    <div id="ms-daftar" style="margin-bottom:16px;"></div>
+    <div class="field-row">
+      <div class="field"><label>Nama Satuan Baru</label><input type="text" id="ms-nama-satuan" placeholder="Contoh: Dus"></div>
+      <div class="field"><label>Isi (dalam satuan dasar)</label><input type="number" id="ms-isi-dasar" placeholder="Contoh: 24"></div>
+    </div>
+    <div class="field"><label>Harga Jual per Satuan Ini (Rp, opsional — kalau kosong dihitung otomatis)</label><input type="number" id="ms-harga" placeholder="0"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('multi-satuan-modal')">Tutup</button>
+      <button class="btn-primary" onclick="tambahSatuanProduk()">+ Tambah Satuan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PILIH SATUAN SAAT TRANSAKSI -->
+<div class="modal-overlay" id="pilih-satuan-transaksi-modal">
+  <div class="modal-card">
+    <div class="modal-title">Pilih Satuan — <span id="pst-nama-produk"></span></div>
+    <input type="hidden" id="pst-product-id">
+    <div id="pst-pilihan" style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;"></div>
+    <div class="field"><label>Jumlah</label><input type="number" id="pst-qty" value="1" min="1"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('pilih-satuan-transaksi-modal')">Batal</button>
+      <button class="btn-primary" onclick="konfirmasiTambahDenganSatuan()">Tambah ke Keranjang</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KELOLA VARIAN PRODUK -->
+<div class="modal-overlay" id="varian-produk-modal">
+  <div class="modal-card">
+    <div class="modal-title">Kelola Varian — <span id="vp-nama-produk"></span></div>
+    <input type="hidden" id="vp-product-id">
+    <div id="vp-daftar" style="margin-bottom:16px;"></div>
+    <div style="font-size:12px; font-weight:600; margin-bottom:8px;">+ Tambah Varian Baru</div>
+    <div class="field"><label>Nama Varian</label><input type="text" id="vp-nama-varian" placeholder="Contoh: Merah - L"></div>
+    <div class="field-row">
+      <div class="field"><label>Harga Jual (Rp)</label><input type="number" id="vp-harga" placeholder="0"></div>
+      <div class="field"><label>Stok Awal</label><input type="number" id="vp-stok" placeholder="0"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('varian-produk-modal')">Tutup</button>
+      <button class="btn-primary" onclick="tambahVarianProduk()">+ Tambah Varian</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PILIH VARIAN SAAT TRANSAKSI -->
+<div class="modal-overlay" id="pilih-varian-kasir-modal">
+  <div class="modal-card">
+    <div class="modal-title">Pilih Varian — <span id="pvk-nama-produk"></span></div>
+    <div id="pvk-daftar" style="display:flex; flex-direction:column; gap:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('pilih-varian-kasir-modal')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HARGA KHUSUS PELANGGAN -->
+<div class="modal-overlay" id="harga-khusus-modal">
+  <div class="modal-card">
+    <div class="modal-title">Harga Khusus — <span id="hk-nama-pelanggan"></span></div>
+    <input type="hidden" id="hk-whatsapp">
+    <div id="hk-daftar" style="margin-bottom:16px;"></div>
+    <div class="field"><label>Cari Produk</label><input type="text" id="hk-cari-produk" placeholder="Ketik nama produk…" oninput="cariProdukUntukHargaKhusus(this.value)"></div>
+    <div id="hk-hasil-cari" style="max-height:140px; overflow-y:auto; margin-bottom:10px;"></div>
+    <div id="hk-form-harga" style="display:none;">
+      <div style="font-size:12px; margin-bottom:6px;">Produk dipilih: <b id="hk-produk-dipilih-nama"></b></div>
+      <input type="hidden" id="hk-produk-dipilih-id">
+      <div class="field"><label>Harga Khusus (Rp)</label><input type="number" id="hk-harga-input" placeholder="0"></div>
+      <button class="btn-primary" style="width:100%; justify-content:center;" onclick="simpanHargaKhusus()">Simpan Harga Khusus</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('harga-khusus-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="return-modal">
   <div class="modal-card">
     <div class="modal-title">Catat Retur Produk</div>
@@ -3706,7 +3812,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       return;
     }
 
-    const filtered = products.filter(p => p.nama.toLowerCase().includes(q))
+    const filtered = products.filter(p => p.nama.toLowerCase().includes(q) && !p.varian_dari_product_id)
       .sort((a,b) => (b.favorit === true) - (a.favorit === true));
     if (filtered.length === 0){
       grid.innerHTML = `<div class="loading-note" style="grid-column:1/-1;">Tidak ada produk ditemukan.</div>
@@ -3724,8 +3830,8 @@ Baca & tanda tangan kontrak kerja</textarea>
         <div class="prod-meta">${p.produsen || p.satuan} · Stok ${p.stok < p.stok_minimum ? '<span style="color:var(--danger)">rendah</span>' : 'cukup'}</div>
         ${p.lokasi_rak ? `<div style="font-size:10.5px; font-weight:700; color:var(--brand); background:var(--brand-tint); border-radius:6px; padding:2px 7px; display:inline-block; margin:2px 0;">📍 ${p.lokasi_rak}</div>` : ''}
         <div class="prod-foot">
-          <span class="prod-price num">Rp ${parseFloat(p.harga).toLocaleString('id-ID')}</span>
-          <span class="prod-stock ${p.stok < p.stok_minimum ? 'low' : ''}">${p.is_racikan ? 'Racikan' : 'Stok ' + p.stok + ' ' + (p.satuan || '')}</span>
+          <span class="prod-price num">${p.is_induk_varian ? 'Pilih Varian' : 'Rp ' + parseFloat(p.harga).toLocaleString('id-ID')}</span>
+          <span class="prod-stock ${p.stok < p.stok_minimum ? 'low' : ''}">${p.is_racikan ? 'Racikan' : (p.is_induk_varian ? '🎨 Ada varian' : 'Stok ' + p.stok + ' ' + (p.satuan || ''))}</span>
         </div>
       </div>`).join('');
   }
@@ -3997,12 +4103,14 @@ Baca & tanda tangan kontrak kerja</textarea>
     if (filtered.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada member tercatat.</div>'; return; }
 
     const TIPE_LABEL = { dokter:'👨‍⚕️ Dokter', bidan:'🤰 Bidan', perawat:'👩‍⚕️ Perawat', reseller:'🏪 Reseller' };
+    const bukanApotek = currentTenant?.jenis_usaha && currentTenant.jenis_usaha !== 'apotek';
     el.innerHTML = filtered.slice(0, 50).map(m => `
       <div class="row-item">
         <div><div class="row-name">${m.nama || 'Tanpa nama'}${m.tipe_pelanggan && m.tipe_pelanggan !== 'umum' ? ' · ' + TIPE_LABEL[m.tipe_pelanggan] : ''}</div><div class="row-meta">${m.whatsapp} · ${m.poin || 0} poin${m.alamat ? ' · ' + m.alamat : ''}</div></div>
         <div class="row-right">
           <div style="display:flex; gap:4px;">
             <button class="btn-secondary" style="font-size:10px; padding:3px 7px; background:var(--brand-tint); color:var(--brand);" onclick='bukaKartuDigital(${JSON.stringify({nama:m.nama,whatsapp:m.whatsapp,tipe:m.tipe_pelanggan||"umum"}).replace(/'/g,"&#39;")})'>🪪 Kartu Digital</button>
+            ${bukanApotek ? `<button class="btn-secondary" style="font-size:10px; padding:3px 7px;" onclick='openHargaKhususModal(${JSON.stringify({nama:m.nama,whatsapp:m.whatsapp}).replace(/'/g,"&#39;")})'>💰 Harga Khusus</button>` : ''}
             ${m.tipe_pelanggan && m.tipe_pelanggan !== 'umum' ? `<button class="btn-secondary" style="font-size:10px; padding:3px 7px; color:var(--danger);" onclick="hapusPelangganKhusus('${m.whatsapp}')">Jadikan Umum</button>` : ''}
           </div>
         </div>
@@ -4555,6 +4663,10 @@ Baca & tanda tangan kontrak kerja</textarea>
   function handleProductTapKasir(productId){
     const prod = products.find(p => p.id === productId);
     if (!prod) return;
+    if (prod.is_induk_varian){
+      bukaPilihanVarianKasir(prod);
+      return;
+    }
     const hasKemasan = prod.satuan_kemasan && prod.isi_per_kemasan > 1;
     if (hasKemasan){
       openQtyConfirmForProduct(productId);
@@ -4751,10 +4863,17 @@ Baca & tanda tangan kontrak kerja</textarea>
     }
   }
 
-  function addToCart(id){
+  async function addToCart(id){
     const prod = products.find(p => p.id === id);
     if (!prod){ showToast('Produk tidak ditemukan.', true); return; }
     if (!prod.is_racikan && prod.stok <= 0){ showToast('Stok produk ini habis.', true); return; }
+
+    // Dynamic Unit Engine: kalau produk non-Apotek ini punya multi-satuan, tampilkan pilihan dulu
+    if (currentTenant?.jenis_usaha && currentTenant.jenis_usaha !== 'apotek'){
+      const adaMultiSatuan = await bukaPilihanSatuanTransaksi(prod);
+      if (adaMultiSatuan) return; // modal yang urus penambahan ke keranjang
+    }
+
     const cart = getActiveCart().items;
     const existing = cart.find(c => c.id === id);
     if (existing){
@@ -4783,7 +4902,15 @@ Baca & tanda tangan kontrak kerja</textarea>
 
   function applyGrosirPricing(cart){
     const isReseller = getActiveCart().isResellerCustomer;
+    const hargaKhususMap = getActiveCart().hargaKhususMap || {};
     cart.forEach(item => {
+      const idProdukAsli = item.produkId || item.id; // dukung item multi-satuan yang id-nya bukan UUID produk asli
+      if (hargaKhususMap[idProdukAsli] !== undefined){
+        item.price = hargaKhususMap[idProdukAsli];
+        item.isHargaKhusus = true;
+        return;
+      }
+      item.isHargaKhusus = false;
       if (item.hargaGrosir && (isReseller || (item.minGrosir && item.qty >= item.minGrosir))){
         item.price = item.hargaGrosir; item.isGrosir = true;
       } else if (item.hargaGrosir){
@@ -4798,6 +4925,9 @@ Baca & tanda tangan kontrak kerja</textarea>
     const item = activeCart.items.find(c => c.id === id);
     if (!item) return;
     item.qty += delta;
+    if (item.satuanBesarLabel && item.faktorSatuan){
+      item.displayQty = Math.round(item.qty / item.faktorSatuan);
+    }
     if (item.qty <= 0){ activeCart.items = activeCart.items.filter(c => c.id !== id); }
     else { applyGrosirPricing(activeCart.items); }
     renderCart();
@@ -4862,8 +4992,13 @@ Baca & tanda tangan kontrak kerja</textarea>
     const box = document.getElementById('poin-tebus-box');
     getActiveCart().isResellerCustomer = false;
     getActiveCart().resellerNama = null;
+    getActiveCart().hargaKhususMap = {};
 
     if (!wa){ box.style.display = 'none'; applyGrosirPricing(getActiveCart().items); renderCart(); return; }
+
+    // TAHAP C — Harga Khusus per Pelanggan: prefetch sekali saat WA diisi, dipakai applyGrosirPricing
+    const { data: hargaKhususList } = await sb.from('customer_product_prices').select('product_id, harga').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa);
+    (hargaKhususList || []).forEach(h => { getActiveCart().hargaKhususMap[h.product_id] = parseFloat(h.harga); });
 
     const { data } = await sb.from('customer_points').select('poin, tipe_pelanggan, nama').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).maybeSingle();
 
@@ -4978,9 +5113,9 @@ Baca & tanda tangan kontrak kerja</textarea>
           </div>
           <div class="ci-bottom">
             <div class="ci-qty">
-              <div class="qty-btn" onclick="changeQty('${c.id}', -1)">−</div>
-              <div class="qty-val">${c.qty}</div>
-              <div class="qty-btn" onclick="changeQty('${c.id}', 1)">+</div>
+              <div class="qty-btn" onclick="changeQty('${c.id}', ${c.satuanBesarLabel ? -(c.faktorSatuan||1) : -1})">−</div>
+              <div class="qty-val">${c.satuanBesarLabel ? `${c.displayQty} ${c.satuanBesarLabel}` : c.qty}</div>
+              <div class="qty-btn" onclick="changeQty('${c.id}', ${c.satuanBesarLabel ? (c.faktorSatuan||1) : 1})">+</div>
             </div>
             <div class="ci-actions">
               <input type="number" class="ci-diskon-input" placeholder="Diskon (Rp)" value="${c.diskonItem || ''}" oninput="updateItemDiskon('${c.id}', this.value)">
@@ -5296,7 +5431,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     if (txErr) throw txErr;
 
     const items = cart.map(c => ({
-      transaction_id: tx.id, product_id: c.isDynamicRacikan ? null : c.id, nama_produk: c.name,
+      transaction_id: tx.id, product_id: c.isDynamicRacikan ? null : (c.produkId || c.id), nama_produk: c.name,
       harga_satuan: c.price, qty: c.qty, subtotal: (c.price * c.qty) - (c.diskonItem||0),
       diskon_item: c.diskonItem || 0
     }));
@@ -5900,28 +6035,39 @@ Baca & tanda tangan kontrak kerja</textarea>
         <div><div class="row-name">${r.nama}</div><div class="row-meta">${r.whatsapp || '—'} · ${new Date(r.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}${r.jatuh_tempo ? ` · Jatuh tempo ${new Date(r.jatuh_tempo).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}` : ''}</div></div>
         <div class="row-right">
           <div class="num" style="font-size:13px;">Rp ${parseFloat(r.sisa).toLocaleString('id-ID')}</div>
+          <div style="font-size:10.5px; color:var(--ink-soft);">dari Rp ${parseFloat(r.jumlah).toLocaleString('id-ID')}</div>
           <span class="pill ${r.status === 'lunas' ? 'ok' : 'crit'}">${r.status === 'lunas' ? 'Lunas' : 'Belum Lunas'}</span>
-          ${r.status !== 'lunas' ? `<button class="btn-secondary" style="margin-top:6px; display:block;" onclick="markReceivablePaid('${r.id}')">Tandai Lunas</button>` : ''}
+          ${r.status !== 'lunas' ? `<button class="btn-secondary" style="margin-top:6px; display:block;" onclick="openBayarSebagianModal('${r.id}','${r.nama.replace(/'/g,"\\'")}',${r.sisa})">Bayar Sebagian</button>
+          <button class="btn-secondary" style="margin-top:6px; display:block;" onclick="markReceivablePaid('${r.id}')">Tandai Lunas</button>` : ''}
         </div>
       </div>`).join('');
   }
   function openReceivableModal(){
-    ['rf-nama','rf-wa','rf-jumlah','rf-alamat','rf-jatuh-tempo'].forEach(id => document.getElementById(id).value = '');
+    ['rf-nama','rf-wa','rf-jumlah','rf-dibayar','rf-alamat','rf-jatuh-tempo'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('receivable-modal').classList.add('show');
   }
   async function submitReceivable(){
     const nama = document.getElementById('rf-nama').value.trim();
     const jumlah = parseFloat(document.getElementById('rf-jumlah').value) || 0;
+    const dibayarAwal = parseFloat(document.getElementById('rf-dibayar').value) || 0;
     if (!nama || jumlah <= 0){ showToast('Nama dan jumlah wajib diisi.', true); return; }
+    if (dibayarAwal > jumlah){ showToast('Jumlah dibayar tidak boleh lebih besar dari total bon.', true); return; }
+    const sisa = jumlah - dibayarAwal;
     const btn = document.getElementById('rf-submit-btn');
     btn.disabled = true; btn.textContent = 'Menyimpan…';
-    const { error } = await sb.from('receivables').insert({
+    const { data: inserted, error } = await sb.from('receivables').insert({
       tenant_id: currentProfile.tenant_id, nama,
       whatsapp: document.getElementById('rf-wa').value.trim() || null,
       alamat: document.getElementById('rf-alamat').value.trim() || null,
       jatuh_tempo: document.getElementById('rf-jatuh-tempo').value || null,
-      jumlah, sisa: jumlah, status: 'belum_lunas', kasir_id: currentProfile.id
-    });
+      jumlah, sisa, status: sisa <= 0 ? 'lunas' : 'belum_lunas', kasir_id: currentProfile.id
+    }).select().single();
+    if (!error && dibayarAwal > 0 && inserted){
+      await sb.from('receivable_payments').insert({
+        receivable_id: inserted.id, tenant_id: currentProfile.tenant_id,
+        jumlah: dibayarAwal, catatan: 'Dibayar saat transaksi', dicatat_oleh: currentProfile.id
+      });
+    }
     btn.disabled = false; btn.textContent = 'Simpan';
     if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
     showToast('✓ Piutang tercatat');
@@ -5932,6 +6078,56 @@ Baca & tanda tangan kontrak kerja</textarea>
     const { error } = await sb.from('receivables').update({ status:'lunas', sisa:0 }).eq('id', id);
     if (error){ showToast('Gagal memperbarui: ' + error.message, true); return; }
     showToast('✓ Ditandai lunas');
+    await loadReceivables();
+  }
+
+  async function openBayarSebagianModal(receivableId, nama, sisaSekarang){
+    document.getElementById('bs-receivable-id').value = receivableId;
+    document.getElementById('bs-jumlah').value = '';
+    document.getElementById('bs-catatan').value = '';
+    document.getElementById('bs-info').textContent = `${nama} — sisa piutang saat ini: Rp ${parseFloat(sisaSekarang).toLocaleString('id-ID')}`;
+    document.getElementById('bs-riwayat').innerHTML = '<div class="loading-note">Memuat riwayat…</div>';
+    document.getElementById('bayar-sebagian-modal').classList.add('show');
+
+    const { data: riwayat } = await sb.from('receivable_payments').select('*').eq('receivable_id', receivableId).order('created_at', {ascending:false});
+    const elRiwayat = document.getElementById('bs-riwayat');
+    if (!riwayat || riwayat.length === 0){
+      elRiwayat.innerHTML = '<div style="font-size:11.5px; color:var(--ink-soft);">Belum ada riwayat pembayaran.</div>';
+    } else {
+      elRiwayat.innerHTML = '<div style="font-size:11.5px; font-weight:600; margin-bottom:6px;">Riwayat Pembayaran</div>' +
+        riwayat.map(p => `<div style="font-size:11.5px; color:var(--ink-soft); padding:4px 0; border-bottom:1px solid var(--line);">
+          ${new Date(p.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})} — Rp ${parseFloat(p.jumlah).toLocaleString('id-ID')}${p.catatan ? ' · ' + p.catatan : ''}
+        </div>`).join('');
+    }
+  }
+
+  async function submitBayarSebagian(){
+    const receivableId = document.getElementById('bs-receivable-id').value;
+    const jumlahBayar = parseFloat(document.getElementById('bs-jumlah').value) || 0;
+    const catatan = document.getElementById('bs-catatan').value.trim() || null;
+    if (jumlahBayar <= 0){ showToast('Jumlah pembayaran wajib diisi.', true); return; }
+
+    const { data: piutang } = await sb.from('receivables').select('sisa').eq('id', receivableId).single();
+    if (!piutang){ showToast('Data piutang tidak ditemukan.', true); return; }
+    if (jumlahBayar > piutang.sisa){ showToast('Jumlah bayar tidak boleh lebih besar dari sisa piutang (Rp ' + parseFloat(piutang.sisa).toLocaleString('id-ID') + ').', true); return; }
+
+    const btn = document.getElementById('bs-submit-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+
+    const { error: errPembayaran } = await sb.from('receivable_payments').insert({
+      receivable_id: receivableId, tenant_id: currentProfile.tenant_id,
+      jumlah: jumlahBayar, catatan, dicatat_oleh: currentProfile.id
+    });
+    if (errPembayaran){ btn.disabled = false; btn.textContent = 'Simpan Pembayaran'; showToast('Gagal menyimpan: ' + errPembayaran.message, true); return; }
+
+    const sisaBaru = piutang.sisa - jumlahBayar;
+    await sb.from('receivables').update({
+      sisa: sisaBaru, status: sisaBaru <= 0 ? 'lunas' : 'belum_lunas'
+    }).eq('id', receivableId);
+
+    btn.disabled = false; btn.textContent = 'Simpan Pembayaran';
+    showToast('✓ Pembayaran tercatat, sisa piutang Rp ' + sisaBaru.toLocaleString('id-ID'));
+    closeModal('bayar-sebagian-modal');
     await loadReceivables();
   }
 
@@ -8254,11 +8450,167 @@ Baca & tanda tangan kontrak kerja</textarea>
 
     btn.disabled = false;
     if (error){ showToast('Gagal menyimpan: ' + error.message, true); btn.textContent = editingProductId ? 'Simpan Perubahan' : 'Simpan Produk'; return; }
-
     showToast(editingProductId ? '✓ Produk berhasil diperbarui' : '✓ Produk berhasil ditambahkan');
+
+    // Kalau baru dibuat & ditandai punya varian, tandai sebagai induk & langsung buka Kelola Varian
+    const punyaVarian = document.getElementById('pf-punya-varian')?.checked;
+    if (!editingProductId && punyaVarian && savedProductId){
+      await sb.from('products').update({ is_induk_varian: true }).eq('id', savedProductId);
+      closeProductModal();
+      await loadStokPage();
+      openVarianProdukModal({ id: savedProductId, nama });
+      return;
+    }
+
     closeProductModal();
     await loadStokPage();
   }
+
+  // ================== TAHAP B — Varian Produk (non-Apotek) ==================
+  // Aditif: tiap varian tersimpan sebagai baris produk normal (varian_dari_product_id terisi),
+  // jadi ikut sistem stok & kasir yang sudah ada tanpa perlu ubah trigger/checkout.
+  async function openVarianProdukModal(p){
+    document.getElementById('vp-product-id').value = p.id;
+    document.getElementById('vp-nama-produk').textContent = p.nama;
+    document.getElementById('vp-nama-varian').value = '';
+    document.getElementById('vp-harga').value = '';
+    document.getElementById('vp-stok').value = '';
+    document.getElementById('varian-produk-modal').classList.add('show');
+    await muatDaftarVarianProduk(p.id);
+  }
+
+  async function muatDaftarVarianProduk(parentId){
+    const { data } = await sb.from('products').select('id, nama_varian, harga, stok').eq('varian_dari_product_id', parentId).order('created_at');
+    const el = document.getElementById('vp-daftar');
+    if (!data || data.length === 0){
+      el.innerHTML = '<div style="font-size:11.5px; color:var(--ink-soft);">Belum ada varian ditambahkan.</div>';
+      return;
+    }
+    el.innerHTML = data.map(v => `
+      <div style="font-size:12.5px; padding:7px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+        <span>${v.nama_varian} — Rp ${parseFloat(v.harga).toLocaleString('id-ID')} · Stok ${v.stok}</span>
+        <button class="btn-secondary" style="padding:3px 8px; font-size:10.5px; color:var(--danger);" onclick="hapusVarianProduk('${v.id}','${parentId}')">Hapus</button>
+      </div>`).join('');
+  }
+
+  async function tambahVarianProduk(){
+    const parentId = document.getElementById('vp-product-id').value;
+    const namaVarian = document.getElementById('vp-nama-varian').value.trim();
+    const harga = parseFloat(document.getElementById('vp-harga').value) || 0;
+    const stok = parseInt(document.getElementById('vp-stok').value) || 0;
+    if (!namaVarian || harga <= 0){ showToast('Nama varian & harga wajib diisi.', true); return; }
+
+    const { data: induk } = await sb.from('products').select('kategori, satuan, harga_modal, stok_minimum').eq('id', parentId).single();
+    const { error } = await sb.from('products').insert({
+      tenant_id: currentProfile.tenant_id, nama: document.getElementById('vp-nama-produk').textContent + ' - ' + namaVarian,
+      nama_varian: namaVarian, varian_dari_product_id: parentId,
+      kategori: induk?.kategori || 'umum', satuan: induk?.satuan || 'Pcs',
+      harga, harga_modal: induk?.harga_modal || 0, stok, stok_minimum: induk?.stok_minimum || 5
+    });
+    if (error){ showToast('Gagal menambah varian: ' + error.message, true); return; }
+
+    showToast(`✓ Varian "${namaVarian}" ditambahkan`);
+    document.getElementById('vp-nama-varian').value = '';
+    document.getElementById('vp-harga').value = '';
+    document.getElementById('vp-stok').value = '';
+    await muatDaftarVarianProduk(parentId);
+    await loadStokPage();
+  }
+
+  async function hapusVarianProduk(varianId, parentId){
+    const { error } = await sb.from('products').delete().eq('id', varianId);
+    if (error){ showToast('Gagal menghapus: ' + error.message, true); return; }
+    showToast('✓ Varian dihapus');
+    await muatDaftarVarianProduk(parentId);
+    await loadStokPage();
+  }
+
+  // Dipanggil dari handleProductTapKasir() saat produk induk-varian diklik di kasir
+  async function bukaPilihanVarianKasir(prod){
+    document.getElementById('pvk-nama-produk').textContent = prod.nama;
+    const { data } = await sb.from('products').select('id, nama_varian, harga, stok').eq('varian_dari_product_id', prod.id).order('created_at');
+    const el = document.getElementById('pvk-daftar');
+    if (!data || data.length === 0){
+      el.innerHTML = '<div style="font-size:12.5px; color:var(--ink-soft);">Belum ada varian terdaftar untuk produk ini.</div>';
+    } else {
+      el.innerHTML = data.map(v => `
+        <button class="btn-secondary" style="text-align:left; padding:11px 13px; ${v.stok <= 0 ? 'opacity:0.5;' : ''}" ${v.stok <= 0 ? 'disabled' : `onclick="closeModal('pilih-varian-kasir-modal'); addToCart('${v.id}');"`}>
+          <b>${v.nama_varian}</b> — Rp ${parseFloat(v.harga).toLocaleString('id-ID')} <span style="color:var(--ink-soft);">· Stok ${v.stok}${v.stok<=0 ? ' (Habis)' : ''}</span>
+        </button>`).join('');
+    }
+    document.getElementById('pilih-varian-kasir-modal').classList.add('show');
+  }
+  // ================== akhir Varian Produk ==================
+
+  // ================== TAHAP C — Harga Khusus per Pelanggan ==================
+  let hkCariTimeout = null;
+  async function openHargaKhususModal(pelanggan){
+    document.getElementById('hk-nama-pelanggan').textContent = pelanggan.nama || pelanggan.whatsapp;
+    document.getElementById('hk-whatsapp').value = pelanggan.whatsapp;
+    document.getElementById('hk-cari-produk').value = '';
+    document.getElementById('hk-hasil-cari').innerHTML = '';
+    document.getElementById('hk-form-harga').style.display = 'none';
+    document.getElementById('harga-khusus-modal').classList.add('show');
+    await muatDaftarHargaKhusus(pelanggan.whatsapp);
+  }
+
+  async function muatDaftarHargaKhusus(wa){
+    const { data } = await sb.from('customer_product_prices').select('id, harga, products(nama)').eq('tenant_id', currentProfile.tenant_id).eq('whatsapp', wa).order('created_at', {ascending:false});
+    const el = document.getElementById('hk-daftar');
+    if (!data || data.length === 0){
+      el.innerHTML = '<div style="font-size:11.5px; color:var(--ink-soft);">Belum ada harga khusus untuk pelanggan ini.</div>';
+      return;
+    }
+    el.innerHTML = data.map(h => `
+      <div style="font-size:12.5px; padding:7px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+        <span>${h.products?.nama || '?'} — Rp ${parseFloat(h.harga).toLocaleString('id-ID')}</span>
+        <button class="btn-secondary" style="padding:3px 8px; font-size:10.5px; color:var(--danger);" onclick="hapusHargaKhusus('${h.id}','${wa}')">Hapus</button>
+      </div>`).join('');
+  }
+
+  function cariProdukUntukHargaKhusus(q){
+    clearTimeout(hkCariTimeout);
+    const el = document.getElementById('hk-hasil-cari');
+    if (!q || q.trim().length < 2){ el.innerHTML = ''; return; }
+    hkCariTimeout = setTimeout(() => {
+      const hasil = products.filter(p => !p.varian_dari_product_id && p.nama.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
+      el.innerHTML = hasil.map(p => `
+        <div style="font-size:12px; padding:7px 8px; border-radius:8px; cursor:pointer;" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background=''" onclick='pilihProdukHargaKhusus(${JSON.stringify({id:p.id,nama:p.nama}).replace(/'/g,"&#39;")})'>${p.nama} <span style="color:var(--ink-soft);">(harga normal Rp ${parseFloat(p.harga).toLocaleString('id-ID')})</span></div>`).join('') || '<div style="font-size:11.5px; color:var(--ink-soft); padding:6px;">Tidak ditemukan.</div>';
+    }, 250);
+  }
+
+  function pilihProdukHargaKhusus(p){
+    document.getElementById('hk-produk-dipilih-id').value = p.id;
+    document.getElementById('hk-produk-dipilih-nama').textContent = p.nama;
+    document.getElementById('hk-harga-input').value = '';
+    document.getElementById('hk-form-harga').style.display = 'block';
+    document.getElementById('hk-hasil-cari').innerHTML = '';
+    document.getElementById('hk-cari-produk').value = '';
+  }
+
+  async function simpanHargaKhusus(){
+    const wa = document.getElementById('hk-whatsapp').value;
+    const productId = document.getElementById('hk-produk-dipilih-id').value;
+    const harga = parseFloat(document.getElementById('hk-harga-input').value) || 0;
+    if (!productId || harga <= 0){ showToast('Pilih produk & isi harga.', true); return; }
+
+    const { error } = await sb.from('customer_product_prices').upsert({
+      tenant_id: currentProfile.tenant_id, whatsapp: wa, product_id: productId, harga
+    }, { onConflict: 'tenant_id,whatsapp,product_id' });
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+
+    showToast('✓ Harga khusus disimpan');
+    document.getElementById('hk-form-harga').style.display = 'none';
+    await muatDaftarHargaKhusus(wa);
+  }
+
+  async function hapusHargaKhusus(id, wa){
+    const { error } = await sb.from('customer_product_prices').delete().eq('id', id);
+    if (error){ showToast('Gagal menghapus: ' + error.message, true); return; }
+    showToast('✓ Harga khusus dihapus');
+    await muatDaftarHargaKhusus(wa);
+  }
+  // ================== akhir Harga Khusus per Pelanggan ==================
 
   // ===== Daftarkan Produk Baru versi Gudang (tanpa harga jual/margin terlihat) =====
   function openDaftarProdukGudangModal(){
@@ -8730,6 +9082,134 @@ Baca & tanda tangan kontrak kerja</textarea>
     await renderSupplierPriceList();
   }
 
+  // ================== TAHAP B — Dynamic Unit Engine (non-Apotek) ==================
+  // Aditif: fitur multi-satuan opt-in per produk. Produk yang tidak didaftarkan ke sini
+  // (semua produk Apotek) tetap pakai products.satuan seperti biasa, tidak terpengaruh.
+  async function openMultiSatuanModal(p){
+    document.getElementById('ms-product-id').value = p.id;
+    document.getElementById('ms-nama-produk').textContent = p.nama;
+    document.getElementById('ms-satuan-dasar').textContent = p.satuan || 'Pcs';
+    document.getElementById('ms-nama-satuan').value = '';
+    document.getElementById('ms-isi-dasar').value = '';
+    document.getElementById('ms-harga').value = '';
+    document.getElementById('multi-satuan-modal').classList.add('show');
+    await muatDaftarSatuanProduk(p.id, p.satuan);
+  }
+
+  async function muatDaftarSatuanProduk(productId, satuanDasar){
+    const { data } = await sb.from('product_units').select('id, qty_dalam_satuan_dasar, harga_jual, units(nama)').eq('product_id', productId);
+    const el = document.getElementById('ms-daftar');
+    let html = `<div style="font-size:12px; padding:6px 0; border-bottom:1px solid var(--line);">1 ${satuanDasar || 'Pcs'} <span style="color:var(--ink-soft);">(satuan dasar)</span></div>`;
+    (data || []).forEach(row => {
+      html += `<div style="font-size:12px; padding:6px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+        <span>1 ${row.units?.nama || '?'} = ${row.qty_dalam_satuan_dasar} ${satuanDasar || 'Pcs'}${row.harga_jual ? ` · Rp ${parseFloat(row.harga_jual).toLocaleString('id-ID')}` : ''}</span>
+        <button class="btn-secondary" style="padding:3px 8px; font-size:10.5px;" onclick="hapusSatuanProduk('${row.id}','${productId}','${(satuanDasar||'Pcs').replace(/'/g,"")}')">Hapus</button>
+      </div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  async function tambahSatuanProduk(){
+    const productId = document.getElementById('ms-product-id').value;
+    const namaSatuan = document.getElementById('ms-nama-satuan').value.trim();
+    const isiDasar = parseFloat(document.getElementById('ms-isi-dasar').value) || 0;
+    const harga = parseFloat(document.getElementById('ms-harga').value) || null;
+    const satuanDasar = document.getElementById('ms-satuan-dasar').textContent;
+    if (!namaSatuan || isiDasar <= 0){ showToast('Nama satuan & isi wajib diisi.', true); return; }
+
+    try{
+      let { data: existingUnit } = await sb.from('units').select('id').eq('tenant_id', currentProfile.tenant_id).eq('nama', namaSatuan).maybeSingle();
+      let unitId = existingUnit?.id;
+      if (!unitId){
+        const { data: newUnit, error: errUnit } = await sb.from('units').insert({ tenant_id: currentProfile.tenant_id, nama: namaSatuan, kategori: 'kemasan' }).select().single();
+        if (errUnit) throw errUnit;
+        unitId = newUnit.id;
+      }
+      const { error } = await sb.from('product_units').insert({ product_id: productId, unit_id: unitId, qty_dalam_satuan_dasar: isiDasar, harga_jual: harga });
+      if (error) throw error;
+
+      showToast(`✓ Satuan "${namaSatuan}" ditambahkan`);
+      document.getElementById('ms-nama-satuan').value = '';
+      document.getElementById('ms-isi-dasar').value = '';
+      document.getElementById('ms-harga').value = '';
+      await muatDaftarSatuanProduk(productId, satuanDasar);
+    } catch(err){
+      showToast('Gagal menambah satuan: ' + err.message, true);
+    }
+  }
+
+  async function hapusSatuanProduk(productUnitId, productId, satuanDasar){
+    const { error } = await sb.from('product_units').delete().eq('id', productUnitId);
+    if (error){ showToast('Gagal menghapus: ' + error.message, true); return; }
+    showToast('✓ Satuan dihapus');
+    await muatDaftarSatuanProduk(productId, satuanDasar);
+  }
+
+  // Dipanggil dari renderProducts() saat produk punya multi-satuan (dicek di addToCart)
+  let pilihSatuanCache = null;
+  async function bukaPilihanSatuanTransaksi(prod){
+    const { data } = await sb.from('product_units').select('id, qty_dalam_satuan_dasar, harga_jual, units(nama)').eq('product_id', prod.id);
+    if (!data || data.length === 0) return false; // tidak punya multi-satuan, biarkan alur normal jalan
+
+    pilihSatuanCache = { prod, opsi: data };
+    document.getElementById('pst-product-id').value = prod.id;
+    document.getElementById('pst-nama-produk').textContent = prod.nama;
+    document.getElementById('pst-qty').value = 1;
+    const el = document.getElementById('pst-pilihan');
+    let html = `<label style="display:flex; align-items:center; gap:8px; font-size:13px;"><input type="radio" name="pst-satuan" value="dasar" checked> 1 ${prod.satuan || 'Pcs'} — Rp ${parseFloat(prod.harga).toLocaleString('id-ID')} (satuan dasar)</label>`;
+    data.forEach(row => {
+      const hargaTampil = row.harga_jual || (parseFloat(prod.harga) * row.qty_dalam_satuan_dasar);
+      html += `<label style="display:flex; align-items:center; gap:8px; font-size:13px;"><input type="radio" name="pst-satuan" value="${row.id}"> 1 ${row.units?.nama} (= ${row.qty_dalam_satuan_dasar} ${prod.satuan || 'Pcs'}) — Rp ${hargaTampil.toLocaleString('id-ID')}</label>`;
+    });
+    el.innerHTML = html;
+    document.getElementById('pilih-satuan-transaksi-modal').classList.add('show');
+    return true;
+  }
+
+  function konfirmasiTambahDenganSatuan(){
+    if (!pilihSatuanCache) return;
+    const { prod, opsi } = pilihSatuanCache;
+    const dipilih = document.querySelector('input[name="pst-satuan"]:checked')?.value || 'dasar';
+    const qtyInput = parseInt(document.getElementById('pst-qty').value) || 1;
+
+    let faktor, hargaTotalPerUnitBesar, labelSatuan;
+    if (dipilih === 'dasar'){
+      faktor = 1; hargaTotalPerUnitBesar = parseFloat(prod.harga); labelSatuan = prod.satuan || 'Pcs';
+    } else {
+      const row = opsi.find(o => o.id === dipilih);
+      faktor = row.qty_dalam_satuan_dasar;
+      hargaTotalPerUnitBesar = row.harga_jual || (parseFloat(prod.harga) * faktor);
+      labelSatuan = row.units?.nama || '?';
+    }
+
+    const qtyDasarTotal = qtyInput * faktor; // qty SEBENARNYA dalam satuan dasar — dipakai untuk stok & trigger
+    const hargaPerSatuanDasar = hargaTotalPerUnitBesar / faktor; // supaya subtotal (harga x qty) tetap benar
+
+    if (prod.stok < qtyDasarTotal){ showToast(`Stok tidak cukup (tersedia ${prod.stok} ${prod.satuan || 'Pcs'}).`, true); return; }
+
+    // PENTING: cartLineId unik per baris (biar tombol +/-/hapus tidak salah sasaran kalau produk sama
+    // dibeli dalam 2 satuan berbeda di satu transaksi). produkId TETAP UUID asli untuk checkout & trigger stok.
+    const cartLineId = prod.id + (dipilih !== 'dasar' ? '_unit_' + dipilih : '');
+    const cart = getActiveCart().items;
+    const existing = cart.find(c => c.id === cartLineId);
+    if (existing){
+      existing.qty += qtyDasarTotal;
+      existing.displayQty = (existing.displayQty || 0) + qtyInput;
+    } else {
+      cart.push({
+        id: cartLineId, produkId: prod.id,
+        name: prod.nama + (dipilih !== 'dasar' ? ` (${qtyInput} ${labelSatuan} = ${qtyDasarTotal} ${prod.satuan || 'Pcs'})` : ''),
+        price: hargaPerSatuanDasar, tag: prod.kategori, qty: qtyDasarTotal,
+        displayQty: qtyInput, satuanBesarLabel: dipilih !== 'dasar' ? labelSatuan : null, faktorSatuan: faktor,
+        hargaEceran: hargaPerSatuanDasar, hargaGrosir: null, minGrosir: null, isRacikanItem: false
+      });
+    }
+    renderCart();
+    closeModal('pilih-satuan-transaksi-modal');
+    pilihSatuanCache = null;
+  }
+  // ================== akhir Dynamic Unit Engine ==================
+
   async function openBatchModal(p){
     currentBatchProductId = p.id;
     currentBatchProductData = p;
@@ -9081,6 +9561,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       }
 
       document.getElementById('kategori-satuan-custom-panel').style.display = '';
+      document.getElementById('pf-varian-wrap').style.display = '';
       muatKategoriSatuanCustom();
     } catch(err){
       console.error('applyKategoriSatuanDinamis error (dibiarkan default Apotek):', err);
@@ -9337,6 +9818,8 @@ Baca & tanda tangan kontrak kerja</textarea>
                     ? `<button class="btn-secondary apoteker-access" onclick='openRacikanModal(${JSON.stringify({id:p.id,nama:p.nama}).replace(/'/g,"&#39;")})'>Kelola Bahan</button>`
                     : `<button class="btn-secondary" onclick='openBatchModal(${JSON.stringify({id:p.id,nama:p.nama,satuan:p.satuan}).replace(/'/g,"&#39;")})'>Kelola Batch</button>
                        <button class="btn-secondary" onclick='openSupplierPriceModal(${JSON.stringify({id:p.id,nama:p.nama}).replace(/'/g,"&#39;")})'>Harga Supplier</button>`}
+                  ${(currentTenant?.jenis_usaha && currentTenant.jenis_usaha !== 'apotek') ? `<button class="btn-secondary" onclick='openMultiSatuanModal(${JSON.stringify({id:p.id,nama:p.nama,satuan:p.satuan}).replace(/'/g,"&#39;")})'>Multi-Satuan</button>` : ''}
+                  ${p.is_induk_varian ? `<button class="btn-secondary" onclick='openVarianProdukModal(${JSON.stringify({id:p.id,nama:p.nama}).replace(/'/g,"&#39;")})'>Kelola Varian</button>` : ''}
                   <button class="btn-secondary" onclick="openEditProductModal(window.__stokData[${idx}])">Edit</button>
                   <button class="btn-secondary" style="color:var(--danger);" onclick="deleteProduct('${p.id}', '${p.nama.replace(/'/g,"")}')">Hapus</button>
                 </td>
