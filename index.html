@@ -725,10 +725,7 @@
           <button type="button" class="btn-secondary" style="white-space:nowrap; background:var(--brand); color:#fff; border-color:var(--brand-deep);" onclick="openDaftarPelangganKasir()">👤 Daftarkan Pelanggan Baru</button>
           <button class="btn-secondary apoteker-access" id="btn-racikan-dinamis" style="white-space:nowrap; box-shadow:0 3px 10px rgba(27,24,16,0.08);" onclick="openDynamicRacikanModal()">🧪 Racikan Dinamis</button>
         </div>
-        <div class="prod-grid" id="prod-grid"><div class="loading-note">Memuat produk dari database…</div></div>
-      </div>
-      <aside class="cart">
-        <div class="field-row" style="margin:14px 20px 10px; padding-top:6px;">
+        <div class="field-row" style="margin:12px 20px 10px;">
           <div class="field" style="position:relative;">
             <label>Nama Pelanggan (opsional)</label>
             <input type="text" id="cart-nama-pelanggan" placeholder="Umum" onchange="getActiveCart().namaPelanggan = this.value" oninput="cariPelangganByNama(this.value)" onblur="setTimeout(()=>document.getElementById('nama-pelanggan-saran').style.display='none', 200)">
@@ -739,6 +736,9 @@
             <input type="text" id="cart-wa-pelanggan" placeholder="08xxxxxxxxxx" onchange="getActiveCart().waPelanggan = this.value; checkPoinPelanggan();">
           </div>
         </div>
+        <div class="prod-grid" id="prod-grid"><div class="loading-note">Memuat produk dari database…</div></div>
+      </div>
+      <aside class="cart">
         <div class="cart-head">
           <div class="cart-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1.4"/><circle cx="18" cy="21" r="1.4"/><path d="M1 1h3l2.6 13.2a2 2 0 002 1.8h9.8a2 2 0 002-1.6L22 6H6"/></svg>
