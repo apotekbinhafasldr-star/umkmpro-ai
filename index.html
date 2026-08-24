@@ -2155,6 +2155,10 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       <div class="field"><label>Harga Jual (Rp)</label><input type="number" id="qa-harga" placeholder="0"></div>
       <div class="field"><label>Stok Awal</label><input type="number" id="qa-stok" placeholder="0" value="1"></div>
     </div>
+    <div class="field" id="qa-satuan-wrap" style="display:none;">
+      <label>Satuan</label>
+      <select id="qa-satuan"><option value="Pcs">Pcs</option></select>
+    </div>
     <div style="text-align:center; margin:4px 0 10px;"><button onclick="document.getElementById('qa-detail-lanjutan').style.display = document.getElementById('qa-detail-lanjutan').style.display==='none'?'block':'none';" style="background:none; border:none; color:var(--brand); font-size:11.5px; font-weight:700; cursor:pointer;">+ Detail lainnya (opsional)</button></div>
     <div id="qa-detail-lanjutan" style="display:none;">
       <div class="field-row">
@@ -4479,10 +4483,11 @@ Baca & tanda tangan kontrak kerja</textarea>
     const barcode = document.getElementById('qa-barcode').value.trim() || null;
     const hargaModal = parseFloat(document.getElementById('qa-harga-modal').value) || 0;
     const kategori = document.getElementById('qa-kategori').value || 'obat_bebas';
+    const satuan = document.getElementById('qa-satuan')?.value || 'Pcs';
 
     const { data: produkBaru, error } = await sb.from('products').insert({
       tenant_id: currentProfile.tenant_id, nama, harga, harga_modal: hargaModal, stok,
-      stok_minimum: 5, kategori, kode_produk: barcode, satuan: 'Pcs',
+      stok_minimum: 5, kategori, kode_produk: barcode, satuan,
       inventory_status: 'needs_review', migration_source: 'quick_add_pos',
     }).select().single();
 
@@ -9489,6 +9494,12 @@ Baca & tanda tangan kontrak kerja</textarea>
       // Racikan Dinamis: fitur racik obat, tidak relevan di luar Apotek
       const btnRacikan = document.getElementById('btn-racikan-dinamis');
       if (btnRacikan) btnRacikan.style.display = isApotek ? '' : 'none';
+
+      const placeholderNamaProduk = isApotek ? 'Contoh: Paracetamol 500mg' : 'Contoh: Nama Produk';
+      ['pf-nama','qa-nama','gpf-nama'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.placeholder = placeholderNamaProduk;
+      });
     } catch(err){
       console.error('applyBusinessTerminology error (dibiarkan default Apotek):', err);
     }
@@ -9542,9 +9553,10 @@ Baca & tanda tangan kontrak kerja</textarea>
       ['pf-kategori','qa-kategori','gpf-kategori'].forEach(id => {
         isiUlangSelectOptions(document.getElementById(id), config.kategori, true);
       });
-      ['pf-satuan','gpf-satuan'].forEach(id => {
+      ['pf-satuan','gpf-satuan','qa-satuan'].forEach(id => {
         isiUlangSelectOptions(document.getElementById(id), config.satuan, false);
       });
+      document.getElementById('qa-satuan-wrap').style.display = '';
 
       // Satuan Kemasan Beli (opsional) — tetap ada opsi kosong "tidak ada" di paling atas
       const selKemasan = document.getElementById('pf-satuan-kemasan');
@@ -9601,7 +9613,7 @@ Baca & tanda tangan kontrak kerja</textarea>
         });
       });
       (satuanCustom || []).forEach(s => {
-        ['pf-satuan','gpf-satuan','pf-satuan-kemasan'].forEach(id => {
+        ['pf-satuan','gpf-satuan','pf-satuan-kemasan','qa-satuan'].forEach(id => {
           const sel = document.getElementById(id);
           if (sel && !Array.from(sel.options).some(o => o.value === s.nama)){
             const opt = document.createElement('option');
