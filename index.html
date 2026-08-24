@@ -5236,6 +5236,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       data.items.map(i => `${i.name}\n${i.qty} x Rp${i.price.toLocaleString('id-ID')} = Rp${(i.qty*i.price).toLocaleString('id-ID')}`).join('\n\n') +
       `\n\nSubtotal: Rp${data.subtotal.toLocaleString('id-ID')}\nDiskon: -Rp${data.diskon.toLocaleString('id-ID')}\n*TOTAL: Rp${data.total.toLocaleString('id-ID')}*\nBayar: ${data.metode.replace('_',' ').toUpperCase()}` +
       (data.kembalian ? `\nKembalian: Rp${data.kembalian.toLocaleString('id-ID')}` : '') +
+      (data.dpInfo ? `\n\n*DIBAYAR (DP): Rp${data.dpInfo.dibayar.toLocaleString('id-ID')}*\n*SISA BON: Rp${data.dpInfo.sisa.toLocaleString('id-ID')}*\nMohon dilunasi sesuai kesepakatan ya 🙏` : '') +
       `\n\nTerima kasih sudah berbelanja 🙏`;
 
     const tombolWA = data.waPelanggan
@@ -5277,6 +5278,9 @@ Baca & tanda tangan kontrak kerja</textarea>
           <tr><td>Bayar</td><td style="text-align:right;">${data.metode.replace('_',' ').toUpperCase()}</td></tr>
           ${data.uangDiterima ? `<tr><td>Uang Diterima</td><td style="text-align:right;">Rp ${data.uangDiterima.toLocaleString('id-ID')}</td></tr>` : ''}
           ${data.kembalian ? `<tr class="total-row"><td>Kembalian</td><td style="text-align:right;">Rp ${data.kembalian.toLocaleString('id-ID')}</td></tr>` : ''}
+          ${data.dpInfo ? `<tr><td colspan="2"><hr></td></tr>
+          <tr class="total-row" style="color:#B5480E;"><td>DIBAYAR (DP)</td><td style="text-align:right;">Rp ${data.dpInfo.dibayar.toLocaleString('id-ID')}</td></tr>
+          <tr class="total-row" style="color:#B5480E;"><td>SISA BON</td><td style="text-align:right;">Rp ${data.dpInfo.sisa.toLocaleString('id-ID')}</td></tr>` : ''}
         </table>
         <hr>
         <div class="center">Terima kasih 🙏</div>
@@ -5652,7 +5656,7 @@ Baca & tanda tangan kontrak kerja</textarea>
           });
         }
         showToast(`✓ Transaksi tersimpan — DP Rp ${piutangDariCheckout.dibayarSekarang.toLocaleString('id-ID')} diterima, sisa piutang Rp ${sisaPiutang.toLocaleString('id-ID')} otomatis tercatat`);
-        printReceipt({ nomorTransaksi, namaPelanggan, waPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima });
+        printReceipt({ nomorTransaksi, namaPelanggan, waPelanggan, tanggal: new Date(), items: cart, subtotal: subtotalKotor, diskon, total, metode: metodeFinal, kembalian, uangDiterima, dpInfo: { dibayar: piutangDariCheckout.dibayarSekarang, sisa: sisaPiutang } });
         bersihkanKeranjang();
         await loadProducts();
         await loadDashboard();
