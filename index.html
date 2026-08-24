@@ -416,7 +416,9 @@
     </div>
     <div class="field" id="field-jenis-usaha-custom" style="display:none;">
       <label>Nama jenis usaha kamu</label>
-      <input type="text" id="input-jenis-usaha-custom" placeholder="Contoh: Laundry Kiloan">
+      <input type="text" id="input-jenis-usaha-custom" placeholder="Contoh: Laundry Kiloan" oninput="tampilkanTombolSaranAI(this.value)">
+      <button type="button" class="btn-secondary" id="btn-saran-tanyopo" style="display:none; margin-top:8px; width:100%; justify-content:center;" onclick="mintaSaranTanyopoAI()">🤖 Dapatkan Saran Tanyopo Intelligence</button>
+      <div id="hasil-saran-tanyopo" style="display:none; margin-top:10px; background:var(--brand-tint); border-radius:10px; padding:12px 14px; font-size:12px;"></div>
     </div>
     <div class="field" id="field-kode-referral" style="display:none;">
       <label>Kode Referral (opsional)</label>
@@ -892,6 +894,14 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="panel owner-only" id="multi-gudang-panel" style="display:none;">
+        <div class="panel-head">
+          <div class="panel-title">🚚 Gudang & Mobil Sales</div>
+          <button class="btn-secondary" onclick="openTambahGudangModal()">+ Tambah Gudang</button>
+        </div>
+        <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Catat barang yang dibawa keluar (mis. mobil sales) — stok toko otomatis berkurang, dan kamu bisa lacak berapa yang sedang dibawa tiap gudang/mobil.</div>
+        <div id="daftar-gudang-list"><div class="loading-note">Memuat data gudang…</div></div>
       </div>
       <div class="tabs">
         <div class="tab active" data-sub="produk" onclick="setStokTab('produk', this)">Semua Produk</div>
@@ -2766,6 +2776,55 @@ Baca & tanda tangan kontrak kerja</textarea>
   </div>
 </div>
 
+<!-- MODAL TAMBAH GUDANG -->
+<div class="modal-overlay" id="tambah-gudang-modal">
+  <div class="modal-card">
+    <div class="modal-title">Tambah Gudang / Mobil Sales</div>
+    <div class="field"><label>Nama</label><input type="text" id="tg-nama" placeholder="Contoh: Mobil Sales Budi"></div>
+    <div class="field">
+      <label>Tipe</label>
+      <select id="tg-tipe">
+        <option value="mobil_sales">Mobil Sales</option>
+        <option value="gudang">Gudang</option>
+        <option value="toko">Toko/Cabang</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('tambah-gudang-modal')">Batal</button>
+      <button class="btn-primary" onclick="simpanGudangBaru()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MUAT / KEMBALIKAN BARANG -->
+<div class="modal-overlay" id="muat-barang-modal">
+  <div class="modal-card">
+    <div class="modal-title" id="mb-judul">Muat Barang — <span id="mb-nama-gudang"></span></div>
+    <input type="hidden" id="mb-warehouse-id">
+    <div class="field">
+      <label>Aksi</label>
+      <select id="mb-aksi">
+        <option value="muat">Muat dari Toko → Gudang Ini (stok toko berkurang)</option>
+        <option value="kembali">Kembalikan ke Toko (stok toko bertambah lagi)</option>
+      </select>
+    </div>
+    <div class="field" style="position:relative;">
+      <label>Cari Produk</label>
+      <input type="text" id="mb-cari-produk" placeholder="Ketik nama produk…" oninput="cariProdukUntukMuatBarang(this.value)">
+      <div id="mb-hasil-cari" style="max-height:140px; overflow-y:auto;"></div>
+    </div>
+    <div id="mb-form-jumlah" style="display:none;">
+      <div style="font-size:12px; margin-bottom:6px;">Produk: <b id="mb-produk-dipilih-nama"></b> <span id="mb-info-stok" style="color:var(--ink-soft);"></span></div>
+      <input type="hidden" id="mb-produk-dipilih-id">
+      <div class="field"><label>Jumlah</label><input type="number" id="mb-jumlah-input" placeholder="0"></div>
+      <button class="btn-primary" style="width:100%; justify-content:center;" onclick="simpanMuatBarang()">Simpan</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('muat-barang-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL HARGA KHUSUS PELANGGAN -->
 <div class="modal-overlay" id="harga-khusus-modal">
   <div class="modal-card">
@@ -3537,6 +3596,85 @@ Baca & tanda tangan kontrak kerja</textarea>
   }
   function hideAuthError(){ document.getElementById('auth-error').classList.remove('show'); }
 
+  // ================== TAHAP A — Tanyopo Intelligence Configuration Layer ==================
+  // AI cuma MEMBERI SARAN (kategori/satuan/modul) — tidak pernah otomatis ubah data kritikal.
+  // Owner tetap yang klik "Terapkan" untuk beneran menyimpannya.
+  let tanyopoSaranTimeout = null;
+  let tanyopoSaranTerakhir = null;
+  function tampilkanTombolSaranAI(nama){
+    clearTimeout(tanyopoSaranTimeout);
+    document.getElementById('hasil-saran-tanyopo').style.display = 'none';
+    tanyopoSaranTerakhir = null;
+    const btn = document.getElementById('btn-saran-tanyopo');
+    if (!nama || nama.trim().length < 3){ btn.style.display = 'none'; return; }
+    tanyopoSaranTimeout = setTimeout(() => { btn.style.display = 'block'; }, 400);
+  }
+
+  async function mintaSaranTanyopoAI(){
+    const namaUsaha = document.getElementById('input-jenis-usaha-custom').value.trim();
+    if (!namaUsaha) return;
+    const btn = document.getElementById('btn-saran-tanyopo');
+    const hasilBox = document.getElementById('hasil-saran-tanyopo');
+    btn.disabled = true; btn.textContent = '🤖 Tanyopo Intelligence sedang berpikir…';
+    hasilBox.style.display = 'block';
+    hasilBox.innerHTML = '<div class="loading-note">Menyusun saran konfigurasi…</div>';
+
+    const prompt = `Saya baru mendaftarkan jenis usaha "${namaUsaha}" di aplikasi kasir UMKM. Sarankan konfigurasi yang cocok. Balas HANYA dalam format JSON valid tanpa teks lain, persis struktur ini:
+{"kategori": ["kategori1","kategori2","kategori3","kategori4"], "satuan": ["satuan1","satuan2","satuan3"], "catatan": "1 kalimat singkat kenapa saran ini cocok, bahasa Indonesia santai"}
+Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}", bukan generik. Maksimal 5 kategori, maksimal 6 satuan.`;
+
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/panggil-claude`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: prompt }] }),
+      });
+      const data = await response.json();
+      const teksMentah = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
+      const jsonMatch = teksMentah.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('AI tidak mengembalikan format yang bisa dibaca.');
+      const saran = JSON.parse(jsonMatch[0]);
+      tanyopoSaranTerakhir = saran;
+
+      hasilBox.innerHTML = `
+        <div style="font-weight:700; color:var(--brand); margin-bottom:6px;">🤖 Saran Tanyopo Intelligence</div>
+        <div style="margin-bottom:6px;"><b>Kategori:</b> ${saran.kategori.join(', ')}</div>
+        <div style="margin-bottom:6px;"><b>Satuan:</b> ${saran.satuan.join(', ')}</div>
+        <div style="font-style:italic; color:var(--ink-soft); margin-bottom:8px;">${saran.catatan || ''}</div>
+        <div style="font-size:10.5px; color:var(--ink-soft);">✓ Saran ini otomatis diterapkan ke akunmu begitu pendaftaran selesai — bisa diedit lagi kapan saja di menu Stok & Gudang.</div>`;
+    } catch (err) {
+      hasilBox.innerHTML = `<div style="color:var(--danger);">Gagal mendapat saran: ${err.message}. Tidak masalah, kamu tetap bisa lanjut daftar — kategori/satuan bisa diisi manual nanti.</div>`;
+    }
+    btn.disabled = false; btn.textContent = '🤖 Dapatkan Saran Tanyopo Intelligence';
+  }
+  // ================== akhir Tanyopo Intelligence Configuration Layer ==================
+
+  async function terapkanSaranTanyopoTersimpan(){
+    try{
+      const email = (await sb.auth.getUser()).data.user?.email;
+      if (!email) return;
+      const key = 'tanyopo_saran_pending_' + email;
+      const saranMentah = localStorage.getItem(key);
+      if (!saranMentah) return;
+
+      const saran = JSON.parse(saranMentah);
+      const tenantId = currentProfile.tenant_id;
+
+      for (const nama of (saran.kategori || [])){
+        await sb.from('kategori_produk').insert({ tenant_id: tenantId, nama }).select().maybeSingle();
+      }
+      for (const nama of (saran.satuan || [])){
+        await sb.from('units').insert({ tenant_id: tenantId, nama, kategori: 'lainnya' }).select().maybeSingle();
+      }
+
+      localStorage.removeItem(key);
+      showToast('✓ Saran Tanyopo Intelligence berhasil diterapkan ke akunmu!');
+      await muatKategoriSatuanCustom();
+    } catch(err){
+      console.error('terapkanSaranTanyopoTersimpan error:', err);
+    }
+  }
+
   async function handleAuthSubmit(){
     hideAuthError();
     const email = document.getElementById('input-email').value.trim();
@@ -3559,6 +3697,12 @@ Baca & tanda tangan kontrak kerja</textarea>
         const jenisUsaha = (jenisUsahaPilihan === 'lainnya' && jenisUsahaCustom) ? jenisUsahaCustom : jenisUsahaPilihan;
         const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nama, nama_usaha: namaUsaha, kode_referral: kodeReferral, jenis_usaha: jenisUsaha } } });
         if (error) throw error;
+
+        // Simpan saran Tanyopo Intelligence (kalau ada) supaya bisa diterapkan otomatis pas login pertama nanti
+        if (tanyopoSaranTerakhir){
+          try{ localStorage.setItem('tanyopo_saran_pending_' + email, JSON.stringify(tanyopoSaranTerakhir)); } catch(e){}
+        }
+
         if (!data.session){
           showAuthError('Akun dibuat! Jika email konfirmasi diaktifkan, cek email kamu lalu masuk kembali.');
           btn.textContent = 'Daftar'; btn.disabled = false;
@@ -3626,7 +3770,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       applyRoleAccess(profile.role);
       await applyModuleVisibility();
       applyBusinessTerminology();
-      applyKategoriSatuanDinamis();
+      await applyKategoriSatuanDinamis();
       updateOfflineStatusBadge();
       syncOfflineQueue();
       document.getElementById('dash-greeting').textContent = `Selamat datang, ${namaAman.split(' ')[0]} 👋`;
@@ -5276,7 +5420,8 @@ Baca & tanda tangan kontrak kerja</textarea>
         .total-row td{ font-weight:800; font-size:14.5px; }
         .preview-note{ background:#FFF6E0; color:#7A4B1C; font-size:11px; text-align:center; padding:8px 10px; border-radius:8px; margin-bottom:10px; font-family:'IBM Plex Sans',sans-serif; }
         .cetak-btn{ width:100%; padding:13px; font-size:14px; font-weight:700; background:#2C4A3A; color:#fff; border:none; border-radius:9px; margin-top:10px; font-family:'IBM Plex Sans',sans-serif; }
-        @media print{ .no-print{ display:none; } body{ width:auto; margin:0; } }
+        @page{ size:58mm auto; margin:0; }
+        @media print{ .no-print{ display:none; } body{ width:58mm; margin:0; padding:6px; } }
       </style></head>
       <body>
         <div class="no-print preview-note">👁️ Ini pratinjau struk. Cek dulu detailnya, baru tekan tombol cetak di bawah.</div>
@@ -9665,7 +9810,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     });
   }
 
-  function applyKategoriSatuanDinamis(){
+  async function applyKategoriSatuanDinamis(){
     try{
       const jenisUsaha = currentTenant?.jenis_usaha || 'apotek';
       if (jenisUsaha === 'apotek') return; // Apotek: TIDAK disentuh, tetap pakai HTML asli
@@ -9695,8 +9840,11 @@ Baca & tanda tangan kontrak kerja</textarea>
       }
 
       document.getElementById('kategori-satuan-custom-panel').style.display = '';
+      document.getElementById('multi-gudang-panel').style.display = '';
       document.getElementById('pf-varian-wrap').style.display = '';
       muatKategoriSatuanCustom();
+      muatDaftarGudang();
+      await terapkanSaranTanyopoTersimpan();
     } catch(err){
       console.error('applyKategoriSatuanDinamis error (dibiarkan default Apotek):', err);
     }
@@ -9779,6 +9927,116 @@ Baca & tanda tangan kontrak kerja</textarea>
     }
   }
   // ================== akhir Kategori & Satuan Dinamis ==================
+
+  // ================== TAHAP C — Multi-Gudang (versi aman, terpisah dari POS) ==================
+  // PENTING: fitur ini TIDAK mengubah cara kasir/checkout baca stok (products.stok tetap sumber
+  // kebenaran untuk apa yang bisa dijual di kasir). Ini cuma buku catatan alokasi terpisah,
+  // supaya owner bisa lacak barang yang lagi dibawa keluar (mis. mobil sales) secara akuntabel.
+  async function muatDaftarGudang(){
+    const { data: gudangList } = await sb.from('warehouses').select('*').eq('tenant_id', currentProfile.tenant_id).eq('aktif', true).order('created_at');
+    const el = document.getElementById('daftar-gudang-list');
+    if (!gudangList || gudangList.length === 0){
+      el.innerHTML = '<div class="loading-note">Belum ada gudang/mobil sales lain selain toko utama. Tap "+ Tambah Gudang" untuk mulai.</div>';
+      return;
+    }
+    const TIPE_LABEL = { mobil_sales: '🚐 Mobil Sales', gudang: '🏭 Gudang', toko: '🏬 Toko/Cabang' };
+    let html = '';
+    for (const g of gudangList){
+      const { data: isiGudang } = await sb.from('warehouse_stock').select('stok, products(nama, satuan)').eq('warehouse_id', g.id).gt('stok', 0);
+      const totalItem = (isiGudang || []).length;
+      html += `
+        <div class="row-item">
+          <div><div class="row-name">${TIPE_LABEL[g.tipe] || g.tipe} — ${g.nama}</div><div class="row-meta">${totalItem} jenis produk sedang dibawa</div></div>
+          <div class="row-right">
+            <button class="btn-secondary" onclick='openMuatBarangModal(${JSON.stringify({id:g.id,nama:g.nama}).replace(/'/g,"&#39;")})'>Muat/Kembalikan Barang</button>
+          </div>
+        </div>
+        ${totalItem > 0 ? `<div style="padding:0 4px 10px; font-size:11.5px; color:var(--ink-soft);">${(isiGudang||[]).map(i => `${i.products?.nama}: ${i.stok} ${i.products?.satuan||''}`).join(' · ')}</div>` : ''}`;
+    }
+    el.innerHTML = html;
+  }
+
+  function openTambahGudangModal(){
+    document.getElementById('tg-nama').value = '';
+    document.getElementById('tg-tipe').value = 'mobil_sales';
+    document.getElementById('tambah-gudang-modal').classList.add('show');
+  }
+
+  async function simpanGudangBaru(){
+    const nama = document.getElementById('tg-nama').value.trim();
+    const tipe = document.getElementById('tg-tipe').value;
+    if (!nama){ showToast('Nama wajib diisi.', true); return; }
+    const { error } = await sb.from('warehouses').insert({ tenant_id: currentProfile.tenant_id, nama, tipe });
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Gudang ditambahkan');
+    closeModal('tambah-gudang-modal');
+    await muatDaftarGudang();
+  }
+
+  let mbProdukDipilih = null;
+  function openMuatBarangModal(g){
+    document.getElementById('mb-warehouse-id').value = g.id;
+    document.getElementById('mb-nama-gudang').textContent = g.nama;
+    document.getElementById('mb-aksi').value = 'muat';
+    document.getElementById('mb-cari-produk').value = '';
+    document.getElementById('mb-hasil-cari').innerHTML = '';
+    document.getElementById('mb-form-jumlah').style.display = 'none';
+    mbProdukDipilih = null;
+    document.getElementById('muat-barang-modal').classList.add('show');
+  }
+
+  let mbCariTimeout = null;
+  function cariProdukUntukMuatBarang(q){
+    clearTimeout(mbCariTimeout);
+    const el = document.getElementById('mb-hasil-cari');
+    if (!q || q.trim().length < 2){ el.innerHTML = ''; return; }
+    mbCariTimeout = setTimeout(() => {
+      const hasil = products.filter(p => !p.varian_dari_product_id && !p.is_induk_varian && p.nama.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
+      el.innerHTML = hasil.map(p => `
+        <div style="font-size:12px; padding:7px 8px; border-radius:8px; cursor:pointer;" onmousedown='pilihProdukMuatBarang(${JSON.stringify({id:p.id,nama:p.nama,stok:p.stok,satuan:p.satuan}).replace(/'/g,"&#39;")})'>${p.nama} <span style="color:var(--ink-soft);">(stok toko: ${p.stok} ${p.satuan||''})</span></div>`).join('') || '<div style="font-size:11.5px; color:var(--ink-soft); padding:6px;">Tidak ditemukan.</div>';
+    }, 250);
+  }
+
+  function pilihProdukMuatBarang(p){
+    mbProdukDipilih = p;
+    document.getElementById('mb-produk-dipilih-id').value = p.id;
+    document.getElementById('mb-produk-dipilih-nama').textContent = p.nama;
+    document.getElementById('mb-info-stok').textContent = `(stok toko saat ini: ${p.stok} ${p.satuan||''})`;
+    document.getElementById('mb-jumlah-input').value = '';
+    document.getElementById('mb-form-jumlah').style.display = 'block';
+    document.getElementById('mb-hasil-cari').innerHTML = '';
+    document.getElementById('mb-cari-produk').value = '';
+  }
+
+  async function simpanMuatBarang(){
+    if (!mbProdukDipilih){ showToast('Pilih produk dulu.', true); return; }
+    const warehouseId = document.getElementById('mb-warehouse-id').value;
+    const aksi = document.getElementById('mb-aksi').value;
+    const jumlah = parseFloat(document.getElementById('mb-jumlah-input').value) || 0;
+    if (jumlah <= 0){ showToast('Jumlah wajib diisi.', true); return; }
+
+    const { data: produkTerbaru } = await sb.from('products').select('stok').eq('id', mbProdukDipilih.id).single();
+    const { data: existingGudang } = await sb.from('warehouse_stock').select('stok').eq('warehouse_id', warehouseId).eq('product_id', mbProdukDipilih.id).maybeSingle();
+    const stokGudangSekarang = existingGudang?.stok || 0;
+
+    if (aksi === 'muat'){
+      if (produkTerbaru.stok < jumlah){ showToast(`Stok toko tidak cukup (tersedia ${produkTerbaru.stok}).`, true); return; }
+      await sb.from('products').update({ stok: produkTerbaru.stok - jumlah }).eq('id', mbProdukDipilih.id);
+      await sb.from('warehouse_stock').upsert({ warehouse_id: warehouseId, product_id: mbProdukDipilih.id, stok: stokGudangSekarang + jumlah, updated_at: new Date().toISOString() }, { onConflict: 'warehouse_id,product_id' });
+      await sb.from('inventory_movements').insert({ tenant_id: currentProfile.tenant_id, product_id: mbProdukDipilih.id, jenis_mutasi: 'VAN_LOAD', jumlah: -jumlah, keterangan: `Dimuat ke gudang/mobil` });
+    } else {
+      if (stokGudangSekarang < jumlah){ showToast(`Stok di gudang ini tidak cukup (tersedia ${stokGudangSekarang}).`, true); return; }
+      await sb.from('products').update({ stok: produkTerbaru.stok + jumlah }).eq('id', mbProdukDipilih.id);
+      await sb.from('warehouse_stock').upsert({ warehouse_id: warehouseId, product_id: mbProdukDipilih.id, stok: stokGudangSekarang - jumlah, updated_at: new Date().toISOString() }, { onConflict: 'warehouse_id,product_id' });
+      await sb.from('inventory_movements').insert({ tenant_id: currentProfile.tenant_id, product_id: mbProdukDipilih.id, jenis_mutasi: 'VAN_RETURN', jumlah, keterangan: `Dikembalikan dari gudang/mobil` });
+    }
+
+    showToast('✓ Tersimpan');
+    closeModal('muat-barang-modal');
+    await loadProducts();
+    await muatDaftarGudang();
+  }
+  // ================== akhir Multi-Gudang ==================
 
   function goPage(name, btn){
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
