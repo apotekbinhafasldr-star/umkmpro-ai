@@ -734,6 +734,17 @@
           </div>
           <div class="cart-tabs" id="cart-tabs"></div>
         </div>
+        <div class="field-row" style="margin-bottom:10px;">
+          <div class="field" style="position:relative;">
+            <label>Nama Pelanggan (opsional)</label>
+            <input type="text" id="cart-nama-pelanggan" placeholder="Umum" onchange="getActiveCart().namaPelanggan = this.value" oninput="cariPelangganByNama(this.value)" onblur="setTimeout(()=>document.getElementById('nama-pelanggan-saran').style.display='none', 200)">
+            <div id="nama-pelanggan-saran" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; margin-top:2px; z-index:20; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+          </div>
+          <div class="field">
+            <label>No. WA (opsional)</label>
+            <input type="text" id="cart-wa-pelanggan" placeholder="08xxxxxxxxxx" onchange="getActiveCart().waPelanggan = this.value; checkPoinPelanggan();">
+          </div>
+        </div>
         <div class="rx-card" id="rx-card">
           <div class="rx-head">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
@@ -756,17 +767,6 @@
               <button class="pay-btn active" data-method="tunai" onclick="setPaymentMethod('tunai', this)">Tunai</button>
               <button class="pay-btn" data-method="qris" onclick="setPaymentMethod('qris', this)">QRIS</button>
               <button class="pay-btn" data-method="debit_kredit" onclick="setPaymentMethod('debit_kredit', this)">Debit/Kredit</button>
-            </div>
-          </div>
-          <div class="field-row" style="margin-bottom:10px;">
-            <div class="field" style="position:relative;">
-              <label>Nama Pelanggan (opsional)</label>
-              <input type="text" id="cart-nama-pelanggan" placeholder="Umum" onchange="getActiveCart().namaPelanggan = this.value" oninput="cariPelangganByNama(this.value)" onblur="setTimeout(()=>document.getElementById('nama-pelanggan-saran').style.display='none', 200)">
-              <div id="nama-pelanggan-saran" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; margin-top:2px; z-index:20; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
-            </div>
-            <div class="field">
-              <label>No. WA (opsional)</label>
-              <input type="text" id="cart-wa-pelanggan" placeholder="08xxxxxxxxxx" onchange="getActiveCart().waPelanggan = this.value; checkPoinPelanggan();">
             </div>
           </div>
           <div class="field" style="margin-bottom:10px;">
