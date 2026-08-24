@@ -9039,6 +9039,7 @@ Baca & tanda tangan kontrak kerja</textarea>
     amdk:                 { kategori: [['cup_gelas','Cup/Gelas'],['botol','Botol'],['galon','Galon'],['lainnya','Lainnya']], satuan: ['Pcs','Dus','Galon','Karton'] },
   };
   const KATEGORI_SATUAN_DEFAULT = { kategori: [['umum','Umum'],['lainnya','Lainnya']], satuan: ['Pcs','Pack','Box','Kg','Liter','Set'] };
+  const SATUAN_KEMASAN_NON_APOTEK = ['Box','Karton','Dus','Pack','Lusin','Pallet'];
 
   function isiUlangSelectOptions(selectEl, daftar, isKategori){
     if (!selectEl) return;
@@ -9064,6 +9065,20 @@ Baca & tanda tangan kontrak kerja</textarea>
       ['pf-satuan','gpf-satuan'].forEach(id => {
         isiUlangSelectOptions(document.getElementById(id), config.satuan, false);
       });
+
+      // Satuan Kemasan Beli (opsional) — tetap ada opsi kosong "tidak ada" di paling atas
+      const selKemasan = document.getElementById('pf-satuan-kemasan');
+      if (selKemasan){
+        selKemasan.innerHTML = '';
+        const optKosong = document.createElement('option');
+        optKosong.value = ''; optKosong.textContent = '— Tidak ada, beli satuan langsung —';
+        selKemasan.appendChild(optKosong);
+        SATUAN_KEMASAN_NON_APOTEK.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s; opt.textContent = s;
+          selKemasan.appendChild(opt);
+        });
+      }
 
       document.getElementById('kategori-satuan-custom-panel').style.display = '';
       muatKategoriSatuanCustom();
@@ -9105,7 +9120,7 @@ Baca & tanda tangan kontrak kerja</textarea>
         });
       });
       (satuanCustom || []).forEach(s => {
-        ['pf-satuan','gpf-satuan'].forEach(id => {
+        ['pf-satuan','gpf-satuan','pf-satuan-kemasan'].forEach(id => {
           const sel = document.getElementById(id);
           if (sel && !Array.from(sel.options).some(o => o.value === s.nama)){
             const opt = document.createElement('option');
