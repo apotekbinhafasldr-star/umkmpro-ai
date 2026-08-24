@@ -809,8 +809,9 @@
               <input type="number" id="cart-uang-diterima" placeholder="Kosongkan jika pas" oninput="updateKembalian()">
             </div>
             <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700;">
-              <span>Kembalian</span><span class="num" id="kembalian-value" style="color:var(--brand);">Rp 0</span>
+              <span id="kembalian-label">Kembalian</span><span class="num" id="kembalian-value" style="color:var(--brand);">Rp 0</span>
             </div>
+            <div id="dp-hint" style="display:none; font-size:11px; color:var(--danger); margin-top:6px;">Bayar sebagian? Isi Nama & No. WA pelanggan di atas, sisanya otomatis tercatat jadi piutang.</div>
           </div>
 
           <button class="checkout-btn" id="checkout-btn" disabled onclick="checkout()">
@@ -5118,15 +5119,30 @@ Baca & tanda tangan kontrak kerja</textarea>
     if (!isTunai){ box.style.display = 'none'; return; }
     box.style.display = 'block';
     const inputMentah = document.getElementById('cart-uang-diterima').value;
+    const dpHint = document.getElementById('dp-hint');
+    const labelEl = document.getElementById('kembalian-label');
     if (inputMentah === ''){
+      labelEl.textContent = 'Kembalian';
       document.getElementById('kembalian-value').textContent = 'Rp 0 (uang pas)';
       document.getElementById('kembalian-value').style.color = 'var(--brand)';
+      dpHint.style.display = 'none';
       return;
     }
     const diterima = parseFloat(inputMentah) || 0;
     const kembalian = diterima - total;
-    document.getElementById('kembalian-value').textContent = 'Rp ' + Math.max(0, kembalian).toLocaleString('id-ID');
-    document.getElementById('kembalian-value').style.color = kembalian < 0 ? 'var(--danger)' : 'var(--brand)';
+    if (kembalian < 0){
+      labelEl.textContent = 'Sisa (jadi piutang)';
+      document.getElementById('kembalian-value').textContent = 'Rp ' + Math.abs(kembalian).toLocaleString('id-ID');
+      document.getElementById('kembalian-value').style.color = 'var(--danger)';
+      const namaOk = document.getElementById('cart-nama-pelanggan').value.trim();
+      const waOk = document.getElementById('cart-wa-pelanggan').value.trim();
+      dpHint.style.display = (namaOk && waOk) ? 'none' : 'block';
+    } else {
+      labelEl.textContent = 'Kembalian';
+      document.getElementById('kembalian-value').textContent = 'Rp ' + kembalian.toLocaleString('id-ID');
+      document.getElementById('kembalian-value').style.color = 'var(--brand)';
+      dpHint.style.display = 'none';
+    }
   }
 
   function cart_hasItems(){ return getActiveCart().items.length > 0; }
