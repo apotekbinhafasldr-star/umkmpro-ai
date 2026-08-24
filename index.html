@@ -655,7 +655,7 @@
           <div class="kpi-delta">real-time</div>
         </div>
         <div class="kpi-card" style="cursor:pointer;" onclick="goKeStokDenganFilter('kedaluwarsa')">
-          <div class="kpi-label">Obat mendekati kedaluwarsa</div>
+          <div class="kpi-label" id="kpi-label-expiry">Obat mendekati kedaluwarsa</div>
           <div class="kpi-value num" id="kpi-expiry">0 item</div>
           <div class="kpi-delta">&lt; 30 hari</div>
         </div>
@@ -721,7 +721,7 @@
           <button class="btn-secondary" style="white-space:nowrap;" onclick="openScanModal()">📷 Scan</button>
           <button class="btn-secondary" style="white-space:nowrap; background:var(--brand-tint); color:var(--brand); border:1px solid rgba(32,64,47,0.15); box-shadow:0 3px 10px rgba(32,64,47,0.12);" onclick="openScanKartuPelanggan()">🪪 Scan Kartu</button>
           <button class="btn-secondary" style="white-space:nowrap; background:var(--amber-tint); color:var(--amber); border:1px solid rgba(156,100,40,0.18); box-shadow:0 3px 10px rgba(156,100,40,0.14);" onclick="openWaitingListModal()">📋 Barang Kosong?</button>
-          <button class="btn-secondary apoteker-access" style="white-space:nowrap; box-shadow:0 3px 10px rgba(27,24,16,0.08);" onclick="openDynamicRacikanModal()">🧪 Racikan Dinamis</button>
+          <button class="btn-secondary apoteker-access" id="btn-racikan-dinamis" style="white-space:nowrap; box-shadow:0 3px 10px rgba(27,24,16,0.08);" onclick="openDynamicRacikanModal()">🧪 Racikan Dinamis</button>
         </div>
         <div class="prod-grid" id="prod-grid"><div class="loading-note">Memuat produk dari database…</div></div>
       </div>
@@ -3492,6 +3492,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       currentTenant = tenantsData;
       applyRoleAccess(profile.role);
       await applyModuleVisibility();
+      applyBusinessTerminology();
       updateOfflineStatusBadge();
       syncOfflineQueue();
       document.getElementById('dash-greeting').textContent = `Selamat datang, ${namaAman.split(' ')[0]} 👋`;
@@ -8967,6 +8968,29 @@ Baca & tanda tangan kontrak kerja</textarea>
     }
   }
   // ================== akhir Module Registry & Feature Flag ==================
+
+  // ================== TAHAP B — Istilah Dinamis per Jenis Usaha ==================
+  // Aditif: hanya menyesuaikan teks/tombol yang spesifik-Apotek untuk tenant lain.
+  // Tenant Apotek TIDAK terpengaruh sama sekali — teks & tombol asli tetap tampil.
+  function applyBusinessTerminology(){
+    try{
+      const jenisUsaha = currentTenant?.jenis_usaha || 'apotek';
+      const isApotek = jenisUsaha === 'apotek';
+
+      const posSearch = document.getElementById('pos-search');
+      if (posSearch) posSearch.placeholder = isApotek ? 'Cari nama obat…' : 'Cari nama produk…';
+
+      const labelExpiry = document.getElementById('kpi-label-expiry');
+      if (labelExpiry) labelExpiry.textContent = isApotek ? 'Obat mendekati kedaluwarsa' : 'Produk mendekati kedaluwarsa';
+
+      // Racikan Dinamis: fitur racik obat, tidak relevan di luar Apotek
+      const btnRacikan = document.getElementById('btn-racikan-dinamis');
+      if (btnRacikan) btnRacikan.style.display = isApotek ? '' : 'none';
+    } catch(err){
+      console.error('applyBusinessTerminology error (dibiarkan default Apotek):', err);
+    }
+  }
+  // ================== akhir Istilah Dinamis ==================
 
   function goPage(name, btn){
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
