@@ -715,10 +715,11 @@
         </div>
       </div>
       <div class="catalog">
-        <div class="cat-search">
+        <div class="cat-search" style="flex-wrap:wrap;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input type="text" id="pos-search" placeholder="Cari nama obat…" oninput="renderProducts()">
           <button class="btn-secondary" style="white-space:nowrap;" onclick="openScanModal()">📷 Scan</button>
+          <div id="pos-search-hint" style="width:100%; text-align:center; padding:6px 4px 2px; font-size:11.5px; color:var(--ink-soft);">Ketik nama produk atau pakai tombol Scan/Barcode di atas</div>
           <button class="btn-secondary" style="white-space:nowrap; background:var(--brand-tint); color:var(--brand); border:1px solid rgba(32,64,47,0.15); box-shadow:0 3px 10px rgba(32,64,47,0.12);" onclick="openScanKartuPelanggan()">🪪 Scan Kartu</button>
           <button class="btn-secondary" style="white-space:nowrap; background:var(--amber-tint); color:var(--amber); border:1px solid rgba(156,100,40,0.18); box-shadow:0 3px 10px rgba(156,100,40,0.14);" onclick="openWaitingListModal()">📋 Barang Kosong?</button>
           <button type="button" class="btn-secondary" style="white-space:nowrap; background:var(--brand); color:#fff; border-color:var(--brand-deep);" onclick="openDaftarPelangganKasir()">👤 Daftarkan Pelanggan Baru</button>
@@ -727,14 +728,7 @@
         <div class="prod-grid" id="prod-grid"><div class="loading-note">Memuat produk dari database…</div></div>
       </div>
       <aside class="cart">
-        <div class="cart-head">
-          <div class="cart-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1.4"/><circle cx="18" cy="21" r="1.4"/><path d="M1 1h3l2.6 13.2a2 2 0 002 1.8h9.8a2 2 0 002-1.6L22 6H6"/></svg>
-            Keranjang · <span id="cart-count">0</span> item
-          </div>
-          <div class="cart-tabs" id="cart-tabs"></div>
-        </div>
-        <div class="field-row" style="margin-bottom:10px;">
+        <div class="field-row" style="margin:14px 20px 10px; padding-top:6px;">
           <div class="field" style="position:relative;">
             <label>Nama Pelanggan (opsional)</label>
             <input type="text" id="cart-nama-pelanggan" placeholder="Umum" onchange="getActiveCart().namaPelanggan = this.value" oninput="cariPelangganByNama(this.value)" onblur="setTimeout(()=>document.getElementById('nama-pelanggan-saran').style.display='none', 200)">
@@ -744,6 +738,13 @@
             <label>No. WA (opsional)</label>
             <input type="text" id="cart-wa-pelanggan" placeholder="08xxxxxxxxxx" onchange="getActiveCart().waPelanggan = this.value; checkPoinPelanggan();">
           </div>
+        </div>
+        <div class="cart-head">
+          <div class="cart-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1.4"/><circle cx="18" cy="21" r="1.4"/><path d="M1 1h3l2.6 13.2a2 2 0 002 1.8h9.8a2 2 0 002-1.6L22 6H6"/></svg>
+            Keranjang · <span id="cart-count">0</span> item
+          </div>
+          <div class="cart-tabs" id="cart-tabs"></div>
         </div>
         <div class="rx-card" id="rx-card">
           <div class="rx-head">
@@ -3810,11 +3811,14 @@ Baca & tanda tangan kontrak kerja</textarea>
   function renderProducts(){
     const grid = document.getElementById('prod-grid');
     const q = (document.getElementById('pos-search')?.value || '').toLowerCase();
+    const hintEl = document.getElementById('pos-search-hint');
 
     if (!q){
-      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:10px 4px 4px; font-size:11.5px; color:var(--ink-soft);">Ketik nama produk atau pakai tombol Scan/Barcode di atas</div>`;
+      if (hintEl) hintEl.style.display = '';
+      grid.innerHTML = '';
       return;
     }
+    if (hintEl) hintEl.style.display = 'none';
 
     const filtered = products.filter(p => p.nama.toLowerCase().includes(q) && !p.varian_dari_product_id)
       .sort((a,b) => (b.favorit === true) - (a.favorit === true));
