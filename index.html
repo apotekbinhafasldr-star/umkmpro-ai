@@ -870,6 +870,28 @@
           </div>
         </div>
       </div>
+      <div class="panel owner-only" id="kategori-satuan-custom-panel" style="display:none;">
+        <div class="panel-head"><div class="panel-title">🏷️ Kategori & Satuan Produk Sendiri</div></div>
+        <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Tambah kategori atau satuan yang belum ada di daftar bawaan — otomatis muncul di dropdown saat tambah produk.</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Kategori Produk</label>
+            <div id="daftar-kategori-custom" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;"></div>
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="input-kategori-baru" placeholder="Contoh: Ban Motor" style="flex:1;">
+              <button class="btn-secondary" onclick="tambahKategoriCustom()">+ Tambah</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Satuan Produk</label>
+            <div id="daftar-satuan-custom" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;"></div>
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="input-satuan-baru" placeholder="Contoh: Set Ban" style="flex:1;">
+              <button class="btn-secondary" onclick="tambahSatuanCustom()">+ Tambah</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="tabs">
         <div class="tab active" data-sub="produk" onclick="setStokTab('produk', this)">Semua Produk</div>
         <div class="tab" data-sub="bundling" onclick="setStokTab('bundling', this)">Kombinasi Produk</div>
@@ -3493,6 +3515,7 @@ Baca & tanda tangan kontrak kerja</textarea>
       applyRoleAccess(profile.role);
       await applyModuleVisibility();
       applyBusinessTerminology();
+      applyKategoriSatuanDinamis();
       updateOfflineStatusBadge();
       syncOfflineQueue();
       document.getElementById('dash-greeting').textContent = `Selamat datang, ${namaAman.split(' ')[0]} 👋`;
@@ -8071,8 +8094,8 @@ Baca & tanda tangan kontrak kerja</textarea>
     document.getElementById('pf-modal-title').textContent = 'Tambah Produk Baru';
     document.getElementById('pf-submit-btn').textContent = 'Simpan Produk';
     ['pf-nama','pf-kode','pf-produsen','pf-harga-modal','pf-harga','pf-harga-grosir','pf-min-grosir','pf-harga-jual-kemasan','pf-stok','pf-batch','pf-expired','pf-supplier','pf-supplier-kontak','pf-lokasi-rak'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('pf-kategori').value = 'obat_bebas';
-    document.getElementById('pf-satuan').value = 'Pcs';
+    document.getElementById('pf-kategori').selectedIndex = 0;
+    document.getElementById('pf-satuan').selectedIndex = 0;
     document.getElementById('pf-satuan-kemasan').value = '';
     document.getElementById('pf-isi-kemasan').value = 1;
     document.getElementById('pf-stok-min').value = 10;
@@ -8991,6 +9014,141 @@ Baca & tanda tangan kontrak kerja</textarea>
     }
   }
   // ================== akhir Istilah Dinamis ==================
+
+  // ================== TAHAP B — Kategori & Satuan Dinamis per Jenis Usaha ==================
+  // Aditif: mengganti isi dropdown kategori/satuan HANYA untuk tenant NON-Apotek.
+  // Tenant Apotek tidak disentuh sama sekali (kondisi isApotek langsung skip di awal).
+  const KATEGORI_SATUAN_PER_JENIS_USAHA = {
+    retail:              { kategori: [['sembako','Sembako'],['minuman','Minuman'],['snack','Snack & Makanan Ringan'],['kebersihan','Kebersihan & Rumah Tangga'],['lainnya','Lainnya']], satuan: ['Pcs','Pack','Box','Karton','Lusin','Kg','Gram','Liter','Ml'] },
+    toko_kelontong:       { kategori: [['sembako','Sembako'],['minuman','Minuman'],['snack','Snack & Makanan Ringan'],['kebersihan','Kebersihan & Rumah Tangga'],['lainnya','Lainnya']], satuan: ['Pcs','Pack','Box','Karton','Lusin','Kg','Gram','Liter','Ml'] },
+    minimarket:           { kategori: [['sembako','Sembako'],['minuman','Minuman'],['snack','Snack & Makanan Ringan'],['kebersihan','Kebersihan & Rumah Tangga'],['lainnya','Lainnya']], satuan: ['Pcs','Pack','Box','Karton','Lusin','Kg','Gram','Liter','Ml'] },
+    grosir:               { kategori: [['umum','Umum'],['lainnya','Lainnya']], satuan: ['Pcs','Box','Dus','Karton','Pallet','Kg','Liter'] },
+    distributor:          { kategori: [['umum','Umum'],['lainnya','Lainnya']], satuan: ['Pcs','Box','Dus','Karton','Pallet','Kg','Liter'] },
+    van_sales:            { kategori: [['umum','Umum'],['lainnya','Lainnya']], satuan: ['Pcs','Box','Dus','Karton','Pallet','Kg','Liter'] },
+    kosmetik:             { kategori: [['skincare','Skincare'],['makeup','Makeup'],['perawatan_rambut','Perawatan Rambut'],['parfum','Parfum'],['lainnya','Lainnya']], satuan: ['Pcs','Botol','Tube','Sachet','Pack','Set'] },
+    skincare:             { kategori: [['skincare','Skincare'],['makeup','Makeup'],['perawatan_rambut','Perawatan Rambut'],['parfum','Parfum'],['lainnya','Lainnya']], satuan: ['Pcs','Botol','Tube','Sachet','Pack','Set'] },
+    atk:                  { kategori: [['alat_tulis','Alat Tulis'],['kertas_buku','Kertas & Buku'],['perlengkapan_kantor','Perlengkapan Kantor'],['lainnya','Lainnya']], satuan: ['Pcs','Pack','Lusin','Rim','Box','Set'] },
+    perlengkapan_bayi:    { kategori: [['popok_kebersihan','Popok & Kebersihan'],['pakaian_bayi','Pakaian Bayi'],['perlengkapan_makan','Perlengkapan Makan'],['mainan_edukasi','Mainan & Edukasi'],['lainnya','Lainnya']], satuan: ['Pcs','Pack','Box','Set'] },
+    fashion:              { kategori: [['atasan','Atasan'],['bawahan','Bawahan'],['sepatu','Sepatu'],['aksesoris','Aksesoris'],['lainnya','Lainnya']], satuan: ['Pcs','Pasang','Set'] },
+    elektronik:           { kategori: [['gadget','Gadget'],['aksesoris_elektronik','Aksesoris Elektronik'],['rumah_tangga','Rumah Tangga'],['lainnya','Lainnya']], satuan: ['Pcs','Unit','Set','Box'] },
+    sparepart:            { kategori: [['mesin','Mesin'],['kelistrikan','Kelistrikan'],['body_aksesoris','Body & Aksesoris'],['lainnya','Lainnya']], satuan: ['Pcs','Set','Unit'] },
+    bengkel:              { kategori: [['sparepart','Sparepart'],['oli_cairan','Oli & Cairan'],['jasa_servis','Jasa Servis'],['lainnya','Lainnya']], satuan: ['Pcs','Liter','Botol','Set','Jasa'] },
+    fnb:                  { kategori: [['makanan','Makanan'],['minuman','Minuman'],['snack','Snack'],['bahan_baku','Bahan Baku'],['lainnya','Lainnya']], satuan: ['Porsi','Pcs','Kg','Gram','Liter','Ml','Pack'] },
+    toko_bangunan:        { kategori: [['material','Material Bangunan'],['cat_finishing','Cat & Finishing'],['perkakas','Perkakas'],['listrik_pipa','Listrik & Pipa'],['lainnya','Lainnya']], satuan: ['Pcs','Sak','Batang','Meter','Kg','Liter','Set'] },
+    pertanian:            { kategori: [['pupuk','Pupuk'],['pestisida','Pestisida'],['bibit','Bibit'],['alat_pertanian','Alat Pertanian'],['lainnya','Lainnya']], satuan: ['Kg','Liter','Sak','Pcs','Karung'] },
+    amdk:                 { kategori: [['cup_gelas','Cup/Gelas'],['botol','Botol'],['galon','Galon'],['lainnya','Lainnya']], satuan: ['Pcs','Dus','Galon','Karton'] },
+  };
+  const KATEGORI_SATUAN_DEFAULT = { kategori: [['umum','Umum'],['lainnya','Lainnya']], satuan: ['Pcs','Pack','Box','Kg','Liter','Set'] };
+
+  function isiUlangSelectOptions(selectEl, daftar, isKategori){
+    if (!selectEl) return;
+    selectEl.innerHTML = '';
+    daftar.forEach(item => {
+      const opt = document.createElement('option');
+      if (isKategori){ opt.value = item[0]; opt.textContent = item[1]; }
+      else { opt.value = item; opt.textContent = item; }
+      selectEl.appendChild(opt);
+    });
+  }
+
+  function applyKategoriSatuanDinamis(){
+    try{
+      const jenisUsaha = currentTenant?.jenis_usaha || 'apotek';
+      if (jenisUsaha === 'apotek') return; // Apotek: TIDAK disentuh, tetap pakai HTML asli
+
+      const config = KATEGORI_SATUAN_PER_JENIS_USAHA[jenisUsaha] || KATEGORI_SATUAN_DEFAULT;
+
+      ['pf-kategori','qa-kategori','gpf-kategori'].forEach(id => {
+        isiUlangSelectOptions(document.getElementById(id), config.kategori, true);
+      });
+      ['pf-satuan','gpf-satuan'].forEach(id => {
+        isiUlangSelectOptions(document.getElementById(id), config.satuan, false);
+      });
+
+      document.getElementById('kategori-satuan-custom-panel').style.display = '';
+      muatKategoriSatuanCustom();
+    } catch(err){
+      console.error('applyKategoriSatuanDinamis error (dibiarkan default Apotek):', err);
+    }
+  }
+
+  async function muatKategoriSatuanCustom(){
+    try{
+      const tenantId = currentProfile?.tenant_id;
+      if (!tenantId) return;
+
+      const { data: kategoriCustom } = await sb.from('kategori_produk').select('id, nama').eq('tenant_id', tenantId).eq('aktif', true).order('created_at');
+      const { data: satuanCustom } = await sb.from('units').select('id, nama').eq('tenant_id', tenantId).eq('aktif', true).order('created_at');
+
+      const daftarKategoriDiv = document.getElementById('daftar-kategori-custom');
+      if (daftarKategoriDiv){
+        daftarKategoriDiv.innerHTML = (kategoriCustom || []).map(k =>
+          `<span style="background:var(--brand-tint); color:var(--brand); padding:5px 10px; border-radius:20px; font-size:11.5px; font-weight:600;">${k.nama}</span>`
+        ).join('') || '<span style="font-size:11.5px; color:var(--ink-soft);">Belum ada kategori custom</span>';
+      }
+      const daftarSatuanDiv = document.getElementById('daftar-satuan-custom');
+      if (daftarSatuanDiv){
+        daftarSatuanDiv.innerHTML = (satuanCustom || []).map(s =>
+          `<span style="background:var(--brand-tint); color:var(--brand); padding:5px 10px; border-radius:20px; font-size:11.5px; font-weight:600;">${s.nama}</span>`
+        ).join('') || '<span style="font-size:11.5px; color:var(--ink-soft);">Belum ada satuan custom</span>';
+      }
+
+      // Tambahkan kategori & satuan custom ke dropdown produk (setelah daftar bawaan)
+      (kategoriCustom || []).forEach(k => {
+        ['pf-kategori','qa-kategori','gpf-kategori'].forEach(id => {
+          const sel = document.getElementById(id);
+          if (sel && !Array.from(sel.options).some(o => o.value === k.id)){
+            const opt = document.createElement('option');
+            opt.value = k.id; opt.textContent = k.nama;
+            sel.appendChild(opt);
+          }
+        });
+      });
+      (satuanCustom || []).forEach(s => {
+        ['pf-satuan','gpf-satuan'].forEach(id => {
+          const sel = document.getElementById(id);
+          if (sel && !Array.from(sel.options).some(o => o.value === s.nama)){
+            const opt = document.createElement('option');
+            opt.value = s.nama; opt.textContent = s.nama;
+            sel.appendChild(opt);
+          }
+        });
+      });
+    } catch(err){
+      console.error('muatKategoriSatuanCustom error:', err);
+    }
+  }
+
+  async function tambahKategoriCustom(){
+    const input = document.getElementById('input-kategori-baru');
+    const nama = input.value.trim();
+    if (!nama) return;
+    try{
+      const { error } = await sb.from('kategori_produk').insert({ tenant_id: currentProfile.tenant_id, nama });
+      if (error) throw error;
+      input.value = '';
+      await muatKategoriSatuanCustom();
+      showToast('Kategori "' + nama + '" ditambahkan');
+    } catch(err){
+      showToast('Gagal menambah kategori: ' + err.message, true);
+    }
+  }
+
+  async function tambahSatuanCustom(){
+    const input = document.getElementById('input-satuan-baru');
+    const nama = input.value.trim();
+    if (!nama) return;
+    try{
+      const { error } = await sb.from('units').insert({ tenant_id: currentProfile.tenant_id, nama, kategori: 'lainnya' });
+      if (error) throw error;
+      input.value = '';
+      await muatKategoriSatuanCustom();
+      showToast('Satuan "' + nama + '" ditambahkan');
+    } catch(err){
+      showToast('Gagal menambah satuan: ' + err.message, true);
+    }
+  }
+  // ================== akhir Kategori & Satuan Dinamis ==================
 
   function goPage(name, btn){
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
