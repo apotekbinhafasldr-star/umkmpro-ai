@@ -3466,10 +3466,10 @@ Baca & tanda tangan kontrak kerja</textarea>
 
       // Profil sekarang dibuat otomatis oleh database (trigger) saat akun baru terdaftar.
       // Kalau belum ada juga (mis. delay singkat setelah signup), coba tunggu sebentar lalu cek ulang.
-      let { data: profile } = await sb.from('user_profiles').select('*, tenants(nama_usaha, logo_url, alamat)').eq('id', user.id).single();
+      let { data: profile } = await sb.from('user_profiles').select('*, tenants(nama_usaha, logo_url, alamat, jenis_usaha)').eq('id', user.id).single();
       if (!profile){
         await new Promise(r => setTimeout(r, 1200));
-        const retry = await sb.from('user_profiles').select('*, tenants(nama_usaha, logo_url, alamat)').eq('id', user.id).single();
+        const retry = await sb.from('user_profiles').select('*, tenants(nama_usaha, logo_url, alamat, jenis_usaha)').eq('id', user.id).single();
         profile = retry.data;
       }
       if (!profile) throw new Error('Profil pengguna belum tersedia, coba muat ulang halaman.');
