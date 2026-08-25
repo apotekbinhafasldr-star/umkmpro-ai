@@ -109,6 +109,7 @@
   .auth-switch a{ color:var(--brand); font-weight:600; cursor:pointer; }
   .auth-error{ background:var(--danger-tint); color:var(--danger); font-size:12px; padding:9px 12px; border-radius:8px; margin-bottom:14px; display:none; }
   .auth-error.show{ display:block; }
+  .auth-error.success{ background:var(--good-tint); color:var(--good); }
   .auth-note{ font-size:11px; color:var(--ink-soft); background:var(--surface-2); padding:10px 12px; border-radius:9px; margin-top:16px; line-height:1.5; }
 
   /* ---------- APP SHELL ---------- */
@@ -3611,10 +3612,16 @@ Baca & tanda tangan kontrak kerja</textarea>
 
   function showAuthError(msg){
     const el = document.getElementById('auth-error');
+    el.classList.remove('success');
     el.textContent = msg;
     el.classList.add('show');
   }
-  function hideAuthError(){ document.getElementById('auth-error').classList.remove('show'); }
+  function showAuthSuccess(msg){
+    const el = document.getElementById('auth-error');
+    el.textContent = msg;
+    el.classList.add('show', 'success');
+  }
+  function hideAuthError(){ document.getElementById('auth-error').classList.remove('show', 'success'); }
 
   // ================== TAHAP A — Tanyopo Intelligence Configuration Layer ==================
   // AI cuma MEMBERI SARAN (kategori/satuan/modul) — tidak pernah otomatis ubah data kritikal.
@@ -3724,8 +3731,13 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
         }
 
         if (!data.session){
-          showAuthError('Akun dibuat! Jika email konfirmasi diaktifkan, cek email kamu lalu masuk kembali.');
-          btn.textContent = 'Daftar'; btn.disabled = false;
+          // Daftar berhasil tapi Supabase minta konfirmasi email dulu -> langsung pindahkan ke halaman Masuk
+          // supaya kelihatan JELAS bahwa pendaftaran berhasil (bukan diam/tidak ada respon).
+          const emailTerdaftar = email;
+          toggleAuthMode(); // pindah ke tampilan Masuk (ini juga mereset pesan)
+          document.getElementById('input-email').value = emailTerdaftar;
+          showAuthSuccess('✓ Akun berhasil dibuat! Buka email kamu (' + emailTerdaftar + ') untuk konfirmasi dulu, baru bisa Masuk di sini.');
+          btn.textContent = 'Masuk'; btn.disabled = false;
           return;
         }
       } else {
