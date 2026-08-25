@@ -1250,7 +1250,7 @@
         <div class="panel-body" id="kw-neraca-box"><div class="loading-note">Menghitung…</div></div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="biaya-operasional-panel">
         <div class="panel-head">
           <div class="panel-title">Biaya Operasional</div>
           <button class="btn-secondary" onclick="openBiayaModal()">+ Catat Biaya</button>
@@ -6670,6 +6670,24 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     await loadReturns();
   }
 
+  // ================= NAVIGASI LANGSUNG DARI INSIGHT/REKOMENDASI KE SUMBER MASALAHNYA =================
+  function bukaSumberInsight(kategori, dataPendukung){
+    dataPendukung = dataPendukung || {};
+    if (kategori === 'inventory'){
+      window.__stokFilterAktif = 'menipis'; window.__stokSearchNama = null;
+      goPage('stok', document.querySelector('.nav-item[data-page=stok]'));
+    } else if (kategori === 'margin'){
+      window.__stokFilterAktif = null;
+      window.__stokSearchNama = dataPendukung.produk || null;
+      goPage('stok', document.querySelector('.nav-item[data-page=stok]'));
+    } else if (kategori === 'expense'){
+      goPage('keuangan', document.querySelector('.nav-item[data-page=keuangan]'));
+      setTimeout(() => document.getElementById('biaya-operasional-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }), 150);
+    } else if (kategori === 'cashflow' || kategori === 'revenue' || kategori === 'sales_trend'){
+      goPage('keuangan', document.querySelector('.nav-item[data-page=keuangan]'));
+    }
+  }
+
   // ---- Poin Pelanggan ----
   async function loadPoints(){
     const el = document.getElementById('points-list');
@@ -10573,6 +10591,10 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     } else if (window.__stokFilterAktif === 'menipis'){
       data = dataAsli.filter(p => p.stok < p.stok_minimum);
       banerFilter = `<div style="background:var(--danger-tint); color:var(--danger); font-size:11.5px; padding:9px 12px; border-radius:9px; margin-bottom:10px;">🔍 Menampilkan produk stok menipis saja. <button onclick="window.__stokFilterAktif=null; loadStokPage();" style="background:none; border:none; text-decoration:underline; font-weight:700; cursor:pointer; color:inherit;">Tampilkan Semua</button></div>`;
+    } else if (window.__stokSearchNama){
+      const kata = window.__stokSearchNama.toLowerCase();
+      data = dataAsli.filter(p => (p.nama||'').toLowerCase().includes(kata));
+      banerFilter = `<div style="background:var(--brand-tint); color:var(--brand); font-size:11.5px; padding:9px 12px; border-radius:9px; margin-bottom:10px;">🔍 Menampilkan hasil untuk "${window.__stokSearchNama}". <button onclick="window.__stokSearchNama=null; loadStokPage();" style="background:none; border:none; text-decoration:underline; font-weight:700; cursor:pointer; color:inherit;">Tampilkan Semua</button></div>`;
     }
     if (data.length === 0){ wrap.innerHTML = banerFilter + '<div class="loading-note">Tidak ada produk yang cocok filter ini.</div>'; return; }
 
@@ -11470,7 +11492,7 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
           return `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed var(--line); font-size:11px;"><span style="color:var(--ink-soft);">${labelKey}</span><span style="font-weight:600;">${nilai}</span></div>`;
         }).join('');
         return `
-        <div style="border-left:3px solid ${SEVERITY_WARNA[ins.severity]}; background:var(--surface-2); border-radius:0 10px 10px 0; padding:12px 14px; margin-bottom:10px;">
+        <div style="border-left:3px solid ${SEVERITY_WARNA[ins.severity]}; background:var(--surface-2); border-radius:0 10px 10px 0; padding:12px 14px; margin-bottom:10px; cursor:pointer;" onclick='bukaSumberInsight("${ins.kategori}", ${JSON.stringify(ins.data_pendukung || {}).replace(/'/g,"&#39;")})'>
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
             <div style="font-weight:700; font-size:13.5px;">${INSIGHT_ICON[ins.kategori]||'📊'} ${ins.judul}</div>
             <span class="pill" style="background:${SEVERITY_WARNA[ins.severity]}22; color:${SEVERITY_WARNA[ins.severity]}; flex-shrink:0; font-size:9.5px;">${SEVERITY_LABEL[ins.severity]}</span>
@@ -11478,10 +11500,11 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
           <div style="font-size:12px; color:var(--ink-soft); margin-top:5px;">${ins.penjelasan}</div>
           ${ins.rekomendasi ? `<div style="font-size:11.5px; color:var(--brand); margin-top:7px; font-weight:600;">💡 ${ins.rekomendasi}</div>` : ''}
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:9px;">
-            <button onclick="document.getElementById('insight-detail-${idx}').style.display = document.getElementById('insight-detail-${idx}').style.display==='none'?'block':'none';" style="background:none; border:none; padding:0; font-size:10.5px; color:var(--brand); font-weight:700; cursor:pointer;">🔍 Kenapa saya lihat ini?</button>
+            <button onclick="event.stopPropagation(); document.getElementById('insight-detail-${idx}').style.display = document.getElementById('insight-detail-${idx}').style.display==='none'?'block':'none';" style="background:none; border:none; padding:0; font-size:10.5px; color:var(--brand); font-weight:700; cursor:pointer;">🔍 Kenapa saya lihat ini?</button>
             <span style="font-size:9.5px; color:${CONFIDENCE_WARNA[ins.confidence]};">Keyakinan: ${CONFIDENCE_LABEL[ins.confidence] || '—'}</span>
           </div>
-          <div id="insight-detail-${idx}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid var(--line);">
+          <div style="font-size:9px; color:var(--ink-soft); margin-top:5px; text-align:right;">↗ Tap kartu buat lihat langsung</div>
+          <div id="insight-detail-${idx}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid var(--line);" onclick="event.stopPropagation()">
             <div style="font-size:10px; color:var(--ink-soft); margin-bottom:5px; font-style:italic;">Data mentah yang jadi dasar insight ini:</div>
             ${dataRows || '<div style="font-size:11px; color:var(--ink-soft);">Tidak ada data tambahan.</div>'}
           </div>
@@ -11499,11 +11522,11 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     if (daftarAksi.length > 0){
       panelAksi.style.display = 'block';
       listAksi.innerHTML = daftarAksi.map((a, i) => `
-        <div style="display:flex; gap:10px; align-items:flex-start; padding:9px 0; ${i < daftarAksi.length-1 ? 'border-bottom:1px dashed #E8D9BC;' : ''}">
+        <div style="display:flex; gap:10px; align-items:flex-start; padding:9px 0; cursor:pointer; ${i < daftarAksi.length-1 ? 'border-bottom:1px dashed #E8D9BC;' : ''}" onclick='bukaSumberInsight("${a.kategori}", ${JSON.stringify(a.data_pendukung || {}).replace(/'/g,"&#39;")})'>
           <div style="width:22px; height:22px; border-radius:50%; background:#D4A24E; color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${i+1}</div>
           <div>
             <div style="font-size:12.5px; font-weight:700; color:#5C4319;">${a.rekomendasi}</div>
-            <div style="font-size:10.5px; color:#8C6A2E; margin-top:2px;">Terkait: ${a.judul}</div>
+            <div style="font-size:10.5px; color:#8C6A2E; margin-top:2px;">Terkait: ${a.judul} · <span style="text-decoration:underline;">↗ lihat langsung</span></div>
           </div>
         </div>`).join('');
     } else {
