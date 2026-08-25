@@ -588,6 +588,16 @@
         <div class="panel-body" id="recommended-actions-list"></div>
       </div>
 
+      <div class="panel" id="pengingat-dashboard-panel" style="display:none;">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">🔔 Pengingat Pelanggan Jatuh Tempo</div>
+          </div>
+          <button class="btn-secondary" style="font-size:10.5px;" onclick="goPage('pelanggan', document.querySelector('.nav-item[data-page=pelanggan]')); setTimeout(()=>document.querySelector('#page-pelanggan .tab[data-sub=pengingat]')?.click(), 50)">Kelola Semua →</button>
+        </div>
+        <div class="panel-body" id="pengingat-dashboard-list"></div>
+      </div>
+
       <div class="panel owner-only">
         <div class="panel-head">
           <div>
@@ -1545,6 +1555,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div class="tab" data-sub="promosi" onclick="setPelangganTab('promosi', this)">Buat Promosi</div>
         <div class="tab" data-sub="tunggu" onclick="setPelangganTab('tunggu', this)">Daftar Tunggu Barang</div>
         <div class="tab" data-sub="khusus" onclick="setPelangganTab('khusus', this)">Pelanggan Khusus/Reseller</div>
+        <div class="tab" data-sub="pengingat" onclick="setPelangganTab('pengingat', this)">🔔 Pengingat Rutin</div>
       </div>
 
       <!-- PIUTANG -->
@@ -1745,6 +1756,50 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
             </div>
             <input type="text" id="member-search-input" placeholder="Cari nama atau No. WA…" oninput="renderMemberList()" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px; margin-bottom:12px;">
             <div id="member-list"><div class="loading-note">Memuat data…</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENGINGAT RUTIN -->
+      <div class="sub-page" id="sub-pengingat">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">🔔 Pengingat Siklus Pelanggan</div>
+              <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Buat pengingat berkala buat pelanggan — obat rutin, servis kendaraan, isi ulang galon, atau apapun yang berulang. Otomatis kelihatan pas jatuh tempo, tinggal tap kirim WA.</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div style="border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:16px;">
+              <div style="font-size:12px; font-weight:700; margin-bottom:10px;">+ Tambah Pengingat Baru</div>
+              <div class="field" style="position:relative;">
+                <label>Nama Pelanggan</label>
+                <input type="text" id="pr-nama" placeholder="Ketik nama pelanggan…" autocomplete="off" oninput="cariPelangganUntukPengingat(this.value)" onblur="setTimeout(()=>document.getElementById('pr-pelanggan-saran').style.display='none', 200)">
+                <div id="pr-pelanggan-saran" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; margin-top:2px; z-index:20; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+              </div>
+              <div class="field"><label>No. WhatsApp</label><input type="text" id="pr-wa" placeholder="08xxxxxxxxxx"></div>
+              <div class="field"><label>Judul Pengingat</label><input type="text" id="pr-judul" placeholder="Contoh: Obat Amlodipine 10mg, atau Servis Rutin Supra X 125"></div>
+              <div class="field">
+                <label>Siklus Pengingat</label>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+                  <button type="button" class="btn-secondary" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('pr-siklus').value=7">7 hari</button>
+                  <button type="button" class="btn-secondary" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('pr-siklus').value=30">30 hari</button>
+                  <button type="button" class="btn-secondary" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('pr-siklus').value=60">60 hari</button>
+                  <button type="button" class="btn-secondary" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('pr-siklus').value=90">90 hari</button>
+                  <button type="button" class="btn-secondary" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('pr-siklus').value=180">180 hari</button>
+                </div>
+                <input type="number" id="pr-siklus" placeholder="Atau isi manual, contoh: 30" min="1">
+              </div>
+              <div class="field"><label>Tanggal Terakhir (mulai dihitung dari sini)</label><input type="date" id="pr-tanggal-terakhir"></div>
+              <div class="field"><label>Catatan (opsional)</label><input type="text" id="pr-catatan" placeholder="Contoh: dosis 1x sehari malam"></div>
+              <button class="btn-primary" style="width:100%; justify-content:center;" onclick="simpanPengingatRutin()">+ Simpan Pengingat</button>
+            </div>
+
+            <div style="display:flex; gap:6px; margin-bottom:12px;">
+              <div class="tab active" style="font-size:11.5px;" data-filter="aktif" onclick="setFilterPengingat('aktif', this)">Aktif</div>
+              <div class="tab" style="font-size:11.5px;" data-filter="nonaktif" onclick="setFilterPengingat('nonaktif', this)">Nonaktif</div>
+            </div>
+            <div id="pengingat-rutin-list"><div class="loading-note">Memuat data…</div></div>
           </div>
         </div>
       </div>
@@ -3823,6 +3878,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
 
     loadTugasHarian();
+    loadPengingatDashboardWidget();
     if (currentProfile.role === 'owner') loadSaranTugasOtomatis();
     if (currentProfile.role === 'owner') loadSlipGajiOtomatis();
     if (currentProfile.role === 'owner') loadTanyopoIntelligence();
@@ -6306,6 +6362,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (sub === 'promosi') loadPromoProductSelect();
     if (sub === 'tunggu') loadWaitingListFull();
     if (sub === 'khusus'){ loadPengaturanPoin(); loadMemberList(); }
+    if (sub === 'pengingat') loadPengingatRutin();
   }
 
   async function loadPelangganPage(){
@@ -6418,6 +6475,161 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     showToast('✓ Pembayaran tercatat, sisa piutang Rp ' + sisaBaru.toLocaleString('id-ID'));
     closeModal('bayar-sebagian-modal');
     await loadReceivables();
+  }
+
+  // ================= PENGINGAT SIKLUS PELANGGAN =================
+  // Fondasi bersama buat pengingat rutin ke pelanggan — obat rutin (Apotek), servis berkala (Bengkel),
+  // isi ulang galon (AMDK), atau apapun yang berulang. Sengaja generik, tidak dikunci per jenis usaha.
+  let daftarPelangganCacheReminder = [];
+  let filterPengingatAktif = 'aktif';
+
+  async function isiDaftarPelangganCacheReminder(){
+    const { data } = await sb.from('customer_points').select('nama, whatsapp').eq('tenant_id', currentProfile.tenant_id);
+    daftarPelangganCacheReminder = data || [];
+  }
+
+  function cariPelangganUntukPengingat(q){
+    const el = document.getElementById('pr-pelanggan-saran');
+    if (!q || q.trim().length < 1){ el.style.display = 'none'; return; }
+    const hasil = daftarPelangganCacheReminder.filter(p => (p.nama||'').toLowerCase().includes(q.toLowerCase()));
+    if (hasil.length === 0){ el.style.display = 'none'; return; }
+    el.innerHTML = hasil.slice(0,8).map(p => `<div style="font-size:12.5px; padding:9px 12px; cursor:pointer; border-bottom:1px solid var(--line);" onmousedown='pilihPelangganPengingat(${JSON.stringify({nama:p.nama,wa:p.whatsapp}).replace(/'/g,"&#39;")})'>${p.nama} <span style="color:var(--ink-soft);">· ${p.whatsapp}</span></div>`).join('');
+    el.style.display = 'block';
+  }
+  function pilihPelangganPengingat(p){
+    document.getElementById('pr-nama').value = p.nama;
+    document.getElementById('pr-wa').value = p.wa;
+    document.getElementById('pr-pelanggan-saran').style.display = 'none';
+  }
+
+  async function loadPengingatRutin(){
+    await isiDaftarPelangganCacheReminder();
+    document.getElementById('pr-tanggal-terakhir').value = new Date().toISOString().slice(0,10);
+    await renderPengingatRutinList();
+  }
+
+  function setFilterPengingat(f, el){
+    filterPengingatAktif = f;
+    document.querySelectorAll('#sub-pengingat .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderPengingatRutinList();
+  }
+
+  async function renderPengingatRutinList(){
+    const el = document.getElementById('pengingat-rutin-list');
+    el.innerHTML = '<div class="loading-note">Memuat data…</div>';
+    const { data } = await sb.from('customer_reminders').select('*').eq('tenant_id', currentProfile.tenant_id).eq('status', filterPengingatAktif).order('tanggal_jatuh_tempo', { ascending: true });
+    if (!data || data.length === 0){
+      el.innerHTML = `<div class="loading-note">${filterPengingatAktif === 'aktif' ? 'Belum ada pengingat aktif. Tambahkan lewat form di atas.' : 'Tidak ada pengingat nonaktif.'}</div>`;
+      return;
+    }
+    const today = new Date(); today.setHours(0,0,0,0);
+    el.innerHTML = data.map(r => {
+      const jatuhTempo = new Date(r.tanggal_jatuh_tempo + 'T00:00:00');
+      const selisihHari = Math.round((jatuhTempo - today) / 86400000);
+      let badgeTeks, badgeWarna;
+      if (selisihHari < 0){ badgeTeks = `Terlambat ${Math.abs(selisihHari)} hari`; badgeWarna = 'var(--danger)'; }
+      else if (selisihHari === 0){ badgeTeks = 'Jatuh tempo hari ini'; badgeWarna = 'var(--danger)'; }
+      else if (selisihHari <= 3){ badgeTeks = `${selisihHari} hari lagi`; badgeWarna = 'var(--amber)'; }
+      else { badgeTeks = `${selisihHari} hari lagi`; badgeWarna = 'var(--ink-soft)'; }
+      const pesanWA = encodeURIComponent(`Halo ${r.nama_pelanggan}, ini pengingat dari kami untuk "${r.judul}". Jangan lupa ya 🙏`);
+      const nomorWA = formatNomorWA(r.whatsapp_pelanggan);
+      return `
+        <div class="row-item" style="align-items:flex-start;">
+          <div>
+            <div class="row-name">${r.judul}</div>
+            <div class="row-meta">${r.nama_pelanggan} · ${r.whatsapp_pelanggan}${r.catatan ? ' · ' + r.catatan : ''}</div>
+            <div style="margin-top:4px; font-size:11px; font-weight:700; color:${badgeWarna};">${badgeTeks} · siklus ${r.siklus_hari} hari</div>
+          </div>
+          <div class="row-right" style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+            ${filterPengingatAktif === 'aktif' ? `
+              <a href="https://wa.me/${nomorWA}?text=${pesanWA}" target="_blank" class="btn-secondary" style="font-size:10.5px; padding:4px 9px; background:#25D366; color:#fff; text-decoration:none;" onclick="tandaiPengingatDikirim('${r.id}')">📱 Kirim WA</a>
+              <button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="resetSiklusPengingat('${r.id}')">↻ Sudah Diingatkan</button>
+              <button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--danger);" onclick="nonaktifkanPengingat('${r.id}')">Nonaktifkan</button>
+            ` : `
+              <button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="aktifkanKembaliPengingat('${r.id}')">Aktifkan Lagi</button>
+            `}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function simpanPengingatRutin(){
+    const nama = document.getElementById('pr-nama').value.trim();
+    const wa = document.getElementById('pr-wa').value.trim();
+    const judul = document.getElementById('pr-judul').value.trim();
+    const siklus = parseInt(document.getElementById('pr-siklus').value) || 0;
+    const tanggalTerakhir = document.getElementById('pr-tanggal-terakhir').value;
+    const catatan = document.getElementById('pr-catatan').value.trim();
+    if (!nama || !wa){ showToast('Nama & No. WhatsApp pelanggan wajib diisi.', true); return; }
+    if (!judul){ showToast('Judul pengingat wajib diisi.', true); return; }
+    if (siklus <= 0){ showToast('Siklus pengingat wajib diisi (dalam hari).', true); return; }
+    if (!tanggalTerakhir){ showToast('Tanggal terakhir wajib diisi.', true); return; }
+
+    const { error } = await sb.from('customer_reminders').insert({
+      tenant_id: currentProfile.tenant_id, nama_pelanggan: nama, whatsapp_pelanggan: wa,
+      judul, siklus_hari: siklus, tanggal_terakhir: tanggalTerakhir, catatan: catatan || null,
+      dibuat_oleh: currentProfile.id,
+    });
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast('✓ Pengingat tersimpan');
+    ['pr-nama','pr-wa','pr-judul','pr-siklus','pr-catatan'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('pr-tanggal-terakhir').value = new Date().toISOString().slice(0,10);
+    await renderPengingatRutinList();
+  }
+
+  async function tandaiPengingatDikirim(id){
+    await sb.from('customer_reminders').update({ terakhir_diingatkan_pada: new Date().toISOString().slice(0,10) }).eq('id', id);
+  }
+
+  async function resetSiklusPengingat(id){
+    // Dipakai kalau pelanggan sudah datang lagi (mis. tebus obat/servis ulang) — siklus dihitung ulang dari hari ini.
+    const { error } = await sb.from('customer_reminders').update({ tanggal_terakhir: new Date().toISOString().slice(0,10) }).eq('id', id);
+    if (error){ showToast('Gagal update: ' + error.message, true); return; }
+    showToast('✓ Siklus direset dari hari ini');
+    await renderPengingatRutinList();
+    await loadPengingatDashboardWidget();
+  }
+
+  async function nonaktifkanPengingat(id){
+    const { error } = await sb.from('customer_reminders').update({ status: 'nonaktif' }).eq('id', id);
+    if (error){ showToast('Gagal update: ' + error.message, true); return; }
+    showToast('✓ Pengingat dinonaktifkan');
+    await renderPengingatRutinList();
+    await loadPengingatDashboardWidget();
+  }
+
+  async function aktifkanKembaliPengingat(id){
+    const { error } = await sb.from('customer_reminders').update({ status: 'aktif' }).eq('id', id);
+    if (error){ showToast('Gagal update: ' + error.message, true); return; }
+    showToast('✓ Pengingat diaktifkan lagi');
+    await renderPengingatRutinList();
+  }
+
+  // Widget Dashboard: nunjukkin ringkas pengingat yang jatuh tempo dalam 3 hari ke depan (termasuk yang sudah lewat).
+  // Nggak nunggu cron/jadwal — dihitung langsung tiap Dashboard dibuka, jadi selalu real-time.
+  async function loadPengingatDashboardWidget(){
+    const panel = document.getElementById('pengingat-dashboard-panel');
+    const list = document.getElementById('pengingat-dashboard-list');
+    if (!panel || !list) return;
+    const batasAtas = new Date(); batasAtas.setDate(batasAtas.getDate() + 3);
+    const { data } = await sb.from('customer_reminders').select('*').eq('tenant_id', currentProfile.tenant_id).eq('status', 'aktif')
+      .lte('tanggal_jatuh_tempo', batasAtas.toISOString().slice(0,10)).order('tanggal_jatuh_tempo', { ascending: true }).limit(8);
+    if (!data || data.length === 0){ panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    const today = new Date(); today.setHours(0,0,0,0);
+    list.innerHTML = data.map(r => {
+      const jatuhTempo = new Date(r.tanggal_jatuh_tempo + 'T00:00:00');
+      const selisihHari = Math.round((jatuhTempo - today) / 86400000);
+      const badgeTeks = selisihHari < 0 ? `Terlambat ${Math.abs(selisihHari)} hari` : selisihHari === 0 ? 'Hari ini' : `${selisihHari} hari lagi`;
+      const badgeWarna = selisihHari <= 0 ? 'var(--danger)' : 'var(--amber)';
+      const pesanWA = encodeURIComponent(`Halo ${r.nama_pelanggan}, ini pengingat dari kami untuk "${r.judul}". Jangan lupa ya 🙏`);
+      return `
+        <div class="row-item">
+          <div><div class="row-name">${r.judul}</div><div class="row-meta">${r.nama_pelanggan} · <span style="color:${badgeWarna}; font-weight:700;">${badgeTeks}</span></div></div>
+          <div class="row-right"><a href="https://wa.me/${formatNomorWA(r.whatsapp_pelanggan)}?text=${pesanWA}" target="_blank" class="btn-secondary" style="font-size:10.5px; padding:4px 9px; background:#25D366; color:#fff; text-decoration:none;" onclick="tandaiPengingatDikirim('${r.id}')">📱 Kirim WA</a></div>
+        </div>`;
+    }).join('');
   }
 
   // ---- Retur ----
