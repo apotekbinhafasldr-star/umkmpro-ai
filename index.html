@@ -505,12 +505,16 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             Langganan
           </button>
-          <div style="border-top:1px dashed var(--line); margin:8px 0;"></div>
-          <button class="nav-item" style="color:var(--danger);" onclick="document.getElementById('nav-dropdown').classList.remove('show'); openLaporanMasalahModal();">
+          <button class="nav-item" data-page="admin" id="nav-admin-platform" style="display:none; color:var(--brand); font-weight:700;" onclick="goPage('admin', this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            ⚙️ Panel Admin
+          </button>
+          <div style="border-top:1px dashed var(--line); margin:8px 0;" id="nav-divider-support"></div>
+          <button class="nav-item" id="nav-laporkan-masalah" style="color:var(--danger);" onclick="document.getElementById('nav-dropdown').classList.remove('show'); openLaporanMasalahModal();">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             🐞 Laporkan Masalah
           </button>
-          <button class="nav-item" style="color:var(--gold-deep);" onclick="document.getElementById('nav-dropdown').classList.remove('show'); openSaranFiturModal();">
+          <button class="nav-item" id="nav-saran-kritik" style="color:var(--gold-deep);" onclick="document.getElementById('nav-dropdown').classList.remove('show'); openSaranFiturModal();">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0012 2z"/></svg>
             💡 Saran &amp; Kritik
           </button>
@@ -1801,6 +1805,59 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
             </div>
             <div id="pengingat-rutin-list"><div class="loading-note">Memuat data…</div></div>
           </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- PANEL ADMIN PLATFORM (cuma admin UMKMpro AI, bukan tenant manapun) -->
+  <div class="page" id="page-admin">
+    <main>
+      <div class="topbar">
+        <div>
+          <div class="greeting-eyebrow">Admin UMKMpro AI</div>
+          <h1 class="greeting">Laporan & Saran dari Semua Tenant</h1>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-sub="admin-laporan" onclick="setAdminTab('admin-laporan', this)">🐞 Laporan Masalah</div>
+        <div class="tab" data-sub="admin-saran" onclick="setAdminTab('admin-saran', this)">💡 Saran &amp; Kritik</div>
+      </div>
+
+      <!-- LAPORAN MASALAH -->
+      <div class="sub-page active" id="sub-admin-laporan">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Laporan Masalah — Semua Tenant</div>
+          </div>
+          <div class="panel-body" style="padding:14px 18px 0;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <div class="tab active" style="font-size:11px;" data-filter="baru" onclick="setFilterAdminLaporan('baru', this)">Baru</div>
+              <div class="tab" style="font-size:11px;" data-filter="diproses" onclick="setFilterAdminLaporan('diproses', this)">Diproses</div>
+              <div class="tab" style="font-size:11px;" data-filter="selesai" onclick="setFilterAdminLaporan('selesai', this)">Selesai</div>
+              <div class="tab" style="font-size:11px;" data-filter="semua" onclick="setFilterAdminLaporan('semua', this)">Semua</div>
+            </div>
+          </div>
+          <div class="panel-body" id="admin-laporan-list"><div class="loading-note">Memuat data…</div></div>
+        </div>
+      </div>
+
+      <!-- SARAN & KRITIK -->
+      <div class="sub-page" id="sub-admin-saran">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Saran &amp; Kritik — Semua Tenant</div>
+          </div>
+          <div class="panel-body" style="padding:14px 18px 0;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <div class="tab active" style="font-size:11px;" data-filter="baru" onclick="setFilterAdminSaran('baru', this)">Baru</div>
+              <div class="tab" style="font-size:11px;" data-filter="dipertimbangkan" onclick="setFilterAdminSaran('dipertimbangkan', this)">Dipertimbangkan</div>
+              <div class="tab" style="font-size:11px;" data-filter="dikerjakan" onclick="setFilterAdminSaran('dikerjakan', this)">Dikerjakan</div>
+              <div class="tab" style="font-size:11px;" data-filter="semua" onclick="setFilterAdminSaran('semua', this)">Semua</div>
+            </div>
+          </div>
+          <div class="panel-body" id="admin-saran-list"><div class="loading-note">Memuat data…</div></div>
         </div>
       </div>
     </main>
@@ -3844,8 +3901,37 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
 
       currentProfile = profile;
       await ensureOwnerEmployeeRecord();
+
+      // Cek apakah akun ini terdaftar sebagai admin platform UMKMpro AI (lintas semua tenant)
+      let isAdminPlatform = false;
+      try {
+        const { data: isAdmin } = await sb.rpc('fn_is_platform_admin');
+        isAdminPlatform = !!isAdmin;
+      } catch(errAdmin){ console.error('Cek admin platform gagal:', errAdmin); }
+
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('app-shell').classList.add('show');
+
+      if (isAdminPlatform){
+        // ================= TAMPILAN KHUSUS ADMIN PLATFORM =================
+        // Sembunyikan SEMUA menu tenant biasa — admin platform tidak butuh Kasir/Stok/Keuangan/HR
+        // tenant "palsu" yang cuma dibuat buat syarat login. Fokus cuma ke Panel Admin.
+        document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+          const page = btn.getAttribute('data-page');
+          btn.style.display = (page === 'admin') ? '' : 'none';
+        });
+        ['nav-divider-support','nav-laporkan-masalah','nav-saran-kritik'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+        document.getElementById('user-name').textContent = namaAman;
+        document.getElementById('user-role').textContent = '⚙️ Admin Platform UMKMpro AI';
+        document.getElementById('user-avatar').textContent = 'AD';
+        document.getElementById('sidebar-tenant').textContent = 'Panel Administrator';
+        const navAdmin = document.getElementById('nav-admin-platform');
+        goPage('admin', navAdmin);
+        return;
+      }
 
       document.getElementById('user-name').textContent = namaAman;
       document.getElementById('user-role').textContent = profile.role === 'owner' ? 'Owner · Akses penuh' : profile.role;
@@ -6475,6 +6561,110 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     showToast('✓ Pembayaran tercatat, sisa piutang Rp ' + sisaBaru.toLocaleString('id-ID'));
     closeModal('bayar-sebagian-modal');
     await loadReceivables();
+  }
+
+  // ================= PANEL ADMIN PLATFORM (lintas semua tenant, cuma buat pemilik aplikasi) =================
+  function setAdminTab(sub, tabEl){
+    document.querySelectorAll('#page-admin .tabs > .tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+    document.querySelectorAll('#page-admin .sub-page').forEach(p => p.classList.remove('active'));
+    document.getElementById('sub-' + sub).classList.add('active');
+  }
+
+  async function loadAdminPage(){
+    await renderAdminLaporan('baru');
+    await renderAdminSaran('baru');
+  }
+
+  function setFilterAdminLaporan(f, el){
+    el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderAdminLaporan(f);
+  }
+  function setFilterAdminSaran(f, el){
+    el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderAdminSaran(f);
+  }
+
+  const STATUS_LAPORAN_LABEL = { baru:'Baru', diproses:'Diproses', selesai:'Selesai' };
+  const STATUS_LAPORAN_WARNA = { baru:'var(--danger)', diproses:'var(--amber)', selesai:'var(--good)' };
+
+  async function renderAdminLaporan(filter){
+    const el = document.getElementById('admin-laporan-list');
+    el.innerHTML = '<div class="loading-note">Memuat data…</div>';
+    let q = sb.from('laporan_masalah').select('*, tenants(nama_usaha, jenis_usaha)').order('created_at', { ascending: false });
+    if (filter !== 'semua') q = q.eq('status', filter);
+    const { data, error } = await q;
+    if (error){ el.innerHTML = '<div class="loading-note">Gagal memuat: ' + error.message + '</div>'; return; }
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Tidak ada laporan di kategori ini.</div>'; return; }
+    el.innerHTML = data.map(l => {
+      const tenant = l.tenants || {};
+      return `
+      <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:8px;">
+        <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+          <div>
+            <div class="row-name">${tenant.nama_usaha || 'Tenant tidak diketahui'} <span style="font-weight:400; color:var(--ink-soft);">· ${tenant.jenis_usaha || '-'}</span></div>
+            <div class="row-meta">${l.nama_pelapor} (${l.role_pelapor}) · Halaman: ${l.halaman_aktif} · ${new Date(l.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}</div>
+          </div>
+          <span class="pill" style="background:${STATUS_LAPORAN_WARNA[l.status]}22; color:${STATUS_LAPORAN_WARNA[l.status]}; flex-shrink:0;">${STATUS_LAPORAN_LABEL[l.status] || l.status}</span>
+        </div>
+        <div style="font-size:12.5px; background:var(--surface-2); padding:9px 11px; border-radius:8px; width:100%;">${l.deskripsi}</div>
+        <div style="display:flex; gap:6px;">
+          ${l.status !== 'diproses' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="updateStatusLaporan('${l.id}','diproses')">Tandai Diproses</button>` : ''}
+          ${l.status !== 'selesai' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good);" onclick="updateStatusLaporan('${l.id}','selesai')">Tandai Selesai</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function updateStatusLaporan(id, status){
+    const { error } = await sb.from('laporan_masalah').update({ status }).eq('id', id);
+    if (error){ showToast('Gagal update: ' + error.message, true); return; }
+    showToast('✓ Status diperbarui');
+    const filterAktif = document.querySelector('#sub-admin-laporan .tab.active')?.dataset.filter || 'baru';
+    await renderAdminLaporan(filterAktif);
+  }
+
+  const STATUS_SARAN_LABEL = { baru:'Baru', dipertimbangkan:'Dipertimbangkan', dikerjakan:'Dikerjakan', selesai:'Selesai', ditolak:'Ditolak' };
+  const STATUS_SARAN_WARNA = { baru:'var(--danger)', dipertimbangkan:'var(--amber)', dikerjakan:'var(--brand)', selesai:'var(--good)', ditolak:'var(--ink-soft)' };
+
+  async function renderAdminSaran(filter){
+    const el = document.getElementById('admin-saran-list');
+    el.innerHTML = '<div class="loading-note">Memuat data…</div>';
+    let q = sb.from('saran_fitur').select('*, tenants(nama_usaha)').order('created_at', { ascending: false });
+    if (filter !== 'semua') q = q.eq('status', filter);
+    const { data, error } = await q;
+    if (error){ el.innerHTML = '<div class="loading-note">Gagal memuat: ' + error.message + '</div>'; return; }
+    if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Tidak ada saran di kategori ini.</div>'; return; }
+    el.innerHTML = data.map(s => {
+      const tenant = s.tenants || {};
+      return `
+      <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:8px;">
+        <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+          <div>
+            <div class="row-name">${tenant.nama_usaha || 'Tenant tidak diketahui'} <span style="font-weight:400; color:var(--ink-soft);">· ${s.jenis_usaha || '-'}</span></div>
+            <div class="row-meta">${s.nama_pengaju} · ${new Date(s.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}</div>
+          </div>
+          <span class="pill" style="background:${STATUS_SARAN_WARNA[s.status]}22; color:${STATUS_SARAN_WARNA[s.status]}; flex-shrink:0;">${STATUS_SARAN_LABEL[s.status] || s.status}</span>
+        </div>
+        <div style="font-size:12.5px; background:var(--surface-2); padding:9px 11px; border-radius:8px; width:100%;">${s.deskripsi}</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          ${s.status !== 'dipertimbangkan' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="updateStatusSaran('${s.id}','dipertimbangkan')">Dipertimbangkan</button>` : ''}
+          ${s.status !== 'dikerjakan' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand);" onclick="updateStatusSaran('${s.id}','dikerjakan')">Dikerjakan</button>` : ''}
+          ${s.status !== 'selesai' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good);" onclick="updateStatusSaran('${s.id}','selesai')">Selesai</button>` : ''}
+          ${s.status !== 'ditolak' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--ink-soft);" onclick="updateStatusSaran('${s.id}','ditolak')">Tolak</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function updateStatusSaran(id, status){
+    const { error } = await sb.from('saran_fitur').update({ status }).eq('id', id);
+    if (error){ showToast('Gagal update: ' + error.message, true); return; }
+    showToast('✓ Status diperbarui');
+    const filterAktif = document.querySelector('#sub-admin-saran .tab.active')?.dataset.filter || 'baru';
+    await renderAdminSaran(filterAktif);
   }
 
   // ================= PENGINGAT SIKLUS PELANGGAN =================
@@ -10461,6 +10651,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (name === 'profilsaya') loadProfilSaya();
     if (name === 'pajak') loadPajakPage();
     if (name === 'langganan') loadLanggananPage();
+    if (name === 'admin') loadAdminPage();
     if (name === 'keuangan') loadOwnerTx();
     if (name === 'keuangan') loadCatatanBadanUsahaRingkas();
     if (name === 'keuangan') loadNeraca();
