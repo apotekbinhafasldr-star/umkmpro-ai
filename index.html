@@ -2007,7 +2007,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       </label>
       <div style="font-size:11px; color:var(--ink-soft); margin-top:6px;">Setelah disimpan, kamu bisa tambahkan varian satu-satu (misal: S, M, L — masing-masing punya stok & harga sendiri).</div>
     </div>
-    <div class="field" style="background:var(--amber-tint); border-radius:10px; padding:11px 13px; margin-bottom:13px;">
+    <div class="field" id="pf-racikan-wrap" style="background:var(--amber-tint); border-radius:10px; padding:11px 13px; margin-bottom:13px;">
       <label style="display:flex; align-items:center; gap:8px; margin-bottom:0; color:#7A4B1C; cursor:pointer;">
         <input type="checkbox" id="pf-is-racikan" style="width:16px; height:16px;" onchange="toggleRacikanHint()">
         Ini obat racikan (dibuat dari campuran bahan, bukan barang jadi bersetok)
@@ -4020,7 +4020,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       return `
       <div class="prod-card" onclick="handleProductTapKasir('${p.id}')" style="${p.favorit ? 'border-color:var(--good); border-width:1.5px;' : ''}">
         ${p.favorit ? '<span style="position:absolute; top:8px; left:8px; font-size:13px;">⭐</span>' : ''}
-        <span class="prod-tag ${p.kategori}">${p.is_racikan ? 'Racikan' : (KATEGORI_LABEL[p.kategori] || p.kategori)}</span>
+        <span class="prod-tag ${p.kategori}">${p.is_racikan ? 'Racikan' : getKategoriLabelTampilan(p.kategori)}</span>
         <div class="prod-icon" style="${p.gambar_url ? `background-image:url(${p.gambar_url}); background-size:cover; background-position:center;` : ''}">${p.gambar_url ? '' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/></svg>'}</div>
         <div class="prod-name">${p.nama}</div>
         <div class="prod-meta">${p.produsen || p.satuan} · Stok ${p.stok < p.stok_minimum ? '<span style="color:var(--danger)">rendah</span>' : 'cukup'}</div>
@@ -4028,7 +4028,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
         ${hargaTampil.label ? `<div style="font-size:10px; font-weight:700; color:var(--good);">${hargaTampil.label}</div>` : ''}
         <div class="prod-foot">
           <span class="prod-price num">${p.is_induk_varian ? 'Pilih Varian' : 'Rp ' + hargaTampil.harga.toLocaleString('id-ID')}</span>
-          <span class="prod-stock ${p.stok < p.stok_minimum ? 'low' : ''}">${p.is_racikan ? 'Racikan' : (p.is_induk_varian ? '🎨 Ada varian' : 'Stok ' + p.stok + ' ' + (p.satuan || ''))}</span>
+          <span class="prod-stock ${(!p.is_racikan && p.satuan !== 'Jasa' && p.stok < p.stok_minimum) ? 'low' : ''}">${p.is_racikan ? 'Racikan' : (p.satuan === 'Jasa' ? '🔧 Layanan' : (p.is_induk_varian ? '🎨 Ada varian' : 'Stok ' + p.stok + ' ' + (p.satuan || '')))}</span>
         </div>
       </div>`;
     }).join('');
@@ -4871,7 +4871,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       openQtyConfirmForProduct(productId);
       return;
     }
-    if (!prod.is_racikan && prod.stok <= 0){ showToast('Stok produk ini habis.', true); return; }
+    if (!prod.is_racikan && prod.satuan !== 'Jasa' && prod.stok <= 0){ showToast('Stok produk ini habis.', true); return; }
     addToCart(productId);
     if (navigator.vibrate) navigator.vibrate(30);
     showToast(`✓ "${prod.nama}" ditambahkan ke keranjang`);
@@ -5065,7 +5065,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   async function addToCart(id){
     const prod = products.find(p => p.id === id);
     if (!prod){ showToast('Produk tidak ditemukan.', true); return; }
-    if (!prod.is_racikan && prod.stok <= 0){ showToast('Stok produk ini habis.', true); return; }
+    if (!prod.is_racikan && prod.satuan !== 'Jasa' && prod.stok <= 0){ showToast('Stok produk ini habis.', true); return; }
 
     // Dynamic Unit Engine: kalau produk non-Apotek ini punya multi-satuan, tampilkan pilihan dulu
     if (currentTenant?.jenis_usaha && currentTenant.jenis_usaha !== 'apotek'){
@@ -5076,7 +5076,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const cart = getActiveCart().items;
     const existing = cart.find(c => c.id === id);
     if (existing){
-      if (!prod.is_racikan && existing.qty >= prod.stok){ showToast('Jumlah melebihi stok tersedia.', true); return; }
+      if (!prod.is_racikan && prod.satuan !== 'Jasa' && existing.qty >= prod.stok){ showToast('Jumlah melebihi stok tersedia.', true); return; }
       existing.qty += 1;
     } else {
       cart.push({
@@ -5351,7 +5351,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
           <div class="ci-top">
             <div class="ci-name-wrap">
               <div class="ci-name">${c.name}</div>
-              <div class="ci-tag" style="${c.tag!=='obat_resep' ? 'color:var(--ink-soft)' : ''}">${KATEGORI_LABEL[c.tag] || c.tag}${c.isGrosir ? ' · <span style="color:var(--good)">Harga Grosir</span>' : ''}</div>
+              <div class="ci-tag" style="${c.tag!=='obat_resep' ? 'color:var(--ink-soft)' : ''}">${getKategoriLabelTampilan(c.tag)}${c.isGrosir ? ' · <span style="color:var(--good)">Harga Grosir</span>' : ''}</div>
             </div>
             <div class="ci-price num">Rp ${((c.price * c.qty) - (c.diskonItem||0)).toLocaleString('id-ID')}</div>
           </div>
@@ -6532,7 +6532,20 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   }
 
   // ================= TOGGLE APPROVAL STOK & LOG AKTIVITAS =================
-  const KATEGORI_PRODUK_LABEL = { obat_bebas:'Obat Bebas', obat_resep:'Obat Resep', herbal:'Herbal', skincare:'Skincare', alat_kesehatan:'Alat Kesehatan' };
+  const KATEGORI_PRODUK_LABEL_APOTEK = { obat_bebas:'Obat Bebas', obat_resep:'Obat Resep', herbal:'Herbal', skincare:'Skincare', alat_kesehatan:'Alat Kesehatan' };
+
+  function getKategoriProdukLabelAktif(){
+    const jenisUsaha = currentTenant?.jenis_usaha;
+    if (!jenisUsaha || jenisUsaha === 'apotek') return KATEGORI_PRODUK_LABEL_APOTEK;
+    const config = KATEGORI_SATUAN_PER_JENIS_USAHA[jenisUsaha] || KATEGORI_SATUAN_DEFAULT;
+    return Object.fromEntries(config.kategori);
+  }
+  // Label buat TAMPILAN (kartu Kasir, keranjang, tabel Stok) — beda dari daftar kategori Markup Otomatis,
+  // karena perlu nambahin 'Racikan' untuk tag racikan dinamis yang bukan kategori produk bersetok biasa.
+  function getKategoriLabelTampilan(key){
+    if (key === 'obat_racikan_dinamis') return 'Racikan';
+    return getKategoriProdukLabelAktif()[key] || key;
+  }
 
   async function loadApprovalToggleStatus(){
     const toggle = document.getElementById('approval-stok-toggle');
@@ -6545,7 +6558,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const markupList = document.getElementById('markup-kategori-list');
     if (markupList){
       const markupData = data?.markup_per_kategori || {};
-      markupList.innerHTML = Object.entries(KATEGORI_PRODUK_LABEL).map(([key, label]) => `
+      const kategoriLabelAktif = getKategoriProdukLabelAktif();
+      markupList.innerHTML = Object.entries(kategoriLabelAktif).map(([key, label]) => `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
           <span style="font-size:12.5px;">${label}</span>
           <div style="display:flex; align-items:center; gap:4px;">
@@ -6575,7 +6589,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const markupBaru = { ...(tenantData?.markup_per_kategori || {}), [kategori]: persen };
     const { error } = await sb.from('tenants').update({ markup_per_kategori: markupBaru }).eq('id', currentProfile.tenant_id);
     if (error){ showToast('Gagal mengubah pengaturan: ' + error.message, true); return; }
-    showToast(`✓ Markup ${KATEGORI_PRODUK_LABEL[kategori]} diatur ke ${persen}%`);
+    showToast(`✓ Markup ${getKategoriProdukLabelAktif()[kategori] || kategori} diatur ke ${persen}%`);
   }
 
   let logAktivitasFilter = 'semua';
@@ -8611,6 +8625,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     document.getElementById('pf-is-racikan').checked = false;
     document.getElementById('pf-favorit').checked = false;
     toggleRacikanHint();
+    const bukanApotekModal = currentTenant?.jenis_usaha && currentTenant.jenis_usaha !== 'apotek';
+    document.getElementById('pf-racikan-wrap').style.display = bukanApotekModal ? 'none' : '';
     pendingProductPhotoUrl = null;
     document.getElementById('pf-foto-preview').style.backgroundImage = '';
     document.getElementById('pf-foto-preview').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>';
@@ -8659,6 +8675,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     document.getElementById('pf-is-racikan').checked = !!p.is_racikan;
     document.getElementById('pf-favorit').checked = !!p.favorit;
     toggleRacikanHint();
+    const bukanApotekEdit = currentTenant?.jenis_usaha && currentTenant.jenis_usaha !== 'apotek';
+    document.getElementById('pf-racikan-wrap').style.display = bukanApotekEdit ? 'none' : '';
     pendingProductPhotoUrl = p.gambar_url || null;
     if (p.gambar_url){
       document.getElementById('pf-foto-preview').style.backgroundImage = `url(${p.gambar_url})`;
@@ -10352,10 +10370,10 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
             return `
               <tr>
                 <td><div class="prod-cell"><div class="prod-thumb"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/></svg></div><div><div class="prod-title">${p.nama}</div><div class="prod-sub">${p.satuan}${p.satuan_kemasan ? ` · 1 ${p.satuan_kemasan} = ${p.isi_per_kemasan} ${p.satuan}` : ''}</div></div></div></td>
-                <td>${KATEGORI_LABEL[p.kategori] || p.kategori}</td>
+                <td>${getKategoriLabelTampilan(p.kategori)}</td>
                 <td style="color:${expiryColor}; font-weight:${expiryColor !== 'var(--ink-soft)' ? '600' : '400'}">${expiryLabel}</td>
-                <td class="num">${p.is_racikan ? '<span class="pill" style="background:var(--amber-tint); color:var(--amber);">Racikan</span>' : p.stok + ' ' + (p.satuan || '') + ' / min ' + p.stok_minimum}</td>
-                <td>${p.is_racikan ? '—' : (low ? '<span class="pill crit">Segera pesan</span>' : '<span class="pill ok">Aman</span>')}</td>
+                <td class="num">${p.is_racikan ? '<span class="pill" style="background:var(--amber-tint); color:var(--amber);">Racikan</span>' : (p.satuan === 'Jasa' ? '<span class="pill" style="background:var(--brand-tint); color:var(--brand);">🔧 Layanan (Jasa)</span>' : p.stok + ' ' + (p.satuan || '') + ' / min ' + p.stok_minimum)}</td>
+                <td>${(p.is_racikan || p.satuan === 'Jasa') ? '—' : (low ? '<span class="pill crit">Segera pesan</span>' : '<span class="pill ok">Aman</span>')}</td>
                 <td>${p.supplier || '—'}</td>
                 <td style="white-space:nowrap;">
                   ${p.is_racikan
