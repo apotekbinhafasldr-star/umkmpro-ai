@@ -6965,9 +6965,18 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     el.style.display = 'block';
   }
 
-  function pilihSupplierDariSaran(nama){
+  async function pilihSupplierDariSaran(nama){
     document.getElementById('pf-supplier').value = nama;
     document.getElementById('pf-supplier-saran').style.display = 'none';
+    // Otomatis isi nomor WA sales kalau supplier ini sudah pernah dipakai sebelumnya (di produk lain),
+    // supaya tidak perlu ketik ulang nomornya tiap tambah produk baru dari supplier yang sama.
+    const kontakInput = document.getElementById('pf-supplier-kontak');
+    if (kontakInput && !kontakInput.value.trim()){
+      const { data } = await sb.from('product_suppliers')
+        .select('kontak').eq('tenant_id', currentProfile.tenant_id).eq('nama_supplier', nama)
+        .not('kontak', 'is', null).order('updated_at', { ascending: false }).limit(1).maybeSingle();
+      if (data?.kontak) kontakInput.value = data.kontak;
+    }
   }
 
   // ================= KELOLA KONTAK SALES/SUPPLIER (update massal per nama supplier) =================
@@ -8698,7 +8707,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     document.getElementById('pf-lokasi-rak').value = p.lokasi_rak || '';
     document.getElementById('pf-supplier-kontak').value = '';
     if (p.supplier){
-      sb.from('product_suppliers').select('kontak').eq('product_id', p.id).eq('nama_supplier', p.supplier).maybeSingle()
+      sb.from('product_suppliers').select('kontak').eq('tenant_id', currentProfile.tenant_id).eq('nama_supplier', p.supplier)
+        .not('kontak', 'is', null).order('updated_at', { ascending: false }).limit(1).maybeSingle()
         .then(({ data }) => { if (data?.kontak) document.getElementById('pf-supplier-kontak').value = data.kontak; });
     }
     updateMarginPreview();
