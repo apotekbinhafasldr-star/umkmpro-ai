@@ -2014,10 +2014,11 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <label>Produsen / Pabrik</label>
         <input type="text" id="pf-produsen" placeholder="Contoh: Kimia Farma">
       </div>
-      <div class="field">
+      <div class="field" style="position:relative;">
         <label>Supplier</label>
-        <input type="text" id="pf-supplier" list="daftar-nama-supplier" placeholder="Contoh: RPN" autocomplete="off">
+        <input type="text" id="pf-supplier" list="daftar-nama-supplier" placeholder="Contoh: RPN" autocomplete="off" oninput="cariSupplierUntukProduk(this.value)" onfocus="tampilkanSemuaSupplierSaran()" onblur="setTimeout(()=>document.getElementById('pf-supplier-saran').style.display='none', 200)">
         <datalist id="daftar-nama-supplier"></datalist>
+        <div id="pf-supplier-saran" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; margin-top:2px; z-index:20; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
       </div>
     </div>
     <div class="field-row">
@@ -6893,10 +6894,33 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
 
   // ---- Utang Supplier ----
   // ================= AUTOCOMPLETE NAMA SUPPLIER (cegah typo bikin nama supplier dobel-dobel) =================
+  let daftarSupplierCache = [];
   async function isiDaftarNamaSupplier(){
     const { data } = await sb.from('product_suppliers').select('nama_supplier').eq('tenant_id', currentProfile.tenant_id);
     const namaUnik = [...new Set((data||[]).map(d => d.nama_supplier))].sort();
+    daftarSupplierCache = namaUnik;
     document.getElementById('daftar-nama-supplier').innerHTML = namaUnik.map(n => `<option value="${n}">`).join('');
+  }
+
+  function cariSupplierUntukProduk(q){
+    const el = document.getElementById('pf-supplier-saran');
+    if (!q || q.trim().length < 1){ el.style.display = 'none'; return; }
+    const hasil = daftarSupplierCache.filter(n => n.toLowerCase().includes(q.toLowerCase()));
+    if (hasil.length === 0){ el.style.display = 'none'; return; }
+    el.innerHTML = hasil.map(n => `<div style="font-size:12.5px; padding:9px 12px; cursor:pointer; border-bottom:1px solid var(--line);" onmousedown="pilihSupplierDariSaran('${n.replace(/'/g,"\\'")}')">${n}</div>`).join('');
+    el.style.display = 'block';
+  }
+
+  function tampilkanSemuaSupplierSaran(){
+    if (daftarSupplierCache.length === 0) return;
+    const el = document.getElementById('pf-supplier-saran');
+    el.innerHTML = daftarSupplierCache.map(n => `<div style="font-size:12.5px; padding:9px 12px; cursor:pointer; border-bottom:1px solid var(--line);" onmousedown="pilihSupplierDariSaran('${n.replace(/'/g,"\\'")}')">${n}</div>`).join('');
+    el.style.display = 'block';
+  }
+
+  function pilihSupplierDariSaran(nama){
+    document.getElementById('pf-supplier').value = nama;
+    document.getElementById('pf-supplier-saran').style.display = 'none';
   }
 
   // ================= KELOLA KONTAK SALES/SUPPLIER (update massal per nama supplier) =================
