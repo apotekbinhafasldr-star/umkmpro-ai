@@ -764,6 +764,12 @@
           <div class="empty-cart">Keranjang masih kosong.<br>Klik produk di sebelah kiri untuk menambahkan.</div>
         </div>
         <div class="cart-summary">
+          <div class="field" style="margin-bottom:10px; display:none;" id="kasir-gudang-wrap">
+            <label>Jualan sebagai (Van Sales)</label>
+            <select id="kasir-gudang-pilihan" onchange="getActiveCart().warehouseId = this.value || null;">
+              <option value="">🏬 Toko (tidak ada gudang khusus)</option>
+            </select>
+          </div>
           <div class="field" style="margin-bottom:10px;" id="metode-bayar-wrap">
             <label>Metode Pembayaran</label>
             <div style="display:flex; gap:6px;">
@@ -2805,8 +2811,8 @@ Baca & tanda tangan kontrak kerja</textarea>
     <div class="field">
       <label>Aksi</label>
       <select id="mb-aksi">
-        <option value="muat">Muat dari Toko → Gudang Ini (stok toko berkurang)</option>
-        <option value="kembali">Kembalikan ke Toko (stok toko bertambah lagi)</option>
+        <option value="muat">Muat dari Toko → Gudang Ini (catatan alokasi saja)</option>
+        <option value="kembali">Kembalikan ke Toko (catatan alokasi saja)</option>
       </select>
     </div>
     <div class="field" style="position:relative;">
@@ -2822,6 +2828,19 @@ Baca & tanda tangan kontrak kerja</textarea>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('muat-barang-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REKONSILIASI VAN SALES -->
+<div class="modal-overlay" id="rekonsiliasi-modal">
+  <div class="modal-card">
+    <div class="modal-title">📊 Rekonsiliasi — <span id="rk-nama-gudang"></span></div>
+    <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Bandingkan barang yang dimuat, terjual (via Kasir dengan tag gudang ini), dan dikembalikan — buat cek apakah sisa fisik cocok sama catatan sistem.</div>
+    <div id="rk-isi"><div class="loading-note">Memuat data…</div></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('rekonsiliasi-modal')">Tutup</button>
+      <button class="btn-primary" onclick="kirimLaporanVanSalesWA()">📤 Kirim ke WA</button>
     </div>
   </div>
 </div>
@@ -5644,7 +5663,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       uang_diterima: meta.uangDiterima || null, kembalian: meta.kembalian || 0,
       detail_pembayaran: meta.detailPembayaran || null,
       poin_ditebus: meta.poinDitebus || 0, nilai_poin_ditebus: meta.nilaiPoin || 0,
-      alasan_diskon_besar: meta.alasanDiskonBesar || null
+      alasan_diskon_besar: meta.alasanDiskonBesar || null,
+      warehouse_id: meta.warehouseId || null
     }).select().single();
     if (txErr) throw txErr;
 
@@ -5769,7 +5789,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const meta = {
       nomorTransaksi, namaPelanggan, waPelanggan, subtotal: subtotalKotor, diskon, total,
       metode: metodeFinal, shiftId: currentShift ? currentShift.id : null, waktuAsli: new Date().toISOString(),
-      uangDiterima, kembalian, detailPembayaran, poinDitebus, nilaiPoin, alasanDiskonBesar
+      uangDiterima, kembalian, detailPembayaran, poinDitebus, nilaiPoin, alasanDiskonBesar,
+      warehouseId: getActiveCart().warehouseId || null
     };
 
     const bersihkanKeranjang = () => {
@@ -9868,6 +9889,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       document.getElementById('pf-varian-wrap').style.display = '';
       muatKategoriSatuanCustom();
       muatDaftarGudang();
+      isiPilihanGudangKasir();
       await terapkanSaranTanyopoTersimpan();
     } catch(err){
       console.error('applyKategoriSatuanDinamis error (dibiarkan default Apotek):', err);
@@ -9973,6 +9995,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
           <div><div class="row-name">${TIPE_LABEL[g.tipe] || g.tipe} — ${g.nama}</div><div class="row-meta">${totalItem} jenis produk sedang dibawa</div></div>
           <div class="row-right">
             <button class="btn-secondary" onclick='openMuatBarangModal(${JSON.stringify({id:g.id,nama:g.nama}).replace(/'/g,"&#39;")})'>Muat/Kembalikan Barang</button>
+            <button class="btn-secondary" style="margin-top:6px; display:block;" onclick='openRekonsiliasiModal(${JSON.stringify({id:g.id,nama:g.nama}).replace(/'/g,"&#39;")})'>📊 Lihat Rekonsiliasi</button>
           </div>
         </div>
         ${totalItem > 0 ? `<div style="padding:0 4px 10px; font-size:11.5px; color:var(--ink-soft);">${(isiGudang||[]).map(i => `${i.products?.nama}: ${i.stok} ${i.products?.satuan||''}`).join(' · ')}</div>` : ''}`;
@@ -10039,28 +10062,121 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const jumlah = parseFloat(document.getElementById('mb-jumlah-input').value) || 0;
     if (jumlah <= 0){ showToast('Jumlah wajib diisi.', true); return; }
 
+    // TAHAP C: Muat/Kembalikan Barang sekarang MURNI PENCATATAN, tidak lagi mengubah products.stok.
+    // Stok tetap SATU KOLAM (dikurangi cuma sekali saat transaksi beneran via Kasir, seperti biasa),
+    // supaya tidak dobel hitung kalau sales yang bawa barang itu juga jualan langsung lewat Kasir.
     const { data: produkTerbaru } = await sb.from('products').select('stok').eq('id', mbProdukDipilih.id).single();
     const { data: existingGudang } = await sb.from('warehouse_stock').select('stok').eq('warehouse_id', warehouseId).eq('product_id', mbProdukDipilih.id).maybeSingle();
     const stokGudangSekarang = existingGudang?.stok || 0;
 
     if (aksi === 'muat'){
       if (produkTerbaru.stok < jumlah){ showToast(`Stok toko tidak cukup (tersedia ${produkTerbaru.stok}).`, true); return; }
-      await sb.from('products').update({ stok: produkTerbaru.stok - jumlah }).eq('id', mbProdukDipilih.id);
       await sb.from('warehouse_stock').upsert({ warehouse_id: warehouseId, product_id: mbProdukDipilih.id, stok: stokGudangSekarang + jumlah, updated_at: new Date().toISOString() }, { onConflict: 'warehouse_id,product_id' });
-      await sb.from('inventory_movements').insert({ tenant_id: currentProfile.tenant_id, product_id: mbProdukDipilih.id, jenis_mutasi: 'VAN_LOAD', jumlah: -jumlah, keterangan: `Dimuat ke gudang/mobil` });
+      await sb.from('inventory_movements').insert({ tenant_id: currentProfile.tenant_id, product_id: mbProdukDipilih.id, jenis_mutasi: 'VAN_LOAD', jumlah: -jumlah, keterangan: `Dimuat ke gudang/mobil (catatan saja, stok toko tidak berubah)` });
     } else {
       if (stokGudangSekarang < jumlah){ showToast(`Stok di gudang ini tidak cukup (tersedia ${stokGudangSekarang}).`, true); return; }
-      await sb.from('products').update({ stok: produkTerbaru.stok + jumlah }).eq('id', mbProdukDipilih.id);
       await sb.from('warehouse_stock').upsert({ warehouse_id: warehouseId, product_id: mbProdukDipilih.id, stok: stokGudangSekarang - jumlah, updated_at: new Date().toISOString() }, { onConflict: 'warehouse_id,product_id' });
-      await sb.from('inventory_movements').insert({ tenant_id: currentProfile.tenant_id, product_id: mbProdukDipilih.id, jenis_mutasi: 'VAN_RETURN', jumlah, keterangan: `Dikembalikan dari gudang/mobil` });
+      await sb.from('inventory_movements').insert({ tenant_id: currentProfile.tenant_id, product_id: mbProdukDipilih.id, jenis_mutasi: 'VAN_RETURN', jumlah, keterangan: `Dikembalikan dari gudang/mobil (catatan saja, stok toko tidak berubah)` });
     }
 
-    showToast('✓ Tersimpan');
+    showToast('✓ Tersimpan (catatan alokasi, stok toko tidak berubah)');
     closeModal('muat-barang-modal');
     await loadProducts();
     await muatDaftarGudang();
   }
   // ================== akhir Multi-Gudang ==================
+
+  // ================== TAHAP C — Van Sales: Tandai Transaksi Atas Nama Gudang/Mobil ==================
+  async function isiPilihanGudangKasir(){
+    const wrap = document.getElementById('kasir-gudang-wrap');
+    const jenisUsaha = currentTenant?.jenis_usaha;
+    if (!jenisUsaha || jenisUsaha === 'apotek'){ wrap.style.display = 'none'; return; }
+
+    const { data } = await sb.from('warehouses').select('id, nama').eq('tenant_id', currentProfile.tenant_id).eq('aktif', true).order('created_at');
+    if (!data || data.length === 0){ wrap.style.display = 'none'; return; }
+
+    const sel = document.getElementById('kasir-gudang-pilihan');
+    sel.innerHTML = '<option value="">🏬 Toko (tidak ada gudang khusus)</option>' + data.map(g => `<option value="${g.id}">🚐 ${g.nama}</option>`).join('');
+    wrap.style.display = '';
+  }
+  // ================== akhir Van Sales — Tandai Transaksi ==================
+
+  // ================== TAHAP C — Rekonsiliasi Van Sales ==================
+  let rekonsiliasiCache = null;
+  async function openRekonsiliasiModal(g){
+    document.getElementById('rk-nama-gudang').textContent = g.nama;
+    document.getElementById('rk-isi').innerHTML = '<div class="loading-note">Memuat data…</div>';
+    document.getElementById('rekonsiliasi-modal').classList.add('show');
+
+    const { data: pergerakan } = await sb.from('inventory_movements')
+      .select('jenis_mutasi, jumlah, products(nama, satuan)')
+      .eq('tenant_id', currentProfile.tenant_id)
+      .in('jenis_mutasi', ['VAN_LOAD','VAN_RETURN'])
+      .order('created_at');
+
+    const { data: transaksiGudang } = await sb.from('transactions')
+      .select('id, total, nomor_transaksi, created_at, transaction_items(product_id, nama_produk, qty)')
+      .eq('tenant_id', currentProfile.tenant_id).eq('warehouse_id', g.id);
+
+    // Rekap per produk: total dimuat, total dikembalikan, total terjual (dari transaksi bertag gudang ini)
+    const rekap = {};
+    (pergerakan || []).forEach(m => {
+      const nama = m.products?.nama || '?';
+      if (!rekap[nama]) rekap[nama] = { dimuat: 0, dikembalikan: 0, terjual: 0, satuan: m.products?.satuan || '' };
+      if (m.jenis_mutasi === 'VAN_LOAD') rekap[nama].dimuat += Math.abs(m.jumlah);
+      if (m.jenis_mutasi === 'VAN_RETURN') rekap[nama].dikembalikan += m.jumlah;
+    });
+    (transaksiGudang || []).forEach(tx => {
+      (tx.transaction_items || []).forEach(item => {
+        const nama = item.nama_produk;
+        if (!rekap[nama]) rekap[nama] = { dimuat: 0, dikembalikan: 0, terjual: 0, satuan: '' };
+        rekap[nama].terjual += item.qty;
+      });
+    });
+
+    const totalPenjualan = (transaksiGudang || []).reduce((s, tx) => s + parseFloat(tx.total), 0);
+    const namaProdukList = Object.keys(rekap);
+    rekonsiliasiCache = { namaGudang: g.nama, rekap, totalPenjualan, jumlahTransaksi: (transaksiGudang||[]).length };
+
+    const el = document.getElementById('rk-isi');
+    if (namaProdukList.length === 0){
+      el.innerHTML = '<div style="font-size:12px; color:var(--ink-soft);">Belum ada aktivitas untuk gudang ini.</div>';
+      return;
+    }
+    el.innerHTML = `
+      <div style="font-size:12.5px; font-weight:700; margin-bottom:8px; color:var(--brand);">💰 Total Penjualan Gudang Ini: Rp ${totalPenjualan.toLocaleString('id-ID')} (${(transaksiGudang||[]).length} transaksi)</div>
+      ${namaProdukList.map(nama => {
+        const r = rekap[nama];
+        const sisaSeharusnya = r.dimuat - r.terjual - r.dikembalikan;
+        return `
+        <div style="font-size:12px; padding:8px 0; border-bottom:1px solid var(--line);">
+          <b>${nama}</b><br>
+          Dimuat: ${r.dimuat} ${r.satuan} · Terjual: ${r.terjual} ${r.satuan} · Dikembalikan: ${r.dikembalikan} ${r.satuan}<br>
+          <span style="color:${sisaSeharusnya === 0 ? 'var(--good)' : 'var(--danger)'}; font-weight:700;">Sisa seharusnya di gudang: ${sisaSeharusnya} ${r.satuan}</span>
+        </div>`;
+      }).join('')}
+      <div style="font-size:10.5px; color:var(--ink-soft); margin-top:10px;">Kalau "Sisa seharusnya" tidak nol, cek fisik barang di gudang — mungkin ada yang belum dicatat "Kembalikan ke Toko".</div>`;
+  }
+
+  function kirimLaporanVanSalesWA(){
+    if (!rekonsiliasiCache){ showToast('Belum ada data rekonsiliasi.', true); return; }
+    const { namaGudang, rekap, totalPenjualan, jumlahTransaksi } = rekonsiliasiCache;
+    const tanggal = new Date().toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    let teks = `*LAPORAN VAN SALES*\n${namaGudang}\n${tanggal}\n\n`;
+    teks += `*Total Penjualan: Rp ${totalPenjualan.toLocaleString('id-ID')}*\n`;
+    teks += `Jumlah transaksi: ${jumlahTransaksi}\n\n`;
+    teks += `*Detail Produk:*\n`;
+    Object.keys(rekap).forEach(nama => {
+      const r = rekap[nama];
+      const sisa = r.dimuat - r.terjual - r.dikembalikan;
+      teks += `\n${nama}\nDimuat: ${r.dimuat} ${r.satuan} · Terjual: ${r.terjual} ${r.satuan} · Retur: ${r.dikembalikan} ${r.satuan}\nSisa: ${sisa} ${r.satuan}${sisa !== 0 ? ' ⚠️ CEK FISIK' : ' ✓'}\n`;
+    });
+    teks += `\n_Laporan otomatis dari UMKMpro AI_`;
+
+    window.open('https://wa.me/?text=' + encodeURIComponent(teks), '_blank');
+  }
+  // ================== akhir Rekonsiliasi Van Sales ==================
 
   function goPage(name, btn){
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
