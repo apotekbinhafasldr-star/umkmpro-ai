@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UMKMpro AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -78,6 +78,37 @@
   .tugas-check.done svg{ display:block; }
   .tugas-check svg{ display:none; }
   .tugas-check.readonly{ cursor:default; }
+
+  /* ===== Kartu Pilihan Paket — Basic / Plus / Pro (selaras dengan poster promosi: font Poppins, outline emas) ===== */
+  .paket-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; align-items:end; }
+  .paket-card{ position:relative; border-radius:16px; padding:18px 14px 16px; display:flex; flex-direction:column; transition:transform .2s ease; }
+  .paket-card.basic{ background:var(--surface); border:1.5px solid var(--gold); }
+  .paket-card.plus{ background:linear-gradient(180deg, var(--amber-tint) 0%, var(--surface) 65%); border:1.5px solid var(--gold); }
+  .paket-card.pro{
+    background:radial-gradient(circle at 20% -10%, rgba(192,145,70,0.35), transparent 55%), linear-gradient(160deg, #0F2419 0%, var(--brand-deep) 55%, #0A1810 100%);
+    border:1.5px solid var(--gold); color:#F3EEDF; padding-top:26px; margin-top:-10px; padding-bottom:24px;
+    box-shadow:0 20px 44px rgba(10,24,16,0.35), 0 3px 10px rgba(10,24,16,0.25);
+  }
+  .paket-ribbon{ position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:linear-gradient(120deg, var(--gold) 0%, #E3B96E 100%); color:#2A1D07; font-size:9.5px; font-weight:800; letter-spacing:.04em; padding:4px 12px; border-radius:20px; white-space:nowrap; box-shadow:0 3px 8px rgba(140,106,46,0.35); }
+  .paket-nama{ text-align:center; font-family:'Poppins',sans-serif; font-size:16px; font-weight:600; margin-bottom:2px; }
+  .paket-card.pro .paket-nama{ color:#fff; }
+  .paket-divider{ width:50%; height:1px; background:var(--gold); margin:6px auto 8px; opacity:0.55; }
+  .paket-tagline{ text-align:center; font-size:9.5px; color:var(--ink-soft); margin-bottom:10px; min-height:12px; }
+  .paket-card.pro .paket-tagline{ color:#C7BBA0; }
+  .paket-harga{ text-align:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:18px; margin-bottom:1px; }
+  .paket-card.pro .paket-harga{ color:#F3D28A; }
+  .paket-harga-satuan{ text-align:center; font-size:9.5px; color:var(--ink-soft); margin-bottom:14px; }
+  .paket-card.pro .paket-harga-satuan{ color:#9C927A; }
+  .paket-fitur-list{ flex:1; margin-bottom:12px; }
+  .paket-fitur-item{ font-size:10.5px; padding:5px 0; display:flex; gap:6px; align-items:flex-start; border-bottom:1px dashed rgba(0,0,0,0.06); }
+  .paket-card.pro .paket-fitur-item{ border-bottom-color:rgba(255,255,255,0.08); }
+  .paket-fitur-item:last-child{ border-bottom:none; }
+  .paket-fitur-item.mati{ opacity:0.4; }
+  .paket-fitur-item .cek{ flex-shrink:0; width:14px; height:14px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; margin-top:1px; }
+  .paket-card.basic .paket-fitur-item .cek, .paket-card.plus .paket-fitur-item .cek{ background:var(--good-tint); color:var(--good); }
+  .paket-fitur-item.mati .cek{ background:transparent !important; color:var(--ink-soft) !important; }
+  .paket-card.pro .paket-fitur-item .cek{ background:rgba(192,145,70,0.25); color:#F3D28A; }
+  @media (max-width:420px){ .paket-nama{ font-size:14.5px; } .paket-harga{ font-size:15.5px; } .paket-fitur-item{ font-size:9.5px; } .paket-card{ padding:14px 8px 12px; } }
   .tugas-body{ flex:1; min-width:0; }
   .tugas-judul{ font-family:'Fraunces',serif; font-size:15px; font-weight:600; line-height:1.35; color:var(--ink); }
   .tugas-judul.done{ text-decoration:line-through; color:var(--ink-soft); }
@@ -97,7 +128,7 @@
   .auth-card{ background:var(--surface); border-radius:18px; padding:34px 32px; width:100%; max-width:380px; box-shadow:0 20px 50px rgba(0,0,0,.3); position:relative; }
   .auth-brand{ display:flex; align-items:center; gap:10px; margin-bottom:22px; }
   .brand-mark{ width:36px; height:36px; border-radius:10px; background:linear-gradient(155deg,#E4B15C 0%,var(--good) 65%); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:700; color:#132420; font-size:16px; }
-  .auth-brand-name{ font-size:15px; font-weight:600; }
+  .auth-brand-name{ font-size:19px; font-weight:700; font-family:'Poppins',sans-serif; color:var(--brand); }
   .auth-title{ font-size:20px; font-weight:600; margin-bottom:4px; }
   .auth-sub{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:500; color:var(--ink-soft); opacity:0.65; margin-top:-10px; margin-bottom:26px; line-height:1.8; letter-spacing:0.14em; text-transform:uppercase; }
   .field{ margin-bottom:14px; }
@@ -375,7 +406,11 @@
   <div class="auth-card">
     <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v100-1800</div>
     <div class="auth-brand">
-      <div class="brand-mark">U</div>
+      <svg width="38" height="38" viewBox="0 0 100 100" fill="none">
+        <path d="M14 44 Q8 40 12 34 Q30 20 50 13 Q70 20 88 34 Q92 40 86 44" stroke="#20402F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M22 34V88H78V34" stroke="#20402F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M35 90V66C35 58 39 55 44 58C46.5 59.5 48 61 50 61C52 61 53.5 59.5 56 58C61 55 65 58 65 66V90" stroke="#20402F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
       <div class="auth-brand-name">UMKMpro AI</div>
     </div>
     <div id="auth-sub" class="auth-sub">Powered by Tanyopo Intelligence<br>Developed by Tanyopo Labs</div>
@@ -6624,19 +6659,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   function renderPaketComparisonAdmin(){
     const box = document.getElementById('admin-paket-comparison-box');
     if (!box) return;
-    const kolom = ['basic','plus','pro'].map(p => `
-        <div style="border:1.5px solid var(--line); border-radius:12px; padding:12px;">
-          <div style="text-align:center; font-size:13px; font-weight:800; margin-bottom:2px;">${NAMA_PAKET[p]}</div>
-          <div style="text-align:center; font-size:11px; color:var(--ink-soft); margin-bottom:10px;">Rp ${HARGA_PAKET_TAMPILAN[p].toLocaleString('id-ID')}/bulan</div>
-          ${FITUR_PAKET.map(f => {
-            const val = f[p];
-            const aktifFitur = !!val;
-            const tandaAwal = aktifFitur ? '✓' : '—';
-            const teksTambahan = typeof val === 'string' ? ` (${val})` : '';
-            return `<div style="font-size:10.5px; padding:4px 0; display:flex; gap:5px; align-items:flex-start; ${aktifFitur ? '' : 'color:var(--ink-soft); opacity:0.55;'}">${tandaAwal} <span>${f.label}${teksTambahan}</span></div>`;
-          }).join('')}
-        </div>`).join('');
-    box.innerHTML = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">${kolom}</div>`;
+    const kolom = ['basic','plus','pro'].map(p => buatKartuPaket(p)).join('');
+    box.innerHTML = `<div class="paket-grid">${kolom}</div>`;
   }
 
   function setFilterAdminLaporan(f, el){
@@ -10852,6 +10876,29 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     { label: '📝 Generator Promosi (AI)', basic:false, plus:false, pro:'100x/bulan' },
   ];
 
+  const TAGLINE_PAKET = { basic: 'Buat yang baru mulai', plus: 'Usaha yang udah punya tim', pro: 'Paling lengkap & canggih' };
+
+  function buatKartuPaket(p, { aktif = false, tombolAksiHtml = '' } = {}){
+    const ribbon = p === 'pro' ? `<div class="paket-ribbon">⭐ Paling Direkomendasikan</div>` : '';
+    const fiturHtml = FITUR_PAKET.map(f => {
+      const val = f[p];
+      const aktifFitur = !!val;
+      const teksTambahan = typeof val === 'string' ? ` (${val})` : '';
+      return `<div class="paket-fitur-item ${aktifFitur ? '' : 'mati'}"><span class="cek">${aktifFitur ? '✓' : '–'}</span><span>${f.label}${teksTambahan}</span></div>`;
+    }).join('');
+    return `
+      <div class="paket-card ${p}">
+        ${ribbon}
+        <div class="paket-nama">${NAMA_PAKET[p]}</div>
+        <div class="paket-divider"></div>
+        <div class="paket-tagline">${TAGLINE_PAKET[p]}</div>
+        <div class="paket-harga">Rp${HARGA_PAKET_TAMPILAN[p].toLocaleString('id-ID')}</div>
+        <div class="paket-harga-satuan">per bulan</div>
+        <div class="paket-fitur-list">${fiturHtml}</div>
+        ${tombolAksiHtml}
+      </div>`;
+  }
+
   async function renderPaketComparison(paketAktif, namaUsaha){
     const box = document.getElementById('paket-comparison-box');
     if (!box) return;
@@ -10860,27 +10907,15 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const kolom = ['basic','plus','pro'].map(p => {
       const aktif = p === paketAktif;
       const teksUpgrade = `Halo, saya mau upgrade paket langganan UMKMpro AI untuk usaha "${namaUsaha}" ke paket ${NAMA_PAKET[p]}.`;
-      const tombolAksi = aktif
-        ? `<div style="text-align:center; font-size:11px; font-weight:800; color:var(--good); padding:8px 0;">✓ Paket Aktif Kamu</div>`
+      const tombolAksiHtml = aktif
+        ? `<div style="text-align:center; font-size:11px; font-weight:800; color:${p==='pro' ? '#8FE0B4' : 'var(--good)'}; padding:8px 0;">✓ Paket Aktif Kamu</div>`
         : (config?.whatsapp_number
-            ? `<a href="https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(teksUpgrade)}" target="_blank" class="btn-secondary" style="width:100%; justify-content:center; text-decoration:none; font-size:11px;">Minta Upgrade →</a>`
+            ? `<a href="https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(teksUpgrade)}" target="_blank" class="btn-secondary" style="width:100%; justify-content:center; text-decoration:none; font-size:11px; ${p==='pro' ? 'background:var(--gold); color:#2A1D07; border-color:var(--gold);' : ''}">Minta Upgrade →</a>`
             : `<button class="btn-secondary" style="width:100%; font-size:11px;" disabled>Hubungi Admin</button>`);
-      return `
-        <div style="border:1.5px solid ${aktif ? 'var(--brand)' : 'var(--line)'}; border-radius:12px; padding:12px; ${aktif ? 'background:var(--brand-tint);' : ''}">
-          <div style="text-align:center; font-size:13px; font-weight:800; margin-bottom:2px;">${NAMA_PAKET[p]}</div>
-          <div style="text-align:center; font-size:11px; color:var(--ink-soft); margin-bottom:10px;">Rp ${HARGA_PAKET_TAMPILAN[p].toLocaleString('id-ID')}/bulan</div>
-          ${FITUR_PAKET.map(f => {
-            const val = f[p];
-            const aktifFitur = !!val;
-            const tandaAwal = typeof val === 'string' ? '✓' : (val ? '✓' : '—');
-            const teksTambahan = typeof val === 'string' ? ` (${val})` : '';
-            return `<div style="font-size:10.5px; padding:4px 0; display:flex; gap:5px; align-items:flex-start; ${aktifFitur ? '' : 'color:var(--ink-soft); opacity:0.55;'}">${tandaAwal} <span>${f.label}${teksTambahan}</span></div>`;
-          }).join('')}
-          <div style="margin-top:10px;">${tombolAksi}</div>
-        </div>`;
+      return buatKartuPaket(p, { aktif, tombolAksiHtml });
     }).join('');
 
-    box.innerHTML = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">${kolom}</div>`;
+    box.innerHTML = `<div class="paket-grid">${kolom}</div>`;
   }
 
   const NAMA_PAKET = { basic: 'Basic', plus: 'Plus', pro: 'Pro' };
