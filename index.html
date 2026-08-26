@@ -7380,6 +7380,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       if (a.status === 'menunggu') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand);" onclick="ubahStatusAntrian('${a.id}','dikerjakan')">▶ Mulai Kerjakan</button>`);
       if (a.status === 'dikerjakan') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good);" onclick="ubahStatusAntrian('${a.id}','selesai')">✓ Tandai Selesai</button>`);
       if (a.status === 'selesai') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="ubahStatusAntrian('${a.id}','diambil')">📦 Sudah Diambil</button>`);
+      if (a.status === 'selesai' || a.status === 'diambil') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand); border-color:var(--brand);" onclick='lanjutKeKasirDariServis(${JSON.stringify({nama:a.nama_pelanggan,wa:a.whatsapp_pelanggan||''}).replace(/'/g,"&#39;")})'>💰 Lanjut ke Kasir</button>`);
       if (['menunggu','dikerjakan'].includes(a.status)) tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--danger);" onclick="ubahStatusAntrian('${a.id}','batal')">Batalkan</button>`);
       return `
       <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:6px;">
@@ -7406,6 +7407,17 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     await renderAntrianServis(filterAntrianServisAktif);
   }
 
+  function lanjutKeKasirDariServis(data){
+    goPage('pos', document.querySelector('.nav-item[data-page=pos]'));
+    setTimeout(() => {
+      const inputNama = document.getElementById('cart-nama-pelanggan');
+      const inputWa = document.getElementById('cart-wa-pelanggan');
+      if (inputNama){ inputNama.value = data.nama; const cart = getActiveCart(); if (cart) cart.namaPelanggan = data.nama; }
+      if (inputWa && data.wa){ inputWa.value = data.wa; const cart = getActiveCart(); if (cart) cart.waPelanggan = data.wa; }
+      showToast('✓ Data pelanggan udah keisi — tinggal tambahin produk/jasa yang dikerjakan');
+    }, 150);
+  }
+
   function renderDaftarKendaraan(){
     const box = document.getElementById('daftar-kendaraan-list');
     if (!box) return;
@@ -7413,11 +7425,34 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const data = kendaraanCacheServis.filter(k => (k.plat_nomor||'').toLowerCase().includes(kata) || (k.nama_pelanggan||'').toLowerCase().includes(kata));
     if (data.length === 0){ box.innerHTML = '<div class="loading-note">Tidak ada kendaraan ditemukan.</div>'; return; }
     box.innerHTML = data.map(k => `
-      <div class="row-item">
-        <div>
-          <div class="row-name">${k.plat_nomor} <span style="font-weight:400; color:var(--ink-soft);">· ${[k.merek,k.model].filter(Boolean).join(' ') || k.jenis_kendaraan}</span></div>
-          <div class="row-meta">${k.nama_pelanggan}${k.whatsapp_pelanggan ? ' · '+k.whatsapp_pelanggan : ''}</div>
+      <div class="row-item" style="cursor:pointer; flex-direction:column; align-items:stretch; gap:6px;" onclick="toggleRiwayatKendaraan('${k.id}', this)">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="row-name">${k.plat_nomor} <span style="font-weight:400; color:var(--ink-soft);">· ${[k.merek,k.model].filter(Boolean).join(' ') || k.jenis_kendaraan}</span></div>
+            <div class="row-meta">${k.nama_pelanggan}${k.whatsapp_pelanggan ? ' · '+k.whatsapp_pelanggan : ''}</div>
+          </div>
+          <span style="font-size:11px; color:var(--brand);">📋 Riwayat ▾</span>
         </div>
+        <div class="riwayat-kendaraan-box" style="display:none;"></div>
+      </div>`).join('');
+  }
+
+  async function toggleRiwayatKendaraan(kendaraanId, rowEl){
+    const box = rowEl.querySelector('.riwayat-kendaraan-box');
+    if (box.style.display === 'block'){ box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    box.innerHTML = '<div class="loading-note">Memuat riwayat…</div>';
+    const { data, error } = await sb.from('antrian_servis').select('*').eq('kendaraan_id', kendaraanId).order('created_at', { ascending: false });
+    if (error){ box.innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+    if (!data || data.length === 0){ box.innerHTML = '<div class="loading-note">Belum ada riwayat servis buat kendaraan ini.</div>'; return; }
+    box.innerHTML = data.map(a => `
+      <div style="background:var(--surface-2); border-radius:8px; padding:9px 11px; margin-top:6px; font-size:11.5px;">
+        <div style="display:flex; justify-content:space-between;">
+          <b>${new Date(a.created_at).toLocaleDateString('id-ID',{dateStyle:'medium'})}</b>
+          <span style="color:${STATUS_ANTRIAN_WARNA[a.status]};">${STATUS_ANTRIAN_LABEL[a.status]}</span>
+        </div>
+        <div style="color:var(--ink-soft); margin-top:2px;">${a.keluhan}</div>
+        ${a.nama_mekanik || a.estimasi_biaya ? `<div style="color:var(--ink-soft); margin-top:2px;">${a.nama_mekanik ? '🔧 '+a.nama_mekanik : ''}${a.nama_mekanik && a.estimasi_biaya ? ' · ' : ''}${a.estimasi_biaya ? 'Rp'+Math.round(a.estimasi_biaya).toLocaleString('id-ID') : ''}</div>` : ''}
       </div>`).join('');
   }
 
