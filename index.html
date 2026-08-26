@@ -2040,8 +2040,11 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
           </div>
         </div>
 
+        <div id="status-mekanik-box" style="display:none; background:var(--surface); border-radius:10px; padding:10px 12px; margin-bottom:12px; border:1px solid var(--line);"></div>
+
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
           <div class="tab active" style="font-size:11.5px;" data-filter="menunggu" onclick="setFilterAntrianServis('menunggu', this)">Menunggu</div>
+          <div class="tab" style="font-size:11.5px;" data-filter="menunggu_persetujuan" onclick="setFilterAntrianServis('menunggu_persetujuan', this)">Persetujuan</div>
           <div class="tab" style="font-size:11.5px;" data-filter="dikerjakan" onclick="setFilterAntrianServis('dikerjakan', this)">Dikerjakan</div>
           <div class="tab" style="font-size:11.5px;" data-filter="selesai" onclick="setFilterAntrianServis('selesai', this)">Selesai</div>
           <div class="tab" style="font-size:11.5px;" data-filter="semua" onclick="setFilterAntrianServis('semua', this)">Semua</div>
@@ -3415,6 +3418,24 @@ Baca & tanda tangan kontrak kerja</textarea>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('daftar-pelanggan-kasir-modal')">Batal</button>
       <button class="btn-primary" id="dpk-submit-btn" onclick="submitDaftarPelangganKasir()">Daftarkan</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-estimasi-servis">
+  <div class="modal-card" style="max-width:420px;">
+    <div class="modal-title">📝 Estimasi Sparepart &amp; Jasa</div>
+    <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:10px;">Tunjukkin daftar ini ke pelanggan dulu sebelum mulai kerjakan — biar transparan soal sparepart apa aja yang bakal diganti.</div>
+    <div class="field"><label>Nama Mekanik yang Cek</label><input type="text" id="est-mekanik" placeholder="Contoh: Andi"></div>
+    <div id="est-items-list" style="margin-bottom:8px;"></div>
+    <button type="button" class="btn-secondary" style="width:100%; justify-content:center; margin-bottom:12px;" onclick="tambahBarisEstimasi()">+ Tambah Item</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1.5px solid var(--line); margin-bottom:12px;">
+      <span style="font-weight:700; font-size:13px;">Total Estimasi</span>
+      <span style="font-weight:800; font-size:16px; color:var(--brand);" id="est-total-tampilan">Rp0</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-estimasi-servis')">Batal</button>
+      <button class="btn-primary" id="est-submit-btn" onclick="simpanEstimasiServis()">Simpan Estimasi</button>
     </div>
   </div>
 </div>
@@ -7287,8 +7308,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   // ================= SERVIS & KENDARAAN (khusus Bengkel) =================
   let filterAntrianServisAktif = 'menunggu';
   let kendaraanCacheServis = [];
-  const STATUS_ANTRIAN_LABEL = { menunggu:'Menunggu', dikerjakan:'Dikerjakan', selesai:'Selesai', diambil:'Diambil', batal:'Batal' };
-  const STATUS_ANTRIAN_WARNA = { menunggu:'var(--amber)', dikerjakan:'var(--brand)', selesai:'var(--good)', diambil:'var(--ink-soft)', batal:'var(--danger)' };
+  const STATUS_ANTRIAN_LABEL = { menunggu:'Menunggu Estimasi', menunggu_persetujuan:'Nunggu Persetujuan', dikerjakan:'Dikerjakan', selesai:'Selesai', diambil:'Diambil', batal:'Batal' };
+  const STATUS_ANTRIAN_WARNA = { menunggu:'var(--amber)', menunggu_persetujuan:'#B8860B', dikerjakan:'var(--brand)', selesai:'var(--good)', diambil:'var(--ink-soft)', batal:'var(--danger)' };
 
   function setServisTab(sub, tabEl){
     document.querySelectorAll('#page-servis .tabs > .tab').forEach(t => t.classList.remove('active'));
@@ -7373,15 +7394,33 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (filter !== 'semua') q = q.eq('status', filter);
     const { data, error } = await q;
     if (error){ box.innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+
+    renderStatusMekanik();
+
     if (!data || data.length === 0){ box.innerHTML = '<div class="loading-note">Tidak ada antrian di kategori ini.</div>'; return; }
 
     box.innerHTML = data.map(a => {
       const tombolStatus = [];
-      if (a.status === 'menunggu') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand);" onclick="ubahStatusAntrian('${a.id}','dikerjakan')">▶ Mulai Kerjakan</button>`);
-      if (a.status === 'dikerjakan') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good);" onclick="ubahStatusAntrian('${a.id}','selesai')">✓ Tandai Selesai</button>`);
+      if (a.status === 'menunggu') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand); border-color:var(--brand);" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")})'>📝 Buat Estimasi</button>`);
+      if (a.status === 'menunggu_persetujuan'){
+        tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good); border-color:var(--good);" onclick="setujuiEstimasiServis('${a.id}')">✓ Pelanggan Setuju, Mulai Kerjakan</button>`);
+        tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")})'>✏️ Edit Estimasi</button>`);
+      }
+      if (a.status === 'dikerjakan'){
+        tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good);" onclick="ubahStatusAntrian('${a.id}','selesai')">✓ Tandai Selesai</button>`);
+        tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")})'>+ Tambah Item (Perlu Approval Lagi)</button>`);
+      }
       if (a.status === 'selesai') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="ubahStatusAntrian('${a.id}','diambil')">📦 Sudah Diambil</button>`);
       if (a.status === 'selesai' || a.status === 'diambil') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand); border-color:var(--brand);" onclick='lanjutKeKasirDariServis(${JSON.stringify({nama:a.nama_pelanggan,wa:a.whatsapp_pelanggan||''}).replace(/'/g,"&#39;")})'>💰 Lanjut ke Kasir</button>`);
-      if (['menunggu','dikerjakan'].includes(a.status)) tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--danger);" onclick="ubahStatusAntrian('${a.id}','batal')">Batalkan</button>`);
+      if (['menunggu','menunggu_persetujuan','dikerjakan'].includes(a.status)) tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--danger);" onclick="ubahStatusAntrian('${a.id}','batal')">Batalkan</button>`);
+
+      const items = Array.isArray(a.estimasi_items) ? a.estimasi_items : [];
+      const rincianHtml = items.length > 0 ? `
+        <div style="background:var(--surface-2); border-radius:8px; padding:9px 11px; margin-top:2px;">
+          ${items.map(it => `<div style="display:flex; justify-content:space-between; font-size:11px; padding:2px 0;"><span>${it.jenis === 'sparepart' ? '🔧' : '👷'} ${it.nama}</span><span>Rp${Math.round(it.harga).toLocaleString('id-ID')}</span></div>`).join('')}
+          <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; padding-top:5px; margin-top:4px; border-top:1px dashed var(--line);"><span>Total</span><span>Rp${Math.round(a.total_estimasi||0).toLocaleString('id-ID')}</span></div>
+        </div>` : '';
+
       return `
       <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:6px;">
         <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
@@ -7391,10 +7430,21 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
           </div>
           <span class="pill" style="background:${STATUS_ANTRIAN_WARNA[a.status]}22; color:${STATUS_ANTRIAN_WARNA[a.status]}; flex-shrink:0;">${STATUS_ANTRIAN_LABEL[a.status]}</span>
         </div>
-        <div style="font-size:10.5px; color:var(--ink-soft);">${a.nama_mekanik ? '🔧 Mekanik: '+a.nama_mekanik+' · ' : ''}${a.estimasi_biaya ? 'Estimasi Rp'+Math.round(a.estimasi_biaya).toLocaleString('id-ID')+' · ' : ''}Masuk ${new Date(a.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}</div>
+        <div style="font-size:10.5px; color:var(--ink-soft);">${a.nama_mekanik ? '🔧 Mekanik: '+a.nama_mekanik+' · ' : ''}Masuk ${new Date(a.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}</div>
+        ${rincianHtml}
         <div style="display:flex; gap:6px; flex-wrap:wrap;">${tombolStatus.join('')}</div>
       </div>`;
     }).join('');
+  }
+
+  async function renderStatusMekanik(){
+    const holder = document.getElementById('status-mekanik-box');
+    if (!holder) return;
+    const { data } = await sb.from('antrian_servis').select('nama_mekanik').eq('tenant_id', currentProfile.tenant_id).eq('status', 'dikerjakan').not('nama_mekanik', 'is', null);
+    const mekanikSibuk = [...new Set((data||[]).map(d => d.nama_mekanik))];
+    if (mekanikSibuk.length === 0){ holder.innerHTML = ''; holder.style.display = 'none'; return; }
+    holder.style.display = 'block';
+    holder.innerHTML = `<div style="font-size:11px; color:var(--ink-soft); margin-bottom:6px;">🔧 Sedang Kerja:</div><div style="display:flex; gap:6px; flex-wrap:wrap;">${mekanikSibuk.map(m => `<span class="pill" style="background:var(--amber-tint); color:var(--amber);">${m}</span>`).join('')}</div>`;
   }
 
   async function ubahStatusAntrian(id, statusBaru){
@@ -7404,6 +7454,71 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const { error } = await sb.from('antrian_servis').update(payload).eq('id', id);
     if (error){ showToast('Gagal update status: ' + error.message, true); return; }
     showToast('✓ Status antrian diperbarui');
+    await renderAntrianServis(filterAntrianServisAktif);
+  }
+
+  // ---- Form Estimasi Sparepart & Jasa ----
+  let antrianEstimasiAktifId = null;
+  let itemEstimasiSementara = [];
+
+  function bukaFormEstimasi(antrian){
+    antrianEstimasiAktifId = antrian.id;
+    document.getElementById('est-mekanik').value = antrian.nama_mekanik || '';
+    const itemsAda = Array.isArray(antrian.estimasi_items) ? antrian.estimasi_items : [];
+    itemEstimasiSementara = itemsAda.length > 0 ? JSON.parse(JSON.stringify(itemsAda)) : [{ jenis:'jasa', nama:'Jasa Servis', harga:0 }];
+    renderBarisEstimasi();
+    document.getElementById('modal-estimasi-servis').classList.add('show');
+  }
+
+  function renderBarisEstimasi(){
+    const box = document.getElementById('est-items-list');
+    box.innerHTML = itemEstimasiSementara.map((it, i) => `
+      <div style="display:flex; gap:6px; margin-bottom:6px; align-items:center;">
+        <select onchange="itemEstimasiSementara[${i}].jenis=this.value" style="font-size:11px; padding:8px; border:1px solid var(--line); border-radius:8px; flex-shrink:0;">
+          <option value="jasa" ${it.jenis==='jasa'?'selected':''}>👷 Jasa</option>
+          <option value="sparepart" ${it.jenis==='sparepart'?'selected':''}>🔧 Sparepart</option>
+        </select>
+        <input type="text" value="${(it.nama||'').replace(/"/g,'&quot;')}" placeholder="Nama item" oninput="itemEstimasiSementara[${i}].nama=this.value" style="flex:1; min-width:0; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">
+        <input type="number" value="${it.harga||0}" placeholder="Harga" oninput="itemEstimasiSementara[${i}].harga=parseFloat(this.value)||0; hitungTotalEstimasi();" style="width:85px; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">
+        <button type="button" onclick="hapusBarisEstimasi(${i})" style="background:none; border:none; color:var(--danger); font-size:14px; padding:2px 4px; flex-shrink:0;">✕</button>
+      </div>`).join('');
+    hitungTotalEstimasi();
+  }
+  function tambahBarisEstimasi(){
+    itemEstimasiSementara.push({ jenis:'sparepart', nama:'', harga:0 });
+    renderBarisEstimasi();
+  }
+  function hapusBarisEstimasi(i){
+    itemEstimasiSementara.splice(i,1);
+    renderBarisEstimasi();
+  }
+  function hitungTotalEstimasi(){
+    const total = itemEstimasiSementara.reduce((s,it) => s + (parseFloat(it.harga)||0), 0);
+    document.getElementById('est-total-tampilan').textContent = 'Rp' + Math.round(total).toLocaleString('id-ID');
+  }
+
+  async function simpanEstimasiServis(){
+    const mekanik = document.getElementById('est-mekanik').value.trim();
+    const itemsValid = itemEstimasiSementara.filter(it => it.nama && it.nama.trim());
+    if (itemsValid.length === 0){ showToast('Tambahin minimal 1 item (jasa atau sparepart).', true); return; }
+    const total = itemsValid.reduce((s,it) => s + (parseFloat(it.harga)||0), 0);
+
+    const { error } = await sb.from('antrian_servis').update({
+      nama_mekanik: mekanik || null, estimasi_items: itemsValid, total_estimasi: total,
+      estimasi_dibuat_pada: new Date().toISOString(), status: 'menunggu_persetujuan',
+    }).eq('id', antrianEstimasiAktifId);
+    if (error){ showToast('Gagal menyimpan estimasi: ' + error.message, true); return; }
+    showToast('✓ Estimasi tersimpan — tunjukkin ke pelanggan buat persetujuan');
+    closeModal('modal-estimasi-servis');
+    await renderAntrianServis(filterAntrianServisAktif);
+  }
+
+  async function setujuiEstimasiServis(id){
+    const { error } = await sb.from('antrian_servis').update({
+      status: 'dikerjakan', estimasi_disetujui_pada: new Date().toISOString(), mulai_dikerjakan_pada: new Date().toISOString(),
+    }).eq('id', id);
+    if (error){ showToast('Gagal update: ' + error.message, true); return; }
+    showToast('✓ Disetujui pelanggan — servis mulai dikerjakan');
     await renderAntrianServis(filterAntrianServisAktif);
   }
 
