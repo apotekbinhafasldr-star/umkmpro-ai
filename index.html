@@ -1841,6 +1841,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       <div class="tabs">
         <div class="tab active" data-sub="admin-laporan" onclick="setAdminTab('admin-laporan', this)">🐞 Laporan Masalah</div>
         <div class="tab" data-sub="admin-saran" onclick="setAdminTab('admin-saran', this)">💡 Saran &amp; Kritik</div>
+        <div class="tab" data-sub="admin-paket" onclick="setAdminTab('admin-paket', this)">💰 Paket &amp; Harga</div>
       </div>
 
       <!-- LAPORAN MASALAH -->
@@ -1876,6 +1877,19 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
             </div>
           </div>
           <div class="panel-body" id="admin-saran-list"><div class="loading-note">Memuat data…</div></div>
+        </div>
+      </div>
+
+      <!-- PAKET & HARGA (pratinjau, sama seperti yang tenant lihat di menu Langganan) -->
+      <div class="sub-page" id="sub-admin-paket">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Paket &amp; Harga — Pratinjau</div>
+              <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">Tampilan ini persis sama dengan yang dilihat tenant di menu Langganan mereka masing-masing.</div>
+            </div>
+          </div>
+          <div class="panel-body" id="admin-paket-comparison-box" style="padding:16px;"></div>
         </div>
       </div>
     </main>
@@ -6604,6 +6618,25 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   async function loadAdminPage(){
     await renderAdminLaporan('baru');
     await renderAdminSaran('baru');
+    renderPaketComparisonAdmin();
+  }
+
+  function renderPaketComparisonAdmin(){
+    const box = document.getElementById('admin-paket-comparison-box');
+    if (!box) return;
+    const kolom = ['basic','plus','pro'].map(p => `
+        <div style="border:1.5px solid var(--line); border-radius:12px; padding:12px;">
+          <div style="text-align:center; font-size:13px; font-weight:800; margin-bottom:2px;">${NAMA_PAKET[p]}</div>
+          <div style="text-align:center; font-size:11px; color:var(--ink-soft); margin-bottom:10px;">Rp ${HARGA_PAKET_TAMPILAN[p].toLocaleString('id-ID')}/bulan</div>
+          ${FITUR_PAKET.map(f => {
+            const val = f[p];
+            const aktifFitur = !!val;
+            const tandaAwal = aktifFitur ? '✓' : '—';
+            const teksTambahan = typeof val === 'string' ? ` (${val})` : '';
+            return `<div style="font-size:10.5px; padding:4px 0; display:flex; gap:5px; align-items:flex-start; ${aktifFitur ? '' : 'color:var(--ink-soft); opacity:0.55;'}">${tandaAwal} <span>${f.label}${teksTambahan}</span></div>`;
+          }).join('')}
+        </div>`).join('');
+    box.innerHTML = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">${kolom}</div>`;
   }
 
   function setFilterAdminLaporan(f, el){
