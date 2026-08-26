@@ -448,6 +448,23 @@
   </div>
 </div>
 
+<!-- BANNER TELAT BAYAR (masih bisa pakai app, cuma diingatkan) -->
+<div id="banner-telat-bayar" style="display:none; position:sticky; top:0; z-index:500; background:var(--danger); color:#fff; padding:9px 16px; font-size:12px; font-weight:600; text-align:center; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
+  <span id="banner-telat-bayar-teks">⚠️ Langganan telat bayar</span>
+  <button onclick="goPage('langganan', document.querySelector('.nav-item[data-page=langganan]'))" style="background:#fff; color:var(--danger); border:none; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer;">Bayar Sekarang</button>
+</div>
+
+<!-- OVERLAY KUNCI TOTAL (Nonaktif) -->
+<div id="overlay-nonaktif" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(20,16,10,0.85); backdrop-filter:blur(3px); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--surface); border-radius:16px; padding:28px 24px; max-width:380px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="font-size:40px; margin-bottom:10px;">🔒</div>
+    <div style="font-family:'Fraunces',serif; font-size:19px; font-weight:700; margin-bottom:8px;">Akun Dikunci Sementara</div>
+    <div style="font-size:13px; color:var(--ink-soft); line-height:1.6; margin-bottom:18px;">Langganan usahamu sudah nonaktif karena belum diperpanjang. Data kamu aman tersimpan — selesaikan pembayaran buat buka akses kembali.</div>
+    <button class="btn-primary" style="width:100%; justify-content:center; margin-bottom:8px;" onclick="document.getElementById('overlay-nonaktif').style.display='none'; goPage('langganan', document.querySelector('.nav-item[data-page=langganan]'));">Bayar & Aktifkan Lagi</button>
+    <button class="btn-secondary" style="width:100%; justify-content:center;" onclick="handleLogout()">Keluar</button>
+  </div>
+</div>
+
 <!-- ============ APP SHELL ============ -->
 <div id="app-shell">
   <aside class="sidebar">
@@ -602,12 +619,13 @@
         <div class="panel-body" id="pengingat-dashboard-list"></div>
       </div>
 
-      <div class="panel owner-only">
+      <div class="panel owner-only" id="tanya-bisnis-panel">
         <div class="panel-head">
           <div>
             <div style="font-size:10px; font-weight:700; color:var(--brand); text-transform:uppercase; letter-spacing:.08em;">Tanyopo Intelligence</div>
             <div class="panel-title" style="font-family:'Fraunces',serif;">🤖 Tanya Kondisi Bisnis</div>
           </div>
+          <div id="tanya-bisnis-kuota-label" style="font-size:10px; color:var(--ink-soft); font-weight:600;"></div>
         </div>
         <div class="panel-body">
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
@@ -858,7 +876,7 @@
           <button class="btn-secondary" style="background:var(--brand-tint); color:var(--brand); border-color:var(--brand);" onclick="openTerimaBarangScan()">
             📷 Scan Barang Masuk
           </button>
-          <button class="btn-secondary" style="background:var(--amber-tint); color:var(--amber); border-color:var(--amber);" onclick="openBonScanModal()">
+          <button class="btn-secondary" id="btn-scan-bon-ai" style="background:var(--amber-tint); color:var(--amber); border-color:var(--amber);" onclick="openBonScanModal()">
             📸 Scan Bon (AI)
           </button>
           <button class="btn-secondary" onclick="openImportModal()">
@@ -1993,6 +2011,10 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div class="panel-body" id="langganan-status-box" style="padding:20px;">
           <div class="loading-note">Memuat status langganan…</div>
         </div>
+      </div>
+      <div class="panel" style="max-width:480px; margin-top:16px;">
+        <div class="panel-head"><h3>Pilihan Paket</h3></div>
+        <div class="panel-body" id="paket-comparison-box" style="padding:16px;"></div>
       </div>
       <div class="panel" style="max-width:480px; margin-top:16px;">
         <div class="panel-head"><h3>🎁 Referral — Ajak Usaha Lain Pakai UMKMpro AI</h3></div>
@@ -3763,12 +3785,14 @@ Baca & tanda tangan kontrak kerja</textarea>
 Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}", bukan generik. Maksimal 5 kategori, maksimal 6 satuan.`;
 
     try {
+      const { data: sessTanyopo } = await sb.auth.getSession();
       const response = await fetch(`${SUPABASE_URL}/functions/v1/panggil-claude`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: prompt }] }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessTanyopo?.session?.access_token}` },
+        body: JSON.stringify({ fitur: 'onboarding_saran', model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: prompt }] }),
       });
       const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Gagal memanggil AI.');
       const teksMentah = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
       const jsonMatch = teksMentah.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('AI tidak mengembalikan format yang bisa dibaca.');
@@ -3887,10 +3911,10 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
 
       // Profil sekarang dibuat otomatis oleh database (trigger) saat akun baru terdaftar.
       // Kalau belum ada juga (mis. delay singkat setelah signup), coba tunggu sebentar lalu cek ulang.
-      let { data: profile } = await sb.from('user_profiles').select('*, tenants(nama_usaha, logo_url, alamat, jenis_usaha)').eq('id', user.id).single();
+      let { data: profile } = await sb.from('user_profiles').select('*, tenants(nama_usaha, logo_url, alamat, jenis_usaha, paket, status_langganan, telat_bayar_sejak)').eq('id', user.id).single();
       if (!profile){
         await new Promise(r => setTimeout(r, 1200));
-        const retry = await sb.from('user_profiles').select('*, tenants(nama_usaha, logo_url, alamat, jenis_usaha)').eq('id', user.id).single();
+        const retry = await sb.from('user_profiles').select('*, tenants(nama_usaha, logo_url, alamat, jenis_usaha, paket, status_langganan, telat_bayar_sejak)').eq('id', user.id).single();
         profile = retry.data;
       }
       if (!profile) throw new Error('Profil pengguna belum tersedia, coba muat ulang halaman.');
@@ -3942,6 +3966,12 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       currentTenant = tenantsData;
       applyRoleAccess(profile.role);
       await applyModuleVisibility();
+      // Selama masa trial, tenant dikasih rasa paket Pro penuh (fitur terbuka semua) biar makin
+      // kepincut buat lanjut bayar — kuota AI-nya tetap dibatasi khusus di edge function
+      // (fitur_ai_usage_log & tanya-bisnis-ai), bukan di sini. Ini cuma soal tampilan/akses menu.
+      const paketUntukTampilan = tenantsData?.status_langganan === 'trial' ? 'pro' : tenantsData?.paket;
+      applyPaketVisibility(paketUntukTampilan);
+      terapkanStatusLangganan(tenantsData?.status_langganan, tenantsData?.telat_bayar_sejak);
       applyBusinessTerminology();
       await applyKategoriSatuanDinamis();
       updateOfflineStatusBadge();
@@ -3964,7 +3994,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
 
     loadTugasHarian();
-    loadPengingatDashboardWidget();
+    if (currentTenant?.paket === 'plus' || currentTenant?.paket === 'pro') loadPengingatDashboardWidget();
     if (currentProfile.role === 'owner') loadSaranTugasOtomatis();
     if (currentProfile.role === 'owner') loadSlipGajiOtomatis();
     if (currentProfile.role === 'owner') loadTanyopoIntelligence();
@@ -6600,6 +6630,9 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Tidak ada laporan di kategori ini.</div>'; return; }
     el.innerHTML = data.map(l => {
       const tenant = l.tenants || {};
+      const URGENSI_WARNA = { rendah:'var(--ink-soft)', sedang:'var(--amber)', tinggi:'var(--danger)', kritis:'#8B1E1E' };
+      const URGENSI_LABEL = { rendah:'Rendah', sedang:'Sedang', tinggi:'Tinggi', kritis:'KRITIS' };
+      const punyaAnalisis = !!l.ai_dianalisis_pada;
       return `
       <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:8px;">
         <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
@@ -6610,12 +6643,31 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
           <span class="pill" style="background:${STATUS_LAPORAN_WARNA[l.status]}22; color:${STATUS_LAPORAN_WARNA[l.status]}; flex-shrink:0;">${STATUS_LAPORAN_LABEL[l.status] || l.status}</span>
         </div>
         <div style="font-size:12.5px; background:var(--surface-2); padding:9px 11px; border-radius:8px; width:100%;">${l.deskripsi}</div>
+        ${punyaAnalisis ? `
+          <div style="width:100%; border:1.5px solid ${URGENSI_WARNA[l.ai_urgensi]||'var(--brand)'}; background:${URGENSI_WARNA[l.ai_urgensi]||'var(--brand)'}11; border-radius:9px; padding:10px 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:${URGENSI_WARNA[l.ai_urgensi]||'var(--brand)'};">🤖 Analisis AI · Urgensi ${URGENSI_LABEL[l.ai_urgensi]||'-'}</div>
+              <button onclick="analisisLaporanAI('${l.id}', this)" style="background:none; border:none; padding:0; font-size:10px; color:var(--brand); text-decoration:underline; cursor:pointer;">Analisis ulang</button>
+            </div>
+            <div style="font-size:12px; margin-bottom:5px;"><b>Diagnosis:</b> ${l.ai_diagnosis}</div>
+            <div style="font-size:12px;"><b>Saran:</b> ${l.ai_rekomendasi}</div>
+          </div>` : `
+          <button class="btn-secondary" style="font-size:10.5px; padding:5px 10px; background:var(--brand-tint); border-color:var(--brand); color:var(--brand);" onclick="analisisLaporanAI('${l.id}', this)">🤖 Analisis dengan AI</button>`}
         <div style="display:flex; gap:6px;">
           ${l.status !== 'diproses' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="updateStatusLaporan('${l.id}','diproses')">Tandai Diproses</button>` : ''}
           ${l.status !== 'selesai' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good);" onclick="updateStatusLaporan('${l.id}','selesai')">Tandai Selesai</button>` : ''}
         </div>
       </div>`;
     }).join('');
+  }
+
+  async function analisisLaporanAI(id, btn){
+    const teksAsli = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Menganalisis…';
+    const { data, error } = await sb.functions.invoke('analisis-laporan-ai', { body: { tipe: 'laporan', id } });
+    if (error || data?.error){ showToast('Gagal analisis AI: ' + (data?.error || error.message), true); btn.disabled = false; btn.textContent = teksAsli; return; }
+    const filterAktif = document.querySelector('#sub-admin-laporan .tab.active')?.dataset.filter || 'baru';
+    await renderAdminLaporan(filterAktif);
   }
 
   async function updateStatusLaporan(id, status){
@@ -6639,6 +6691,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (!data || data.length === 0){ el.innerHTML = '<div class="loading-note">Tidak ada saran di kategori ini.</div>'; return; }
     el.innerHTML = data.map(s => {
       const tenant = s.tenants || {};
+      const punyaAnalisis = !!s.ai_dianalisis_pada;
       return `
       <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:8px;">
         <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
@@ -6649,6 +6702,15 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
           <span class="pill" style="background:${STATUS_SARAN_WARNA[s.status]}22; color:${STATUS_SARAN_WARNA[s.status]}; flex-shrink:0;">${STATUS_SARAN_LABEL[s.status] || s.status}</span>
         </div>
         <div style="font-size:12.5px; background:var(--surface-2); padding:9px 11px; border-radius:8px; width:100%;">${s.deskripsi}</div>
+        ${punyaAnalisis ? `
+          <div style="width:100%; border:1.5px solid var(--brand); background:var(--brand-tint); border-radius:9px; padding:10px 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--brand);">🤖 Analisis AI</div>
+              <button onclick="analisisSaranAI('${s.id}', this)" style="background:none; border:none; padding:0; font-size:10px; color:var(--brand); text-decoration:underline; cursor:pointer;">Analisis ulang</button>
+            </div>
+            <div style="font-size:12px;">${s.ai_analisis}</div>
+          </div>` : `
+          <button class="btn-secondary" style="font-size:10.5px; padding:5px 10px; background:var(--brand-tint); border-color:var(--brand); color:var(--brand);" onclick="analisisSaranAI('${s.id}', this)">🤖 Analisis dengan AI</button>`}
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
           ${s.status !== 'dipertimbangkan' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="updateStatusSaran('${s.id}','dipertimbangkan')">Dipertimbangkan</button>` : ''}
           ${s.status !== 'dikerjakan' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand);" onclick="updateStatusSaran('${s.id}','dikerjakan')">Dikerjakan</button>` : ''}
@@ -6657,6 +6719,15 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
         </div>
       </div>`;
     }).join('');
+  }
+
+  async function analisisSaranAI(id, btn){
+    const teksAsli = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Menganalisis…';
+    const { data, error } = await sb.functions.invoke('analisis-laporan-ai', { body: { tipe: 'saran', id } });
+    if (error || data?.error){ showToast('Gagal analisis AI: ' + (data?.error || error.message), true); btn.disabled = false; btn.textContent = teksAsli; return; }
+    const filterAktif = document.querySelector('#sub-admin-saran .tab.active')?.dataset.filter || 'baru';
+    await renderAdminSaran(filterAktif);
   }
 
   async function updateStatusSaran(id, status){
@@ -7924,12 +7995,14 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     prompt += ` Balas HANYA dalam format: pisahkan tiap variasi dengan baris "---" di antaranya, tanpa penomoran atau judul tambahan.`;
 
     try {
+      const { data: sessPromo } = await sb.auth.getSession();
       const response = await fetch(`${SUPABASE_URL}/functions/v1/panggil-claude`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessPromo?.session?.access_token}` },
+        body: JSON.stringify({ fitur: 'promosi', model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
       });
       const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Gagal memanggil AI.');
       const teksMentah = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n');
       const variasi = teksMentah.split('---').map(v => v.trim()).filter(v => v.length > 5);
       if (variasi.length === 0) throw new Error('AI tidak mengembalikan hasil.');
@@ -9494,10 +9567,12 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       const base64 = await resizeImageToBase64(file, 1568);
       const daftarProdukRingkas = products.map(p => p.nama).join(', ');
 
+      const { data: sessBon } = await sb.auth.getSession();
       const response = await fetch(`${SUPABASE_URL}/functions/v1/panggil-claude`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessBon?.session?.access_token}` },
         body: JSON.stringify({
+          fitur: 'scan_bon',
           model: 'claude-sonnet-4-6',
           max_tokens: 2000,
           messages: [{
@@ -9510,6 +9585,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
         }),
       });
       const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Gagal memanggil AI.');
       let teksJson = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('').trim();
       teksJson = teksJson.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
       const hasil = JSON.parse(teksJson);
@@ -10238,6 +10314,71 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   }
   // ================== akhir Module Registry & Feature Flag ==================
 
+  // ================== GATING FITUR PER PAKET (Basic < Plus < Pro) ==================
+  // Basic: fitur inti + Skor Kesehatan Bisnis/Insight AI (GRATIS, nol biaya AI — murni hitungan
+  // deterministik dari database, bukan panggilan LLM) + kuota terbatas Tanya Kondisi Bisnis.
+  // Plus: + HR + Pajak + WA Otomatis (Pengingat Siklus Pelanggan) + kuota Tanya lebih besar.
+  // Pro: + Toko Online + Scan Bon AI + Generator Promosi AI + Tanya Kondisi Bisnis tanpa batas praktis.
+  const KUOTA_TANYA_BISNIS = { basic: 20, plus: 50, pro: 1000 };
+
+  function applyPaketVisibility(paket){
+    const punyaPlus = paket === 'plus' || paket === 'pro';
+    const punyaPro = paket === 'pro';
+
+    // HR & Pajak: minimal paket Plus
+    ['hr','pajak'].forEach(page => {
+      const btn = document.querySelector(`.nav-item[data-page="${page}"]`);
+      if (btn && !punyaPlus) btn.style.display = 'none';
+    });
+
+    // Pengingat Rutin (WA Otomatis): minimal paket Plus. Toko Online: cuma Pro.
+    const tabOnline = document.querySelector(`#page-pelanggan .tab[data-sub="online"]`);
+    if (tabOnline) tabOnline.style.display = punyaPro ? '' : 'none';
+    const tabPengingat = document.querySelector(`#page-pelanggan .tab[data-sub="pengingat"]`);
+    if (tabPengingat) tabPengingat.style.display = punyaPlus ? '' : 'none';
+
+    // Scan Bon AI & Generator Promosi AI (biaya per-panggilan lebih besar, termasuk vision): cuma Pro
+    const btnScanBon = document.getElementById('btn-scan-bon-ai');
+    if (btnScanBon) btnScanBon.style.display = punyaPro ? '' : 'none';
+    const tabPromosi = document.querySelector(`#page-pelanggan .tab[data-sub="promosi"]`);
+    if (tabPromosi) tabPromosi.style.display = punyaPro ? '' : 'none';
+
+    // Skor Kesehatan Bisnis + Insight AI + Rekomendasi Tindakan: GRATIS semua paket (tidak digating).
+    // Tanya Kondisi Bisnis: semua paket boleh, tapi kuota bulanan beda — ditampilkan & ditegakkan
+    // di dalam panel itu sendiri (lihat updateKuotaTanyaBisnisLabel & edge function tanya-bisnis-ai).
+    window.__kuotaTanyaBisnis = KUOTA_TANYA_BISNIS[paket] || KUOTA_TANYA_BISNIS.basic;
+    const labelKuota = document.getElementById('tanya-bisnis-kuota-label');
+    if (labelKuota) labelKuota.textContent = `Kuota ${window.__kuotaTanyaBisnis}x/bulan (paket ${NAMA_PAKET_LABEL_SINGKAT[paket] || paket})`;
+  }
+  const NAMA_PAKET_LABEL_SINGKAT = { basic:'Basic', plus:'Plus', pro:'Pro' };
+  const GRACE_PERIOD_HARI = 7;
+
+  function terapkanStatusLangganan(status, telatBayarSejak){
+    const banner = document.getElementById('banner-telat-bayar');
+    const overlay = document.getElementById('overlay-nonaktif');
+    if (!banner || !overlay) return;
+
+    if (status === 'nonaktif'){
+      overlay.style.display = 'flex';
+      banner.style.display = 'none';
+      return;
+    }
+    overlay.style.display = 'none';
+
+    if (status === 'telat_bayar'){
+      let sisaHari = GRACE_PERIOD_HARI;
+      if (telatBayarSejak){
+        const hariBerlalu = Math.floor((Date.now() - new Date(telatBayarSejak).getTime()) / 86400000);
+        sisaHari = Math.max(0, GRACE_PERIOD_HARI - hariBerlalu);
+      }
+      document.getElementById('banner-telat-bayar-teks').textContent =
+        `⚠️ Langganan telat bayar — akun akan dikunci dalam ${sisaHari} hari kalau belum dibayar`;
+      banner.style.display = 'flex';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
   // ================== TAHAP B — Istilah Dinamis per Jenis Usaha ==================
   // Aditif: hanya menyesuaikan teks/tombol yang spesifik-Apotek untuk tenant lain.
   // Tenant Apotek TIDAK terpengaruh sama sekali — teks & tombol asli tetap tampil.
@@ -10664,7 +10805,52 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     telat_bayar: { teks: 'Telat Bayar', warna: 'var(--warn)' },
     nonaktif: { teks: 'Nonaktif', warna: 'var(--danger)' },
   };
-  const NAMA_PAKET = { kasir_keuangan: 'Kasir & Keuangan', lengkap: 'Lengkap', hr: 'Kasir + HR', pajak_ai: 'Kasir + Pajak AI' };
+  const HARGA_PAKET_TAMPILAN = { basic: 99000, plus: 149000, pro: 249000 };
+  const FITUR_PAKET = [
+    { label: 'Kasir/POS, Stok & Gudang, Laporan Keuangan', basic:true, plus:true, pro:true },
+    { label: 'Pelanggan & Piutang', basic:true, plus:true, pro:true },
+    { label: '📊 Skor Kesehatan Bisnis & Insight AI', basic:true, plus:true, pro:true },
+    { label: '🤖 Tanya Kondisi Bisnis (AI)', basic:'20x/bulan', plus:'50x/bulan', pro:'200x/bulan' },
+    { label: 'HR (Karyawan & Shift)', basic:false, plus:true, pro:true },
+    { label: 'Pajak & Profil Usaha', basic:false, plus:true, pro:true },
+    { label: '📱 WA Otomatis (Pengingat Siklus Pelanggan)', basic:false, plus:true, pro:true },
+    { label: '🛒 Toko Online', basic:false, plus:false, pro:true },
+    { label: '📸 Scan Bon (AI)', basic:false, plus:false, pro:'60x/bulan' },
+    { label: '📝 Generator Promosi (AI)', basic:false, plus:false, pro:'100x/bulan' },
+  ];
+
+  async function renderPaketComparison(paketAktif, namaUsaha){
+    const box = document.getElementById('paket-comparison-box');
+    if (!box) return;
+    const { data: config } = await sb.from('dev_support_config').select('whatsapp_number').eq('id', 1).maybeSingle();
+
+    const kolom = ['basic','plus','pro'].map(p => {
+      const aktif = p === paketAktif;
+      const teksUpgrade = `Halo, saya mau upgrade paket langganan UMKMpro AI untuk usaha "${namaUsaha}" ke paket ${NAMA_PAKET[p]}.`;
+      const tombolAksi = aktif
+        ? `<div style="text-align:center; font-size:11px; font-weight:800; color:var(--good); padding:8px 0;">✓ Paket Aktif Kamu</div>`
+        : (config?.whatsapp_number
+            ? `<a href="https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(teksUpgrade)}" target="_blank" class="btn-secondary" style="width:100%; justify-content:center; text-decoration:none; font-size:11px;">Minta Upgrade →</a>`
+            : `<button class="btn-secondary" style="width:100%; font-size:11px;" disabled>Hubungi Admin</button>`);
+      return `
+        <div style="border:1.5px solid ${aktif ? 'var(--brand)' : 'var(--line)'}; border-radius:12px; padding:12px; ${aktif ? 'background:var(--brand-tint);' : ''}">
+          <div style="text-align:center; font-size:13px; font-weight:800; margin-bottom:2px;">${NAMA_PAKET[p]}</div>
+          <div style="text-align:center; font-size:11px; color:var(--ink-soft); margin-bottom:10px;">Rp ${HARGA_PAKET_TAMPILAN[p].toLocaleString('id-ID')}/bulan</div>
+          ${FITUR_PAKET.map(f => {
+            const val = f[p];
+            const aktifFitur = !!val;
+            const tandaAwal = typeof val === 'string' ? '✓' : (val ? '✓' : '—');
+            const teksTambahan = typeof val === 'string' ? ` (${val})` : '';
+            return `<div style="font-size:10.5px; padding:4px 0; display:flex; gap:5px; align-items:flex-start; ${aktifFitur ? '' : 'color:var(--ink-soft); opacity:0.55;'}">${tandaAwal} <span>${f.label}${teksTambahan}</span></div>`;
+          }).join('')}
+          <div style="margin-top:10px;">${tombolAksi}</div>
+        </div>`;
+    }).join('');
+
+    box.innerHTML = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">${kolom}</div>`;
+  }
+
+  const NAMA_PAKET = { basic: 'Basic', plus: 'Plus', pro: 'Pro' };
 
   // ================= REFERRAL PLATFORM (ajak usaha lain pakai UMKMpro AI) =================
   async function loadReferralPlatform(){
@@ -10702,8 +10888,9 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   async function loadLanggananPage(){
     loadReferralPlatform();
     const box = document.getElementById('langganan-status-box');
-    const { data: tenant, error } = await sb.from('tenants').select('status_langganan, paket, trial_berakhir_pada, langganan_berakhir_pada').eq('id', currentProfile.tenant_id).single();
+    const { data: tenant, error } = await sb.from('tenants').select('status_langganan, paket, trial_berakhir_pada, langganan_berakhir_pada, nama_usaha').eq('id', currentProfile.tenant_id).single();
     if (error || !tenant){ box.innerHTML = '<div class="loading-note">Gagal memuat status langganan.</div>'; return; }
+    renderPaketComparison(tenant.paket, tenant.nama_usaha);
 
     const info = LABEL_STATUS_LANGGANAN[tenant.status_langganan] || LABEL_STATUS_LANGGANAN.trial;
     const tanggalPenting = tenant.status_langganan === 'trial' ? tenant.trial_berakhir_pada : tenant.langganan_berakhir_pada;
@@ -11336,10 +11523,12 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     riwayatChatBantuan.push({ role: 'user', content: teks });
 
     try {
+      const { data: sessBantuan } = await sb.auth.getSession();
       const response = await fetch(`${SUPABASE_URL}/functions/v1/panggil-claude`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessBantuan?.session?.access_token}` },
         body: JSON.stringify({
+          fitur: 'bantuan_chatbot',
           model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           system: PANDUAN_APLIKASI,
@@ -11347,11 +11536,12 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
         }),
       });
       const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Gagal memanggil AI.');
       const jawaban = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n') || 'Maaf, saya belum bisa jawab itu sekarang.';
       riwayatChatBantuan.push({ role: 'assistant', content: jawaban });
       document.getElementById(loadingId).outerHTML = `<div style="background:var(--surface-2); border-radius:12px; padding:10px 12px; font-size:12.5px; align-self:flex-start; max-width:85%; white-space:pre-wrap;">${jawaban.replace(/</g,'&lt;')}</div>`;
     } catch (err) {
-      document.getElementById(loadingId).outerHTML = `<div style="background:var(--surface-2); border-radius:12px; padding:10px 12px; font-size:12.5px; align-self:flex-start; max-width:85%; color:var(--danger);">Gagal terhubung, coba lagi ya.</div>`;
+      document.getElementById(loadingId).outerHTML = `<div style="background:var(--surface-2); border-radius:12px; padding:10px 12px; font-size:12.5px; align-self:flex-start; max-width:85%; color:var(--danger);">${err.message || 'Gagal terhubung, coba lagi ya.'}</div>`;
     }
     box.scrollTop = box.scrollHeight;
   }
@@ -11802,6 +11992,9 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       jawabanEl.style.color = 'var(--ink)';
       jawabanEl.textContent = result.jawaban;
       input.value = '';
+      if (typeof result.kuota_sisa === 'number'){
+        document.getElementById('tanya-bisnis-kuota-label').textContent = `Sisa ${Math.max(0,result.kuota_sisa)}/${result.kuota_total} bulan ini`;
+      }
     } catch(err){
       jawabanEl.style.color = 'var(--danger)';
       jawabanEl.textContent = '⚠️ ' + err.message;
