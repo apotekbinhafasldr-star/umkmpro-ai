@@ -2011,6 +2011,7 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       <div class="tabs">
         <div class="tab active" data-sub="servis-antrian" onclick="setServisTab('servis-antrian', this)">🔧 Antrian Servis</div>
         <div class="tab" data-sub="servis-kendaraan" onclick="setServisTab('servis-kendaraan', this)">🚗 Data Kendaraan</div>
+        <div class="tab" data-sub="servis-gaji" id="tab-servis-gaji" style="display:none;" onclick="setServisTab('servis-gaji', this)">💰 Kinerja &amp; Gaji</div>
       </div>
 
       <!-- ANTRIAN SERVIS -->
@@ -2061,6 +2062,20 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
           </div>
         </div>
         <div id="daftar-kendaraan-list"><div class="loading-note">Memuat data…</div></div>
+      </div>
+
+      <!-- KINERJA & GAJI MEKANIK (Plus+) -->
+      <div class="sub-page" id="sub-servis-gaji">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-head"><div class="panel-title">💰 Kinerja &amp; Gaji Mekanik</div></div>
+          <div class="panel-body">
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+              <div class="field" style="flex:1; margin-bottom:0;"><label>Mekanik</label><select id="gm-mekanik-select" onchange="hitungGajiMekanik()"></select></div>
+              <div class="field" style="flex:1; margin-bottom:0;"><label>Bulan</label><input type="month" id="gm-bulan" onchange="hitungGajiMekanik()"></div>
+            </div>
+          </div>
+        </div>
+        <div id="gaji-mekanik-hasil"><div class="loading-note">Pilih mekanik &amp; bulan buat lihat hitungan.</div></div>
       </div>
     </main>
   </div>
@@ -2575,13 +2590,20 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     <div class="field"><label>Nama Karyawan</label><input type="text" id="ef-nama" placeholder="Nama lengkap"></div>
     <div class="field">
       <label>Jabatan</label>
-      <select id="ef-jabatan">
+      <select id="ef-jabatan" onchange="toggleEfMekanikFields()">
         <option value="kasir">Kasir</option>
         <option value="apoteker">Apoteker</option>
         <option value="admin_gudang">Admin Gudang</option>
+        <option value="mekanik">Mekanik</option>
         <option value="hr">HR</option>
         <option value="marketing">Marketing</option>
       </select>
+    </div>
+    <div id="ef-mekanik-fields" style="display:none; background:var(--brand-tint); border-radius:10px; padding:11px 13px; margin-bottom:13px;">
+      <div style="font-size:11.5px; font-weight:700; margin-bottom:8px;">🔧 Pengaturan Gaji Mekanik</div>
+      <div style="font-size:10.5px; color:var(--ink-soft); margin-bottom:8px;">Bisa isi salah satu, gabungan, atau kosongkan (0) kalau nggak dipakai — dihitung otomatis dari servis yang dikerjain di menu Servis &amp; Kendaraan.</div>
+      <div class="field"><label>Komisi dari Jasa Servis (%)</label><input type="number" id="ef-komisi-jasa" placeholder="Contoh: 20" min="0" max="100"></div>
+      <div class="field" style="margin-bottom:0;"><label>Nominal Tetap per Motor (Rp)</label><input type="number" id="ef-nominal-servis" placeholder="Contoh: 15000"></div>
     </div>
     <div class="field"><label>No. HP</label><input type="text" id="ef-hp" placeholder="08xxxxxxxxxx"></div>
     <div class="field"><label>Email (untuk sambungkan akun login jika diundang)</label><input type="email" id="ef-email" placeholder="Opsional"></div>
@@ -3426,7 +3448,13 @@ Baca & tanda tangan kontrak kerja</textarea>
   <div class="modal-card" style="max-width:420px;">
     <div class="modal-title">📝 Estimasi Sparepart &amp; Jasa</div>
     <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:10px;">Tunjukkin daftar ini ke pelanggan dulu sebelum mulai kerjakan — biar transparan soal sparepart apa aja yang bakal diganti.</div>
-    <div class="field"><label>Nama Mekanik yang Cek</label><input type="text" id="est-mekanik" placeholder="Contoh: Andi"></div>
+    <div class="field" id="est-mekanik-dropdown-wrap" style="display:none;">
+      <label>Mekanik yang Cek</label>
+      <select id="est-mekanik-select" onchange="pilihMekanikDariDaftar()">
+        <option value="">— Pilih mekanik —</option>
+      </select>
+    </div>
+    <div class="field" id="est-mekanik-teks-wrap"><label>Nama Mekanik yang Cek</label><input type="text" id="est-mekanik" placeholder="Contoh: Andi"></div>
     <div id="est-items-list" style="margin-bottom:8px;"></div>
     <button type="button" class="btn-secondary" style="width:100%; justify-content:center; margin-bottom:12px;" onclick="tambahBarisEstimasi()">+ Tambah Item</button>
     <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1.5px solid var(--line); margin-bottom:12px;">
@@ -6393,6 +6421,9 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     document.getElementById('ef-hp').value = '';
     document.getElementById('ef-email').value = '';
     document.getElementById('ef-ptkp').value = 'TK/0';
+    document.getElementById('ef-komisi-jasa').value = '';
+    document.getElementById('ef-nominal-servis').value = '';
+    toggleEfMekanikFields();
     document.getElementById('ef-keluarga').checked = false;
     document.getElementById('ef-keluarga-siapa').value = '';
     document.getElementById('ef-keluarga-jenis').value = '';
@@ -6412,10 +6443,16 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     document.getElementById('ef-keluarga-siapa').value = emp.hubungan_dengan_siapa || '';
     document.getElementById('ef-keluarga-jenis').value = emp.jenis_hubungan || '';
     toggleEfKeluargaFields();
+    document.getElementById('ef-komisi-jasa').value = emp.komisi_persen_jasa || '';
+    document.getElementById('ef-nominal-servis').value = emp.nominal_per_servis || '';
+    toggleEfMekanikFields();
     document.getElementById('employee-modal').classList.add('show');
   }
   function toggleEfKeluargaFields(){
     document.getElementById('ef-keluarga-fields').style.display = document.getElementById('ef-keluarga').checked ? 'block' : 'none';
+  }
+  function toggleEfMekanikFields(){
+    document.getElementById('ef-mekanik-fields').style.display = document.getElementById('ef-jabatan').value === 'mekanik' ? 'block' : 'none';
   }
   async function submitNewEmployee(){
     const nama = document.getElementById('ef-nama').value.trim();
@@ -6431,6 +6468,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       punya_hubungan_keluarga: punyaKeluarga,
       hubungan_dengan_siapa: punyaKeluarga ? (document.getElementById('ef-keluarga-siapa').value.trim() || null) : null,
       jenis_hubungan: punyaKeluarga ? (document.getElementById('ef-keluarga-jenis').value.trim() || null) : null,
+      komisi_persen_jasa: parseFloat(document.getElementById('ef-komisi-jasa').value) || 0,
+      nominal_per_servis: parseFloat(document.getElementById('ef-nominal-servis').value) || 0,
     };
     let error;
     if (editingEmployeeId){
@@ -7323,6 +7362,67 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const { data } = await sb.from('kendaraan_pelanggan').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false });
     kendaraanCacheServis = data || [];
     await renderAntrianServis('menunggu');
+
+    const punyaAksesGaji = currentTenant?.paket === 'plus' || currentTenant?.paket === 'pro';
+    const tabGaji = document.getElementById('tab-servis-gaji');
+    if (tabGaji) tabGaji.style.display = punyaAksesGaji ? '' : 'none';
+    if (punyaAksesGaji){
+      const bulanInput = document.getElementById('gm-bulan');
+      if (bulanInput && !bulanInput.value) bulanInput.value = new Date().toISOString().slice(0,7);
+      const { data: mekanikList } = await sb.from('employees').select('id, nama, komisi_persen_jasa, nominal_per_servis').eq('tenant_id', currentProfile.tenant_id).eq('jabatan', 'mekanik').eq('status', 'aktif');
+      const select = document.getElementById('gm-mekanik-select');
+      if (select){
+        select.innerHTML = '<option value="">— Pilih mekanik —</option>' + (mekanikList||[]).map(m => `<option value="${m.id}">${m.nama}</option>`).join('');
+        window.__mekanikListCache = mekanikList || [];
+      }
+    }
+  }
+
+  async function hitungGajiMekanik(){
+    const box = document.getElementById('gaji-mekanik-hasil');
+    const mekanikId = document.getElementById('gm-mekanik-select').value;
+    const bulan = document.getElementById('gm-bulan').value;
+    if (!mekanikId || !bulan){ box.innerHTML = '<div class="loading-note">Pilih mekanik & bulan buat lihat hitungan.</div>'; return; }
+
+    box.innerHTML = '<div class="loading-note">Menghitung…</div>';
+    const mekanik = (window.__mekanikListCache || []).find(m => m.id === mekanikId);
+    const awalBulan = bulan + '-01';
+    const [tahun, bln] = bulan.split('-').map(Number);
+    const akhirBulan = new Date(tahun, bln, 0).toISOString().slice(0,10);
+
+    const { data, error } = await sb.from('antrian_servis').select('*')
+      .eq('tenant_id', currentProfile.tenant_id).eq('mekanik_id', mekanikId)
+      .in('status', ['selesai','diambil'])
+      .gte('created_at', awalBulan).lte('created_at', akhirBulan + 'T23:59:59');
+    if (error){ box.innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+
+    const jumlahMotor = (data||[]).length;
+    let totalJasa = 0;
+    (data||[]).forEach(a => {
+      const items = Array.isArray(a.estimasi_items) ? a.estimasi_items : [];
+      totalJasa += items.filter(it => it.jenis === 'jasa').reduce((s,it) => s + (parseFloat(it.harga)||0), 0);
+    });
+
+    const komisi = totalJasa * ((mekanik?.komisi_persen_jasa || 0) / 100);
+    const nominalMotor = jumlahMotor * (mekanik?.nominal_per_servis || 0);
+    const totalGaji = komisi + nominalMotor;
+
+    box.innerHTML = `
+      <div class="panel">
+        <div class="panel-body" style="padding:16px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+            <div style="background:var(--brand-tint); border-radius:10px; padding:12px;"><div style="font-size:10px; color:var(--ink-soft);">Motor Dikerjakan</div><div style="font-size:22px; font-weight:800; color:var(--brand);">${jumlahMotor}</div></div>
+            <div style="background:var(--good-tint); border-radius:10px; padding:12px;"><div style="font-size:10px; color:var(--ink-soft);">Total Jasa Servis</div><div style="font-size:16px; font-weight:800; color:var(--good);">Rp${Math.round(totalJasa).toLocaleString('id-ID')}</div></div>
+          </div>
+          <div style="font-size:12px;">
+            ${mekanik?.komisi_persen_jasa > 0 ? `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--line);"><span>Komisi Jasa (${mekanik.komisi_persen_jasa}%)</span><b>Rp${Math.round(komisi).toLocaleString('id-ID')}</b></div>` : ''}
+            ${mekanik?.nominal_per_servis > 0 ? `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--line);"><span>Nominal per Motor (${jumlahMotor} × Rp${Math.round(mekanik.nominal_per_servis).toLocaleString('id-ID')})</span><b>Rp${Math.round(nominalMotor).toLocaleString('id-ID')}</b></div>` : ''}
+            <div style="display:flex; justify-content:space-between; padding:10px 0; font-weight:800; font-size:14px; color:var(--brand);"><span>Total Gaji dari Servis</span><span>Rp${Math.round(totalGaji).toLocaleString('id-ID')}</span></div>
+          </div>
+          ${(!mekanik?.komisi_persen_jasa && !mekanik?.nominal_per_servis) ? `<div style="font-size:11px; color:var(--danger); margin-top:8px;">⚠️ Mekanik ini belum diatur komisi/nominal-nya — atur dulu di menu HR → Edit Karyawan.</div>` : ''}
+          <div style="font-size:10px; color:var(--ink-soft); margin-top:10px;">*Ini cuma hitungan dari jasa servis, belum termasuk gaji pokok bulanan (kalau ada) — cek Slip Gaji lengkap di menu HR.</div>
+        </div>
+      </div>`;
   }
 
   function cariKendaraanUntukAntrian(q){
@@ -7461,13 +7561,32 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   let antrianEstimasiAktifId = null;
   let itemEstimasiSementara = [];
 
-  function bukaFormEstimasi(antrian){
+  async function bukaFormEstimasi(antrian){
     antrianEstimasiAktifId = antrian.id;
-    document.getElementById('est-mekanik').value = antrian.nama_mekanik || '';
+    const punyaAksesMekanikHR = currentTenant?.paket === 'plus' || currentTenant?.paket === 'pro';
+    document.getElementById('est-mekanik-dropdown-wrap').style.display = punyaAksesMekanikHR ? 'block' : 'none';
+    document.getElementById('est-mekanik-teks-wrap').style.display = punyaAksesMekanikHR ? 'none' : 'block';
+    window.__mekanikIdTerpilih = antrian.mekanik_id || null;
+
+    if (punyaAksesMekanikHR){
+      const { data: daftarMekanik } = await sb.from('employees').select('id, nama').eq('tenant_id', currentProfile.tenant_id).eq('jabatan', 'mekanik').eq('status', 'aktif');
+      const select = document.getElementById('est-mekanik-select');
+      select.innerHTML = '<option value="">— Pilih mekanik —</option>' + (daftarMekanik||[]).map(m => `<option value="${m.id}" data-nama="${m.nama.replace(/"/g,'&quot;')}" ${m.id === antrian.mekanik_id ? 'selected' : ''}>${m.nama}</option>`).join('');
+      if ((daftarMekanik||[]).length === 0){
+        select.innerHTML = '<option value="">Belum ada karyawan jabatan Mekanik — tambah dulu di menu HR</option>';
+      }
+    } else {
+      document.getElementById('est-mekanik').value = antrian.nama_mekanik || '';
+    }
+
     const itemsAda = Array.isArray(antrian.estimasi_items) ? antrian.estimasi_items : [];
     itemEstimasiSementara = itemsAda.length > 0 ? JSON.parse(JSON.stringify(itemsAda)) : [{ jenis:'jasa', nama:'Jasa Servis', harga:0 }];
     renderBarisEstimasi();
     document.getElementById('modal-estimasi-servis').classList.add('show');
+  }
+  function pilihMekanikDariDaftar(){
+    const select = document.getElementById('est-mekanik-select');
+    window.__mekanikIdTerpilih = select.value || null;
   }
 
   function renderBarisEstimasi(){
@@ -7498,13 +7617,22 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   }
 
   async function simpanEstimasiServis(){
-    const mekanik = document.getElementById('est-mekanik').value.trim();
+    const punyaAksesMekanikHR = currentTenant?.paket === 'plus' || currentTenant?.paket === 'pro';
+    let namaMekanik = null, mekanikId = null;
+    if (punyaAksesMekanikHR){
+      const select = document.getElementById('est-mekanik-select');
+      const opsiTerpilih = select.options[select.selectedIndex];
+      mekanikId = select.value || null;
+      namaMekanik = mekanikId ? opsiTerpilih.dataset.nama : null;
+    } else {
+      namaMekanik = document.getElementById('est-mekanik').value.trim() || null;
+    }
     const itemsValid = itemEstimasiSementara.filter(it => it.nama && it.nama.trim());
     if (itemsValid.length === 0){ showToast('Tambahin minimal 1 item (jasa atau sparepart).', true); return; }
     const total = itemsValid.reduce((s,it) => s + (parseFloat(it.harga)||0), 0);
 
     const { error } = await sb.from('antrian_servis').update({
-      nama_mekanik: mekanik || null, estimasi_items: itemsValid, total_estimasi: total,
+      nama_mekanik: namaMekanik, mekanik_id: mekanikId, estimasi_items: itemsValid, total_estimasi: total,
       estimasi_dibuat_pada: new Date().toISOString(), status: 'menunggu_persetujuan',
     }).eq('id', antrianEstimasiAktifId);
     if (error){ showToast('Gagal menyimpan estimasi: ' + error.message, true); return; }
