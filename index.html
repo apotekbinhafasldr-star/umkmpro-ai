@@ -406,11 +406,8 @@
   <div class="auth-card">
     <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v100-1800</div>
     <div class="auth-brand">
-      <svg width="38" height="38" viewBox="0 0 100 100" fill="none">
-        <path d="M14 44 Q8 40 12 34 Q30 20 50 13 Q70 20 88 34 Q92 40 86 44" stroke="#20402F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M22 34V88H78V34" stroke="#20402F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M35 90V66C35 58 39 55 44 58C46.5 59.5 48 61 50 61C52 61 53.5 59.5 56 58C61 55 65 58 65 66V90" stroke="#20402F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+      <img src="logo.png" width="42" height="42" style="object-fit:contain; border-radius:8px;" alt="Logo UMKMpro AI"
+        onerror="this.outerHTML='&lt;svg width=&quot;38&quot; height=&quot;38&quot; viewBox=&quot;0 0 100 100&quot; fill=&quot;none&quot;&gt;&lt;path d=&quot;M14 44 Q8 40 12 34 Q30 20 50 13 Q70 20 88 34 Q92 40 86 44&quot; stroke=&quot;#20402F&quot; stroke-width=&quot;7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;/&gt;&lt;path d=&quot;M22 34V88H78V34&quot; stroke=&quot;#20402F&quot; stroke-width=&quot;7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;/&gt;&lt;path d=&quot;M35 90V66C35 58 39 55 44 58C46.5 59.5 48 61 50 61C52 61 53.5 59.5 56 58C61 55 65 58 65 66V90&quot; stroke=&quot;#20402F&quot; stroke-width=&quot;7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;/&gt;&lt;/svg&gt;'">
       <div class="auth-brand-name">UMKMpro AI</div>
     </div>
     <div id="auth-sub" class="auth-sub">Powered by Tanyopo Intelligence<br>Developed by Tanyopo Labs</div>
@@ -536,6 +533,10 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18M3 9v10a2 2 0 002 2h4M21 9v10a2 2 0 01-2 2h-4"/></svg>
             Laporan Keuangan
           </button>
+          <button class="nav-item" data-page="servis" id="nav-servis-bengkel" style="display:none;" onclick="goPage('servis', this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+            🔧 Servis &amp; Kendaraan
+          </button>
           <button class="nav-item" data-page="hr" onclick="goPage('hr', this)" style="position:relative;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             HR
@@ -642,6 +643,13 @@
           </div>
         </div>
         <div class="panel-body" id="recommended-actions-list"></div>
+      </div>
+
+      <div class="panel" id="pengumuman-dashboard-panel" style="display:none; border:1.5px solid var(--brand); background:var(--brand-tint);">
+        <div class="panel-head">
+          <div class="panel-title">📢 Pengumuman</div>
+        </div>
+        <div class="panel-body" id="pengumuman-dashboard-list"></div>
       </div>
 
       <div class="panel" id="pengingat-dashboard-panel" style="display:none;">
@@ -1877,6 +1885,9 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div class="tab active" data-sub="admin-laporan" onclick="setAdminTab('admin-laporan', this)">🐞 Laporan Masalah</div>
         <div class="tab" data-sub="admin-saran" onclick="setAdminTab('admin-saran', this)">💡 Saran &amp; Kritik</div>
         <div class="tab" data-sub="admin-paket" onclick="setAdminTab('admin-paket', this)">💰 Paket &amp; Harga</div>
+        <div class="tab" data-sub="admin-tenant" onclick="setAdminTab('admin-tenant', this)">🏢 Semua Tenant</div>
+        <div class="tab" data-sub="admin-tagihan" onclick="setAdminTab('admin-tagihan', this)">💳 Kelola Tagihan</div>
+        <div class="tab" data-sub="admin-broadcast" onclick="setAdminTab('admin-broadcast', this)">📢 Broadcast</div>
       </div>
 
       <!-- LAPORAN MASALAH -->
@@ -1926,6 +1937,127 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
           </div>
           <div class="panel-body" id="admin-paket-comparison-box" style="padding:16px;"></div>
         </div>
+      </div>
+
+      <!-- SEMUA TENANT -->
+      <div class="sub-page" id="sub-admin-tenant">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-head"><div class="panel-title">📊 Statistik Platform</div></div>
+          <div class="panel-body" id="admin-stats-box" style="padding:16px;"><div class="loading-note">Memuat statistik…</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">🏢 Semua Tenant</div>
+              <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">Kelola paket &amp; status langganan tiap tenant langsung dari sini.</div>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:14px 18px 0;">
+            <input type="text" id="admin-tenant-search" placeholder="Cari nama usaha…" oninput="renderAdminTenantList()" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px; margin-bottom:4px;">
+          </div>
+          <div class="panel-body" id="admin-tenant-list"><div class="loading-note">Memuat data tenant…</div></div>
+        </div>
+      </div>
+
+      <!-- KELOLA TAGIHAN -->
+      <div class="sub-page" id="sub-admin-tagihan">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">💳 Kelola Tagihan Langganan</div>
+              <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">Riwayat & status pembayaran semua tenant. Tandai lunas manual buat pembayaran transfer/tunai di luar Midtrans.</div>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:14px 18px 0;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <div class="tab active" style="font-size:11px;" data-filter="menunggu" onclick="setFilterAdminTagihan('menunggu', this)">Menunggu</div>
+              <div class="tab" style="font-size:11px;" data-filter="lunas" onclick="setFilterAdminTagihan('lunas', this)">Lunas</div>
+              <div class="tab" style="font-size:11px;" data-filter="semua" onclick="setFilterAdminTagihan('semua', this)">Semua</div>
+            </div>
+          </div>
+          <div class="panel-body" id="admin-tagihan-list"><div class="loading-note">Memuat data tagihan…</div></div>
+        </div>
+      </div>
+
+      <!-- BROADCAST PENGUMUMAN -->
+      <div class="sub-page" id="sub-admin-broadcast">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-head"><div class="panel-title">📢 Kirim Pengumuman Baru</div></div>
+          <div class="panel-body" style="padding:16px;">
+            <div class="field"><label>Judul</label><input type="text" id="broadcast-judul" placeholder="Contoh: Fitur Baru: Pengingat Siklus Pelanggan!"></div>
+            <div class="field"><label>Isi Pengumuman</label><textarea id="broadcast-isi" rows="4" placeholder="Tulis pengumumannya di sini…" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px; font-family:inherit; resize:vertical;"></textarea></div>
+            <button class="btn-primary" style="width:100%; justify-content:center;" onclick="kirimBroadcastPengumuman()">📢 Kirim ke Semua Tenant</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Riwayat Pengumuman</div></div>
+          <div class="panel-body" id="admin-broadcast-list"><div class="loading-note">Memuat riwayat…</div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- SERVIS & KENDARAAN (khusus Bengkel) -->
+  <div class="page" id="page-servis">
+    <main>
+      <div class="topbar">
+        <div>
+          <div class="greeting-eyebrow">Bengkel</div>
+          <h1 class="greeting">Servis &amp; Kendaraan</h1>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-sub="servis-antrian" onclick="setServisTab('servis-antrian', this)">🔧 Antrian Servis</div>
+        <div class="tab" data-sub="servis-kendaraan" onclick="setServisTab('servis-kendaraan', this)">🚗 Data Kendaraan</div>
+      </div>
+
+      <!-- ANTRIAN SERVIS -->
+      <div class="sub-page active" id="sub-servis-antrian">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-head"><div class="panel-title">+ Tambah Antrian Servis Baru</div></div>
+          <div class="panel-body">
+            <div class="field" style="position:relative;">
+              <label>Plat Nomor</label>
+              <input type="text" id="as-plat" placeholder="Contoh: B 1234 XY" autocomplete="off" oninput="cariKendaraanUntukAntrian(this.value)" onblur="setTimeout(()=>document.getElementById('as-kendaraan-saran').style.display='none', 200)" style="text-transform:uppercase;">
+              <div id="as-kendaraan-saran" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; margin-top:2px; z-index:20; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+            </div>
+            <div class="field"><label>Nama Pelanggan</label><input type="text" id="as-nama"></div>
+            <div class="field"><label>No. WhatsApp</label><input type="text" id="as-wa" placeholder="08xxxxxxxxxx"></div>
+            <div style="display:flex; gap:8px;">
+              <div class="field" style="flex:1;"><label>Merek/Model</label><input type="text" id="as-merek" placeholder="Honda Supra X 125"></div>
+              <div class="field" style="flex:1;"><label>Jenis</label>
+                <select id="as-jenis-kendaraan"><option value="motor">Motor</option><option value="mobil">Mobil</option></select>
+              </div>
+            </div>
+            <div class="field"><label>Keluhan / Jenis Servis</label><textarea id="as-keluhan" rows="2" placeholder="Contoh: Servis rutin + ganti oli, rem depan bunyi" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px; font-family:inherit; resize:vertical;"></textarea></div>
+            <div style="display:flex; gap:8px;">
+              <div class="field" style="flex:1;"><label>Nama Mekanik (opsional)</label><input type="text" id="as-mekanik" placeholder="Contoh: Budi"></div>
+              <div class="field" style="flex:1;"><label>Estimasi Biaya (opsional)</label><input type="number" id="as-estimasi" placeholder="0"></div>
+            </div>
+            <button class="btn-primary" style="width:100%; justify-content:center;" onclick="simpanAntrianServis()">+ Tambah ke Antrian</button>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+          <div class="tab active" style="font-size:11.5px;" data-filter="menunggu" onclick="setFilterAntrianServis('menunggu', this)">Menunggu</div>
+          <div class="tab" style="font-size:11.5px;" data-filter="dikerjakan" onclick="setFilterAntrianServis('dikerjakan', this)">Dikerjakan</div>
+          <div class="tab" style="font-size:11.5px;" data-filter="selesai" onclick="setFilterAntrianServis('selesai', this)">Selesai</div>
+          <div class="tab" style="font-size:11.5px;" data-filter="semua" onclick="setFilterAntrianServis('semua', this)">Semua</div>
+        </div>
+        <div id="antrian-servis-list"><div class="loading-note">Memuat data…</div></div>
+      </div>
+
+      <!-- DATA KENDARAAN -->
+      <div class="sub-page" id="sub-servis-kendaraan">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-head"><div class="panel-title">🚗 Cari Kendaraan Pelanggan</div></div>
+          <div class="panel-body">
+            <input type="text" id="kendaraan-search" placeholder="Cari plat nomor atau nama pelanggan…" oninput="renderDaftarKendaraan()" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px;">
+          </div>
+        </div>
+        <div id="daftar-kendaraan-list"><div class="loading-note">Memuat data…</div></div>
       </div>
     </main>
   </div>
@@ -4020,6 +4152,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       // (fitur_ai_usage_log & tanya-bisnis-ai), bukan di sini. Ini cuma soal tampilan/akses menu.
       const paketUntukTampilan = tenantsData?.status_langganan === 'trial' ? 'pro' : tenantsData?.paket;
       applyPaketVisibility(paketUntukTampilan);
+      const navServis = document.getElementById('nav-servis-bengkel');
+      if (navServis) navServis.style.display = (tenantsData?.jenis_usaha === 'bengkel') ? '' : 'none';
       terapkanStatusLangganan(tenantsData?.status_langganan, tenantsData?.telat_bayar_sejak);
       applyBusinessTerminology();
       await applyKategoriSatuanDinamis();
@@ -4043,6 +4177,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
 
     loadTugasHarian();
+    loadPengumumanDashboard();
     if (currentTenant?.paket === 'plus' || currentTenant?.paket === 'pro') loadPengingatDashboardWidget();
     if (currentProfile.role === 'owner') loadSaranTugasOtomatis();
     if (currentProfile.role === 'owner') loadSlipGajiOtomatis();
@@ -6654,6 +6789,9 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     await renderAdminLaporan('baru');
     await renderAdminSaran('baru');
     renderPaketComparisonAdmin();
+    await loadAdminTenantData();
+    await renderAdminTagihan('menunggu');
+    await renderAdminBroadcastList();
   }
 
   function renderPaketComparisonAdmin(){
@@ -6661,6 +6799,199 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (!box) return;
     const kolom = ['basic','plus','pro'].map(p => buatKartuPaket(p)).join('');
     box.innerHTML = `<div class="paket-grid">${kolom}</div>`;
+  }
+
+  // ================= ADMIN: STATISTIK PLATFORM & KELOLA SEMUA TENANT =================
+  let adminTenantCache = [];
+  const STATUS_LANGGANAN_LABEL_ADMIN = { trial:'Trial', aktif:'Aktif', telat_bayar:'Telat Bayar', nonaktif:'Nonaktif' };
+  const STATUS_LANGGANAN_WARNA_ADMIN = { trial:'var(--brand)', aktif:'var(--good)', telat_bayar:'var(--amber)', nonaktif:'var(--danger)' };
+
+  async function loadAdminTenantData(){
+    const { data, error } = await sb.from('tenants')
+      .select('id, nama_usaha, jenis_usaha, paket, status_langganan, created_at, trial_berakhir_pada, langganan_berakhir_pada')
+      .order('created_at', { ascending: false });
+    if (error){ document.getElementById('admin-stats-box').innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+    adminTenantCache = data || [];
+    renderAdminStats();
+    renderAdminTenantList();
+  }
+
+  function renderAdminStats(){
+    const box = document.getElementById('admin-stats-box');
+    if (!box) return;
+    const total = adminTenantCache.length;
+
+    const perJenisUsaha = {};
+    const perPaket = { basic:0, plus:0, pro:0 };
+    const perStatus = { trial:0, aktif:0, telat_bayar:0, nonaktif:0 };
+    adminTenantCache.forEach(t => {
+      const ju = t.jenis_usaha || 'lainnya';
+      perJenisUsaha[ju] = (perJenisUsaha[ju]||0) + 1;
+      if (perPaket[t.paket] !== undefined) perPaket[t.paket]++;
+      if (perStatus[t.status_langganan] !== undefined) perStatus[t.status_langganan]++;
+    });
+
+    const awalBulanIni = new Date(); awalBulanIni.setDate(1); awalBulanIni.setHours(0,0,0,0);
+    const tenantBaruBulanIni = adminTenantCache.filter(t => new Date(t.created_at) >= awalBulanIni).length;
+
+    const topJenisUsahaHtml = Object.entries(perJenisUsaha).sort((a,b)=>b[1]-a[1]).slice(0,6)
+      .map(([ju,jml]) => `<div style="display:flex; justify-content:space-between; font-size:12px; padding:5px 0; border-bottom:1px dashed var(--line);"><span>${ju}</span><b>${jml}</b></div>`).join('');
+
+    box.innerHTML = `
+      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px;">
+        <div style="background:var(--brand-tint); border-radius:10px; padding:12px;"><div style="font-size:10px; color:var(--ink-soft);">Total Tenant</div><div style="font-size:22px; font-weight:800; color:var(--brand);">${total}</div></div>
+        <div style="background:var(--good-tint); border-radius:10px; padding:12px;"><div style="font-size:10px; color:var(--ink-soft);">Baru Bulan Ini</div><div style="font-size:22px; font-weight:800; color:var(--good);">+${tenantBaruBulanIni}</div></div>
+        <div style="background:var(--amber-tint); border-radius:10px; padding:12px;"><div style="font-size:10px; color:var(--ink-soft);">Trial Berjalan</div><div style="font-size:22px; font-weight:800; color:var(--amber);">${perStatus.trial}</div></div>
+        <div style="background:var(--danger-tint); border-radius:10px; padding:12px;"><div style="font-size:10px; color:var(--ink-soft);">Telat Bayar / Nonaktif</div><div style="font-size:22px; font-weight:800; color:var(--danger);">${perStatus.telat_bayar + perStatus.nonaktif}</div></div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div>
+          <div style="font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">Per Paket</div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; padding:5px 0; border-bottom:1px dashed var(--line);"><span>Basic</span><b>${perPaket.basic}</b></div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; padding:5px 0; border-bottom:1px dashed var(--line);"><span>Plus</span><b>${perPaket.plus}</b></div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; padding:5px 0;"><span>Pro</span><b>${perPaket.pro}</b></div>
+        </div>
+        <div>
+          <div style="font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">Per Jenis Usaha</div>
+          ${topJenisUsahaHtml || '<div style="font-size:12px; color:var(--ink-soft);">Belum ada data.</div>'}
+        </div>
+      </div>`;
+  }
+
+  function renderAdminTenantList(){
+    const box = document.getElementById('admin-tenant-list');
+    if (!box) return;
+    const kata = (document.getElementById('admin-tenant-search')?.value || '').toLowerCase();
+    const data = adminTenantCache.filter(t => (t.nama_usaha||'').toLowerCase().includes(kata));
+    if (data.length === 0){ box.innerHTML = '<div class="loading-note">Tidak ada tenant ditemukan.</div>'; return; }
+
+    box.innerHTML = data.map(t => `
+      <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:8px;">
+        <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+          <div>
+            <div class="row-name">${t.nama_usaha || '(tanpa nama)'}</div>
+            <div class="row-meta">${t.jenis_usaha || '-'} · Daftar ${new Date(t.created_at).toLocaleDateString('id-ID',{dateStyle:'medium'})}</div>
+          </div>
+          <span class="pill" style="background:${STATUS_LANGGANAN_WARNA_ADMIN[t.status_langganan]}22; color:${STATUS_LANGGANAN_WARNA_ADMIN[t.status_langganan]}; flex-shrink:0;">${STATUS_LANGGANAN_LABEL_ADMIN[t.status_langganan] || t.status_langganan}</span>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; width:100%;">
+          <select onchange="updateTenantPaketAdmin('${t.id}', this.value)" style="font-size:11px; padding:5px 8px; border:1px solid var(--line); border-radius:7px;">
+            <option value="basic" ${t.paket==='basic'?'selected':''}>Paket: Basic</option>
+            <option value="plus" ${t.paket==='plus'?'selected':''}>Paket: Plus</option>
+            <option value="pro" ${t.paket==='pro'?'selected':''}>Paket: Pro</option>
+          </select>
+          <select onchange="updateTenantStatusAdmin('${t.id}', this.value)" style="font-size:11px; padding:5px 8px; border:1px solid var(--line); border-radius:7px;">
+            <option value="trial" ${t.status_langganan==='trial'?'selected':''}>Status: Trial</option>
+            <option value="aktif" ${t.status_langganan==='aktif'?'selected':''}>Status: Aktif</option>
+            <option value="telat_bayar" ${t.status_langganan==='telat_bayar'?'selected':''}>Status: Telat Bayar</option>
+            <option value="nonaktif" ${t.status_langganan==='nonaktif'?'selected':''}>Status: Nonaktif</option>
+          </select>
+        </div>
+      </div>`).join('');
+  }
+
+  async function updateTenantPaketAdmin(id, paket){
+    const { error } = await sb.from('tenants').update({ paket }).eq('id', id);
+    if (error){ showToast('Gagal mengubah paket: ' + error.message, true); return; }
+    showToast('✓ Paket tenant diperbarui');
+    const idx = adminTenantCache.findIndex(t => t.id === id);
+    if (idx > -1) adminTenantCache[idx].paket = paket;
+    renderAdminStats();
+  }
+
+  async function updateTenantStatusAdmin(id, status){
+    const payload = { status_langganan: status };
+    if (status === 'telat_bayar') payload.telat_bayar_sejak = new Date().toISOString();
+    if (status === 'aktif' || status === 'trial') payload.telat_bayar_sejak = null;
+    const { error } = await sb.from('tenants').update(payload).eq('id', id);
+    if (error){ showToast('Gagal mengubah status: ' + error.message, true); return; }
+    showToast('✓ Status langganan tenant diperbarui');
+    const idx = adminTenantCache.findIndex(t => t.id === id);
+    if (idx > -1) adminTenantCache[idx].status_langganan = status;
+    renderAdminStats();
+    renderAdminTenantList();
+  }
+
+  // ---- Kelola Tagihan Langganan ----
+  let filterTagihanAdminAktif = 'menunggu';
+  const STATUS_TAGIHAN_LABEL = { menunggu:'Menunggu', lunas:'Lunas', gagal:'Gagal', kedaluwarsa:'Kedaluwarsa' };
+  const STATUS_TAGIHAN_WARNA = { menunggu:'var(--amber)', lunas:'var(--good)', gagal:'var(--danger)', kedaluwarsa:'var(--ink-soft)' };
+
+  function setFilterAdminTagihan(f, el){
+    filterTagihanAdminAktif = f;
+    el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderAdminTagihan(f);
+  }
+
+  async function renderAdminTagihan(filter){
+    const box = document.getElementById('admin-tagihan-list');
+    if (!box) return;
+    box.innerHTML = '<div class="loading-note">Memuat data…</div>';
+    let q = sb.from('tagihan_langganan').select('*, tenants(nama_usaha, paket)').order('created_at', { ascending: false });
+    if (filter !== 'semua') q = q.eq('status', filter);
+    const { data, error } = await q;
+    if (error){ box.innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+    if (!data || data.length === 0){ box.innerHTML = '<div class="loading-note">Tidak ada tagihan di kategori ini.</div>'; return; }
+
+    box.innerHTML = data.map(t => {
+      const tenant = t.tenants || {};
+      return `
+      <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+          <div>
+            <div class="row-name">${tenant.nama_usaha || 'Tenant tidak diketahui'} <span style="font-weight:400; color:var(--ink-soft);">· ${NAMA_PAKET[tenant.paket] || tenant.paket || '-'}</span></div>
+            <div class="row-meta">Periode ${new Date(t.periode_mulai).toLocaleDateString('id-ID',{dateStyle:'medium'})} – ${new Date(t.periode_selesai).toLocaleDateString('id-ID',{dateStyle:'medium'})} · Rp${Math.round(t.jumlah).toLocaleString('id-ID')}</div>
+          </div>
+          <span class="pill" style="background:${STATUS_TAGIHAN_WARNA[t.status]}22; color:${STATUS_TAGIHAN_WARNA[t.status]}; flex-shrink:0;">${STATUS_TAGIHAN_LABEL[t.status] || t.status}</span>
+        </div>
+        <div style="font-size:10.5px; color:var(--ink-soft);">Dibuat ${new Date(t.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}${t.dibayar_pada ? ' · Dibayar '+new Date(t.dibayar_pada).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}) : ''}${t.metode_bayar ? ' · '+t.metode_bayar : ''}</div>
+        ${t.status === 'menunggu' ? `<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good);" onclick="tandaiTagihanLunasAdmin('${t.id}','${t.tenant_id}','${t.periode_selesai}')">✓ Tandai Lunas Manual</button>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  async function tandaiTagihanLunasAdmin(idTagihan, tenantId, periodeSelesai){
+    const { error: errTagihan } = await sb.from('tagihan_langganan').update({
+      status: 'lunas', dibayar_pada: new Date().toISOString(), metode_bayar: 'manual (admin)',
+    }).eq('id', idTagihan);
+    if (errTagihan){ showToast('Gagal update tagihan: ' + errTagihan.message, true); return; }
+
+    const { error: errTenant } = await sb.from('tenants').update({
+      status_langganan: 'aktif', langganan_berakhir_pada: periodeSelesai, telat_bayar_sejak: null,
+    }).eq('id', tenantId);
+    if (errTenant){ showToast('Tagihan lunas, tapi gagal update status tenant: ' + errTenant.message, true); return; }
+
+    showToast('✓ Tagihan ditandai lunas & langganan tenant diperpanjang');
+    await renderAdminTagihan(filterTagihanAdminAktif);
+    await loadAdminTenantData();
+  }
+
+  // ---- Broadcast Pengumuman ----
+  async function kirimBroadcastPengumuman(){
+    const judul = document.getElementById('broadcast-judul').value.trim();
+    const isi = document.getElementById('broadcast-isi').value.trim();
+    if (!judul || !isi){ showToast('Judul & isi pengumuman wajib diisi.', true); return; }
+    const { error } = await sb.from('pengumuman_platform').insert({ judul, isi, dibuat_oleh: currentProfile.id });
+    if (error){ showToast('Gagal mengirim: ' + error.message, true); return; }
+    showToast('✓ Pengumuman terkirim ke semua tenant');
+    document.getElementById('broadcast-judul').value = '';
+    document.getElementById('broadcast-isi').value = '';
+    await renderAdminBroadcastList();
+  }
+
+  async function renderAdminBroadcastList(){
+    const box = document.getElementById('admin-broadcast-list');
+    if (!box) return;
+    const { data, error } = await sb.from('pengumuman_platform').select('*').order('created_at', { ascending: false }).limit(20);
+    if (error){ box.innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+    if (!data || data.length === 0){ box.innerHTML = '<div class="loading-note">Belum ada pengumuman dikirim.</div>'; return; }
+    box.innerHTML = data.map(p => `
+      <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:4px;">
+        <div class="row-name">${p.judul}</div>
+        <div style="font-size:12px; color:var(--ink-soft);">${p.isi}</div>
+        <div class="row-meta">${new Date(p.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}</div>
+      </div>`).join('');
   }
 
   function setFilterAdminLaporan(f, el){
@@ -6922,6 +7253,172 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (error){ showToast('Gagal update: ' + error.message, true); return; }
     showToast('✓ Pengingat diaktifkan lagi');
     await renderPengingatRutinList();
+  }
+
+  // ================= PENGUMUMAN PLATFORM (broadcast dari admin) =================
+  async function loadPengumumanDashboard(){
+    const panel = document.getElementById('pengumuman-dashboard-panel');
+    const list = document.getElementById('pengumuman-dashboard-list');
+    if (!panel || !list) return;
+    const [{ data: semuaPengumuman }, { data: sudahDibaca }] = await Promise.all([
+      sb.from('pengumuman_platform').select('id, judul, isi, created_at').order('created_at', { ascending: false }).limit(10),
+      sb.from('pengumuman_dibaca').select('pengumuman_id').eq('tenant_id', currentProfile.tenant_id),
+    ]);
+    const idSudahDibaca = new Set((sudahDibaca||[]).map(d => d.pengumuman_id));
+    const belumDibaca = (semuaPengumuman||[]).filter(p => !idSudahDibaca.has(p.id));
+    if (belumDibaca.length === 0){ panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    list.innerHTML = belumDibaca.map(p => `
+      <div style="background:var(--surface); border-radius:10px; padding:12px 14px; margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+          <div style="font-weight:700; font-size:13px;">${p.judul}</div>
+          <button onclick="tandaiPengumumanDibaca('${p.id}')" style="background:none; border:none; font-size:11px; color:var(--ink-soft); cursor:pointer; flex-shrink:0;">✕ Tutup</button>
+        </div>
+        <div style="font-size:12px; color:var(--ink-soft); margin-top:4px; white-space:pre-wrap;">${p.isi}</div>
+        <div style="font-size:10px; color:var(--ink-soft); margin-top:6px;">${new Date(p.created_at).toLocaleDateString('id-ID',{dateStyle:'medium'})}</div>
+      </div>`).join('');
+  }
+
+  async function tandaiPengumumanDibaca(id){
+    await sb.from('pengumuman_dibaca').insert({ tenant_id: currentProfile.tenant_id, pengumuman_id: id });
+    await loadPengumumanDashboard();
+  }
+
+  // ================= SERVIS & KENDARAAN (khusus Bengkel) =================
+  let filterAntrianServisAktif = 'menunggu';
+  let kendaraanCacheServis = [];
+  const STATUS_ANTRIAN_LABEL = { menunggu:'Menunggu', dikerjakan:'Dikerjakan', selesai:'Selesai', diambil:'Diambil', batal:'Batal' };
+  const STATUS_ANTRIAN_WARNA = { menunggu:'var(--amber)', dikerjakan:'var(--brand)', selesai:'var(--good)', diambil:'var(--ink-soft)', batal:'var(--danger)' };
+
+  function setServisTab(sub, tabEl){
+    document.querySelectorAll('#page-servis .tabs > .tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+    document.querySelectorAll('#page-servis .sub-page').forEach(p => p.classList.remove('active'));
+    document.getElementById('sub-' + sub).classList.add('active');
+    if (sub === 'servis-kendaraan') renderDaftarKendaraan();
+  }
+
+  async function loadServisPage(){
+    const { data } = await sb.from('kendaraan_pelanggan').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false });
+    kendaraanCacheServis = data || [];
+    await renderAntrianServis('menunggu');
+  }
+
+  function cariKendaraanUntukAntrian(q){
+    const el = document.getElementById('as-kendaraan-saran');
+    if (!q || q.trim().length < 2){ el.style.display = 'none'; return; }
+    const hasil = kendaraanCacheServis.filter(k => (k.plat_nomor||'').toLowerCase().includes(q.toLowerCase()));
+    if (hasil.length === 0){ el.style.display = 'none'; return; }
+    el.innerHTML = hasil.slice(0,6).map(k => `<div style="font-size:12.5px; padding:9px 12px; cursor:pointer; border-bottom:1px solid var(--line);" onmousedown='pilihKendaraanUntukAntrian(${JSON.stringify(k).replace(/'/g,"&#39;")})'>${k.plat_nomor} <span style="color:var(--ink-soft);">· ${k.nama_pelanggan} · ${k.merek||''} ${k.model||''}</span></div>`).join('');
+    el.style.display = 'block';
+  }
+  function pilihKendaraanUntukAntrian(k){
+    document.getElementById('as-plat').value = k.plat_nomor;
+    document.getElementById('as-nama').value = k.nama_pelanggan;
+    document.getElementById('as-wa').value = k.whatsapp_pelanggan || '';
+    document.getElementById('as-merek').value = [k.merek, k.model].filter(Boolean).join(' ');
+    document.getElementById('as-jenis-kendaraan').value = k.jenis_kendaraan || 'motor';
+    document.getElementById('as-kendaraan-saran').style.display = 'none';
+    window.__kendaraanTerpilihId = k.id;
+  }
+
+  async function simpanAntrianServis(){
+    const plat = document.getElementById('as-plat').value.trim().toUpperCase();
+    const nama = document.getElementById('as-nama').value.trim();
+    const wa = document.getElementById('as-wa').value.trim();
+    const merekModel = document.getElementById('as-merek').value.trim();
+    const jenisKendaraan = document.getElementById('as-jenis-kendaraan').value;
+    const keluhan = document.getElementById('as-keluhan').value.trim();
+    const mekanik = document.getElementById('as-mekanik').value.trim();
+    const estimasi = parseFloat(document.getElementById('as-estimasi').value) || null;
+
+    if (!plat || !nama){ showToast('Plat nomor & nama pelanggan wajib diisi.', true); return; }
+    if (!keluhan){ showToast('Keluhan/jenis servis wajib diisi.', true); return; }
+
+    let kendaraanId = window.__kendaraanTerpilihId || null;
+    // Kalau kendaraan belum pernah tercatat (plat baru), simpan dulu datanya
+    if (!kendaraanId){
+      const [merek, ...restModel] = merekModel.split(' ');
+      const { data: kendaraanBaru, error: errKendaraan } = await sb.from('kendaraan_pelanggan').insert({
+        tenant_id: currentProfile.tenant_id, nama_pelanggan: nama, whatsapp_pelanggan: wa || null,
+        jenis_kendaraan: jenisKendaraan, merek: merek || null, model: restModel.join(' ') || null, plat_nomor: plat,
+      }).select().single();
+      if (errKendaraan){ showToast('Gagal menyimpan data kendaraan: ' + errKendaraan.message, true); return; }
+      kendaraanId = kendaraanBaru.id;
+      kendaraanCacheServis.unshift(kendaraanBaru);
+    }
+
+    const { error } = await sb.from('antrian_servis').insert({
+      tenant_id: currentProfile.tenant_id, kendaraan_id: kendaraanId, nama_pelanggan: nama, whatsapp_pelanggan: wa || null,
+      plat_nomor: plat, keluhan, nama_mekanik: mekanik || null, estimasi_biaya: estimasi, dibuat_oleh: currentProfile.id,
+    });
+    if (error){ showToast('Gagal menambah antrian: ' + error.message, true); return; }
+    showToast('✓ Antrian servis ditambahkan');
+    ['as-plat','as-nama','as-wa','as-merek','as-keluhan','as-mekanik','as-estimasi'].forEach(id => document.getElementById(id).value = '');
+    window.__kendaraanTerpilihId = null;
+    await renderAntrianServis(filterAntrianServisAktif);
+  }
+
+  function setFilterAntrianServis(f, el){
+    filterAntrianServisAktif = f;
+    el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderAntrianServis(f);
+  }
+
+  async function renderAntrianServis(filter){
+    const box = document.getElementById('antrian-servis-list');
+    box.innerHTML = '<div class="loading-note">Memuat data…</div>';
+    let q = sb.from('antrian_servis').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: filter === 'menunggu' });
+    if (filter !== 'semua') q = q.eq('status', filter);
+    const { data, error } = await q;
+    if (error){ box.innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+    if (!data || data.length === 0){ box.innerHTML = '<div class="loading-note">Tidak ada antrian di kategori ini.</div>'; return; }
+
+    box.innerHTML = data.map(a => {
+      const tombolStatus = [];
+      if (a.status === 'menunggu') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand);" onclick="ubahStatusAntrian('${a.id}','dikerjakan')">▶ Mulai Kerjakan</button>`);
+      if (a.status === 'dikerjakan') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good);" onclick="ubahStatusAntrian('${a.id}','selesai')">✓ Tandai Selesai</button>`);
+      if (a.status === 'selesai') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="ubahStatusAntrian('${a.id}','diambil')">📦 Sudah Diambil</button>`);
+      if (['menunggu','dikerjakan'].includes(a.status)) tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--danger);" onclick="ubahStatusAntrian('${a.id}','batal')">Batalkan</button>`);
+      return `
+      <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+          <div>
+            <div class="row-name">${a.plat_nomor} <span style="font-weight:400; color:var(--ink-soft);">· ${a.nama_pelanggan}</span></div>
+            <div class="row-meta">${a.keluhan}</div>
+          </div>
+          <span class="pill" style="background:${STATUS_ANTRIAN_WARNA[a.status]}22; color:${STATUS_ANTRIAN_WARNA[a.status]}; flex-shrink:0;">${STATUS_ANTRIAN_LABEL[a.status]}</span>
+        </div>
+        <div style="font-size:10.5px; color:var(--ink-soft);">${a.nama_mekanik ? '🔧 Mekanik: '+a.nama_mekanik+' · ' : ''}${a.estimasi_biaya ? 'Estimasi Rp'+Math.round(a.estimasi_biaya).toLocaleString('id-ID')+' · ' : ''}Masuk ${new Date(a.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">${tombolStatus.join('')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  async function ubahStatusAntrian(id, statusBaru){
+    const payload = { status: statusBaru };
+    if (statusBaru === 'dikerjakan') payload.mulai_dikerjakan_pada = new Date().toISOString();
+    if (statusBaru === 'selesai') payload.selesai_pada = new Date().toISOString();
+    const { error } = await sb.from('antrian_servis').update(payload).eq('id', id);
+    if (error){ showToast('Gagal update status: ' + error.message, true); return; }
+    showToast('✓ Status antrian diperbarui');
+    await renderAntrianServis(filterAntrianServisAktif);
+  }
+
+  function renderDaftarKendaraan(){
+    const box = document.getElementById('daftar-kendaraan-list');
+    if (!box) return;
+    const kata = (document.getElementById('kendaraan-search')?.value || '').toLowerCase();
+    const data = kendaraanCacheServis.filter(k => (k.plat_nomor||'').toLowerCase().includes(kata) || (k.nama_pelanggan||'').toLowerCase().includes(kata));
+    if (data.length === 0){ box.innerHTML = '<div class="loading-note">Tidak ada kendaraan ditemukan.</div>'; return; }
+    box.innerHTML = data.map(k => `
+      <div class="row-item">
+        <div>
+          <div class="row-name">${k.plat_nomor} <span style="font-weight:400; color:var(--ink-soft);">· ${[k.merek,k.model].filter(Boolean).join(' ') || k.jenis_kendaraan}</span></div>
+          <div class="row-meta">${k.nama_pelanggan}${k.whatsapp_pelanggan ? ' · '+k.whatsapp_pelanggan : ''}</div>
+        </div>
+      </div>`).join('');
   }
 
   // Widget Dashboard: nunjukkin ringkas pengingat yang jatuh tempo dalam 3 hari ke depan (termasuk yang sudah lewat).
@@ -10850,6 +11347,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (name === 'pajak') loadPajakPage();
     if (name === 'langganan') loadLanggananPage();
     if (name === 'admin') loadAdminPage();
+    if (name === 'servis') loadServisPage();
     if (name === 'keuangan') loadOwnerTx();
     if (name === 'keuangan') loadCatatanBadanUsahaRingkas();
     if (name === 'keuangan') loadNeraca();
