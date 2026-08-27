@@ -3471,8 +3471,6 @@ Baca & tanda tangan kontrak kerja</textarea>
     <div class="field"><label>Nama Mekanik yang Cek</label><input type="text" id="est-mekanik" placeholder="Contoh: Andi" list="daftar-nama-mekanik-datalist"></div>
     <div id="est-mekanik-quick-pick" style="display:flex; gap:5px; flex-wrap:wrap; margin:-6px 0 12px;"></div>
     <datalist id="daftar-nama-mekanik-datalist"></datalist>
-    <datalist id="daftar-produk-jasa-datalist"></datalist>
-    <datalist id="daftar-produk-sparepart-datalist"></datalist>
     <div id="est-garansi-warning" style="display:none; background:var(--amber-tint); border-radius:9px; padding:10px 12px; margin-bottom:12px; font-size:11.5px;">
       <div id="est-garansi-warning-teks"></div>
       <label style="display:flex; align-items:center; gap:6px; margin-top:8px; cursor:pointer;">
@@ -7701,10 +7699,6 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     // yang bisa basi/telat update) — biar produk baru selalu kedeteksi buat pilihan Jasa/Sparepart.
     const { data: produkTerbaru } = await sb.from('products').select('id, nama, harga, satuan, varian_dari_product_id').eq('tenant_id', currentProfile.tenant_id);
     window.__produkEstimasiCache = produkTerbaru || [];
-    const daftarJasa = window.__produkEstimasiCache.filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() === 'jasa');
-    const daftarSparepart = window.__produkEstimasiCache.filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() !== 'jasa');
-    document.getElementById('daftar-produk-jasa-datalist').innerHTML = daftarJasa.map(p => `<option value="${p.nama.replace(/"/g,'&quot;')}">`).join('');
-    document.getElementById('daftar-produk-sparepart-datalist').innerHTML = daftarSparepart.map(p => `<option value="${p.nama.replace(/"/g,'&quot;')}">`).join('');
 
     // Tombol cepat nama mekanik yang paling sering kepake, biar nggak perlu ketik ulang tiap kali
     const namaSemuaMekanik = Array.from(document.getElementById('gm-mekanik-select')?.options || []).map(o => o.value).filter(Boolean).slice(0, 5);
@@ -7753,34 +7747,55 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const sedangGaransi = document.getElementById('est-garansi-checkbox')?.checked;
     box.innerHTML = itemEstimasiSementara.map((it, i) => {
       const digaransikan = sedangGaransi && it.jenis === 'jasa';
-      const idDatalist = it.jenis === 'jasa' ? 'daftar-produk-jasa-datalist' : 'daftar-produk-sparepart-datalist';
       return `
-      <div style="display:flex; gap:6px; margin-bottom:6px; align-items:center;">
+      <div style="display:flex; gap:6px; margin-bottom:6px; align-items:center; position:relative;">
         <select onchange="itemEstimasiSementara[${i}].jenis=this.value; renderBarisEstimasi();" style="font-size:11px; padding:8px; border:1px solid var(--line); border-radius:8px; flex-shrink:0;">
           <option value="jasa" ${it.jenis==='jasa'?'selected':''}>👷 Jasa</option>
           <option value="sparepart" ${it.jenis==='sparepart'?'selected':''}>🔧 Sparepart</option>
         </select>
-        <input type="text" value="${(it.nama||'').replace(/"/g,'&quot;')}" placeholder="Ketik/cari dari Stok" list="${idDatalist}" oninput="itemEstimasiSementara[${i}].nama=this.value" onchange="prosesPilihProdukEstimasi(${i}, this.value)" style="flex:1; min-width:0; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">
-        <input type="number" value="${it.harga||0}" placeholder="Harga" ${digaransikan ? 'readonly' : ''} oninput="itemEstimasiSementara[${i}].harga=parseFloat(this.value)||0; hitungTotalEstimasi();" style="width:85px; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px; ${digaransikan ? 'background:var(--good-tint); color:var(--good); font-weight:700;' : ''}">
+        <div style="flex:1; min-width:0; position:relative;">
+          <input type="text" value="${(it.nama||'').replace(/"/g,'&quot;')}" placeholder="Ketik/cari dari Stok" autocomplete="off"
+            oninput="itemEstimasiSementara[${i}].nama=this.value; cariProdukEstimasi(${i}, this.value);"
+            onfocus="cariProdukEstimasi(${i}, this.value)"
+            onblur="setTimeout(()=>{const el=document.getElementById('est-item-saran-${i}'); if(el) el.style.display='none';}, 200)"
+            style="width:100%; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">
+          <div id="est-item-saran-${i}" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; margin-top:2px; z-index:50; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
+        </div>
+        <input type="number" value="${it.harga||0}" placeholder="Harga" ${digaransikan ? 'readonly' : ''} oninput="itemEstimasiSementara[${i}].harga=parseFloat(this.value)||0; hitungTotalEstimasi();" style="width:80px; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px; ${digaransikan ? 'background:var(--good-tint); color:var(--good); font-weight:700;' : ''}">
         <button type="button" onclick="hapusBarisEstimasi(${i})" style="background:none; border:none; color:var(--danger); font-size:14px; padding:2px 4px; flex-shrink:0;">✕</button>
       </div>`;
     }).join('');
     hitungTotalEstimasi();
   }
 
-  // Kalau nama item yang diketik/dipilih persis sama kayak nama produk di Stok, harga otomatis keisi
-  // dari harga jual produk itu — kalau nggak ketemu (item custom, misal jasa yang gak distok), biarin
-  // harga tetap diisi manual.
-  function prosesPilihProdukEstimasi(i, namaVal){
-    const daftarProduk = window.__produkEstimasiCache || products;
-    const produkKetemu = daftarProduk.find(p => !p.varian_dari_product_id && p.nama.toLowerCase() === namaVal.trim().toLowerCase());
-    if (produkKetemu){
-      itemEstimasiSementara[i].nama = produkKetemu.nama;
-      itemEstimasiSementara[i].harga = parseFloat(produkKetemu.harga) || 0;
-      itemEstimasiSementara[i].produk_id = produkKetemu.id;
-      renderBarisEstimasi();
+  // Pencarian produk custom (bukan datalist native — lebih reliable di browser HP) buat item Jasa/Sparepart.
+  // Nyari dari cache produk yang diambil fresh tiap form estimasi dibuka.
+  function cariProdukEstimasi(i, q){
+    const el = document.getElementById(`est-item-saran-${i}`);
+    if (!el) return;
+    const jenisAktif = itemEstimasiSementara[i]?.jenis || 'sparepart';
+    const daftarProduk = window.__produkEstimasiCache || [];
+    const kandidat = daftarProduk.filter(p => !p.varian_dari_product_id &&
+      (jenisAktif === 'jasa' ? (p.satuan||'').toLowerCase() === 'jasa' : (p.satuan||'').toLowerCase() !== 'jasa'));
+    const hasil = q && q.trim()
+      ? kandidat.filter(p => p.nama.toLowerCase().includes(q.trim().toLowerCase()))
+      : kandidat; // kosongin kolom → tampilin semua pilihan yang ada di kategori itu
+    if (hasil.length === 0){
+      el.innerHTML = `<div style="font-size:11.5px; color:var(--ink-soft); padding:8px 10px;">Nggak ketemu di Stok — bisa tetap diketik manual &amp; isi harga sendiri.</div>`;
+      el.style.display = 'block';
+      return;
     }
+    el.innerHTML = hasil.slice(0, 8).map(p => `<div style="font-size:12px; padding:8px 10px; cursor:pointer; border-bottom:1px solid var(--line);" onmousedown='pilihProdukEstimasi(${i}, ${JSON.stringify({id:p.id,nama:p.nama,harga:p.harga}).replace(/'/g,"&#39;")})'>${p.nama} <span style="color:var(--ink-soft);">— Rp${Math.round(parseFloat(p.harga)).toLocaleString('id-ID')}</span></div>`).join('');
+    el.style.display = 'block';
   }
+  function pilihProdukEstimasi(i, p){
+    itemEstimasiSementara[i].nama = p.nama;
+    itemEstimasiSementara[i].harga = parseFloat(p.harga) || 0;
+    itemEstimasiSementara[i].produk_id = p.id;
+    document.getElementById(`est-item-saran-${i}`).style.display = 'none';
+    renderBarisEstimasi();
+  }
+
   function tambahBarisEstimasi(){
     itemEstimasiSementara.push({ jenis:'sparepart', nama:'', harga:0 });
     renderBarisEstimasi();
