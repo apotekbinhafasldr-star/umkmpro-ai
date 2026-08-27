@@ -402,6 +402,44 @@
   </div>
 </div>
 
+<!-- PORTAL PELANGGAN (publik, tanpa login) — approve estimasi servis & kasih rating mekanik -->
+<div id="portal-pelanggan-screen" style="display:none; min-height:100vh; background:var(--bg); padding:20px 16px;">
+  <div style="max-width:480px; margin:0 auto;">
+    <div id="portal-loading" style="text-align:center; padding:60px 20px; color:var(--ink-soft);">Memuat data servis…</div>
+    <div id="portal-error" style="display:none; background:var(--danger-tint); color:var(--danger); border-radius:12px; padding:20px; text-align:center; font-size:13px; font-weight:600;"></div>
+    <div id="portal-content" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- BOOKING ONLINE SERVIS (publik, tanpa login, Pro) -->
+<div id="booking-servis-screen" style="display:none; min-height:100vh; background:var(--bg); padding:20px 16px;">
+  <div style="max-width:480px; margin:0 auto;">
+    <div id="booking-loading" style="text-align:center; padding:60px 20px; color:var(--ink-soft);">Memuat…</div>
+    <div id="booking-error" style="display:none; background:var(--danger-tint); color:var(--danger); border-radius:12px; padding:20px; text-align:center; font-size:13px; font-weight:600;"></div>
+    <div id="booking-form-wrap" style="display:none;">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-family:'Fraunces',serif; font-size:19px; font-weight:700;" id="booking-nama-usaha">—</div>
+        <div style="font-size:12.5px; color:var(--ink-soft); margin-top:4px;">Booking Servis Online</div>
+      </div>
+      <div class="field"><label>Nama Anda</label><input type="text" id="bk-nama"></div>
+      <div class="field"><label>No. WhatsApp</label><input type="text" id="bk-wa" placeholder="08xxxxxxxxxx"></div>
+      <div class="field"><label>Plat Nomor</label><input type="text" id="bk-plat" placeholder="Contoh: B 1234 XY" style="text-transform:uppercase;"></div>
+      <div style="display:flex; gap:8px;">
+        <div class="field" style="flex:1;"><label>Merek/Model</label><input type="text" id="bk-merek" placeholder="Honda Supra X 125"></div>
+        <div class="field" style="flex:1;"><label>Jenis</label><select id="bk-jenis"><option value="motor">Motor</option><option value="mobil">Mobil</option></select></div>
+      </div>
+      <div class="field"><label>Keluhan / Jenis Servis</label><textarea id="bk-keluhan" rows="2" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea></div>
+      <div class="field"><label>Rencana Tanggal &amp; Jam Datang</label><input type="datetime-local" id="bk-jadwal"></div>
+      <button class="btn-primary" style="width:100%; justify-content:center; margin-top:8px;" onclick="submitBookingServis()">📅 Kirim Booking</button>
+    </div>
+    <div id="booking-sukses" style="display:none; text-align:center; padding:40px 20px;">
+      <div style="font-size:40px; margin-bottom:10px;">✅</div>
+      <div style="font-family:'Fraunces',serif; font-size:20px; font-weight:700;">Booking Terkirim!</div>
+      <div style="font-size:13px; color:var(--ink-soft); margin-top:8px;">Bengkel bakal konfirmasi jadwalnya. Ditunggu ya!</div>
+    </div>
+  </div>
+</div>
+
 <div id="auth-screen">
   <div class="auth-card">
     <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v100-1800</div>
@@ -2047,12 +2085,14 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
         <div id="status-mekanik-box" style="display:none; background:var(--surface); border-radius:10px; padding:10px 12px; margin-bottom:12px; border:1px solid var(--line);"></div>
 
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+          <div class="tab" id="tab-booking-baru" style="display:none; font-size:11.5px;" data-filter="booking_baru" onclick="setFilterAntrianServis('booking_baru', this)">📅 Booking Baru</div>
           <div class="tab active" style="font-size:11.5px;" data-filter="menunggu" onclick="setFilterAntrianServis('menunggu', this)">Menunggu</div>
           <div class="tab" style="font-size:11.5px;" data-filter="menunggu_persetujuan" onclick="setFilterAntrianServis('menunggu_persetujuan', this)">Persetujuan</div>
           <div class="tab" style="font-size:11.5px;" data-filter="dikerjakan" onclick="setFilterAntrianServis('dikerjakan', this)">Dikerjakan</div>
           <div class="tab" style="font-size:11.5px;" data-filter="selesai" onclick="setFilterAntrianServis('selesai', this)">Selesai</div>
           <div class="tab" style="font-size:11.5px;" data-filter="semua" onclick="setFilterAntrianServis('semua', this)">Semua</div>
         </div>
+        <div id="banner-link-booking" style="display:none; background:var(--brand-tint); border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:11.5px;"></div>
         <div id="antrian-servis-list"><div class="loading-note">Memuat data…</div></div>
       </div>
 
@@ -3479,6 +3519,12 @@ Baca & tanda tangan kontrak kerja</textarea>
     </div>
     <div id="est-items-list" style="margin-bottom:8px;"></div>
     <button type="button" class="btn-secondary" style="width:100%; justify-content:center; margin-bottom:12px;" onclick="tambahBarisEstimasi()">+ Tambah Item</button>
+    <div id="est-foto-wrap" style="display:none; margin-bottom:12px;">
+      <label style="font-size:12px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:6px;">📷 Foto Kondisi (opsional)</label>
+      <div id="est-foto-preview-list" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;"></div>
+      <input type="file" id="est-foto-input" accept="image/*" capture="environment" multiple style="display:none;" onchange="handleFotoServisUpload(event)">
+      <button type="button" class="btn-secondary" style="font-size:11px;" onclick="document.getElementById('est-foto-input').click()">+ Tambah Foto</button>
+    </div>
     <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1.5px solid var(--line); margin-bottom:12px;">
       <span style="font-weight:700; font-size:13px;">Total Estimasi</span>
       <span style="font-weight:800; font-size:16px; color:var(--brand);" id="est-total-tampilan">Rp0</span>
@@ -7408,8 +7454,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   // ================= SERVIS & KENDARAAN (khusus Bengkel) =================
   let filterAntrianServisAktif = 'menunggu';
   let kendaraanCacheServis = [];
-  const STATUS_ANTRIAN_LABEL = { menunggu:'Menunggu Estimasi', menunggu_persetujuan:'Nunggu Persetujuan', dikerjakan:'Dikerjakan', selesai:'Selesai', diambil:'Diambil', batal:'Batal' };
-  const STATUS_ANTRIAN_WARNA = { menunggu:'var(--amber)', menunggu_persetujuan:'#B8860B', dikerjakan:'var(--brand)', selesai:'var(--good)', diambil:'var(--ink-soft)', batal:'var(--danger)' };
+  const STATUS_ANTRIAN_LABEL = { booking_baru:'📅 Booking Baru', menunggu:'Menunggu Estimasi', menunggu_persetujuan:'Nunggu Persetujuan', dikerjakan:'Dikerjakan', selesai:'Selesai', diambil:'Diambil', batal:'Batal' };
+  const STATUS_ANTRIAN_WARNA = { booking_baru:'#8B5CF6', menunggu:'var(--amber)', menunggu_persetujuan:'#B8860B', dikerjakan:'var(--brand)', selesai:'var(--good)', diambil:'var(--ink-soft)', batal:'var(--danger)' };
 
   function setServisTab(sub, tabEl){
     document.querySelectorAll('#page-servis .tabs > .tab').forEach(t => t.classList.remove('active'));
@@ -7422,6 +7468,21 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   async function loadServisPage(){
     const { data } = await sb.from('kendaraan_pelanggan').select('*').eq('tenant_id', currentProfile.tenant_id).order('created_at', { ascending: false });
     kendaraanCacheServis = data || [];
+
+    const punyaAksesBooking = currentTenant?.paket === 'pro';
+    const tabBooking = document.getElementById('tab-booking-baru');
+    if (tabBooking) tabBooking.style.display = punyaAksesBooking ? '' : 'none';
+    const bannerBooking = document.getElementById('banner-link-booking');
+    if (bannerBooking){
+      if (punyaAksesBooking){
+        const linkBooking = `${window.location.origin}${window.location.pathname}?booking=${currentProfile.tenant_id}`;
+        bannerBooking.style.display = 'block';
+        bannerBooking.innerHTML = `📅 Link Booking Online buat dibagi ke pelanggan: <a href="${linkBooking}" target="_blank" style="color:var(--brand); font-weight:700;">${linkBooking}</a> <button class="btn-secondary" style="font-size:10px; padding:3px 7px; margin-left:6px;" onclick="navigator.clipboard.writeText('${linkBooking}'); showToast('✓ Link disalin');">Salin</button>`;
+      } else {
+        bannerBooking.style.display = 'none';
+      }
+    }
+
     await renderAntrianServis('menunggu');
 
     const bulanInput = document.getElementById('gm-bulan');
@@ -7619,18 +7680,26 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
 
     box.innerHTML = data.map(a => {
       const tombolStatus = [];
+      if (a.status === 'booking_baru') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good); border-color:var(--good);" onclick="ubahStatusAntrian('${a.id}','menunggu')">✓ Konfirmasi jadi Antrian</button>`);
       if (a.status === 'menunggu') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand); border-color:var(--brand);" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")})'>📝 Buat Estimasi</button>`);
       if (a.status === 'menunggu_persetujuan'){
         tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good); border-color:var(--good);" onclick="setujuiEstimasiServis('${a.id}')">✓ Pelanggan Setuju, Mulai Kerjakan</button>`);
+        if (a.whatsapp_pelanggan) tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:#25D366; border-color:#25D366;" onclick="kirimLinkPortalWA('${a.whatsapp_pelanggan}','${a.token_publik}','${(a.nama_pelanggan||'').replace(/'/g,"\\'")}')">📤 Kirim Link ke Pelanggan</button>`);
         tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")})'>✏️ Edit Estimasi</button>`);
       }
       if (a.status === 'dikerjakan'){
         tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good); border-color:var(--good);" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")}, true)'>✓ Konfirmasi Pemakaian &amp; Selesai</button>`);
         tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")})'>+ Tambah Item (Perlu Approval Lagi)</button>`);
       }
-      if (a.status === 'selesai') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="ubahStatusAntrian('${a.id}','diambil')">📦 Sudah Diambil</button>`);
-      if (a.status === 'selesai' || a.status === 'diambil') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand); border-color:var(--brand);" onclick='lanjutKeKasirDariServis(${JSON.stringify({nama:a.nama_pelanggan, wa:a.whatsapp_pelanggan||'', items:a.estimasi_items||[]}).replace(/'/g,"&#39;")})'>💰 Lanjut ke Kasir</button>`);
-      if (['menunggu','menunggu_persetujuan','dikerjakan'].includes(a.status)) tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--danger);" onclick="ubahStatusAntrian('${a.id}','batal')">Batalkan</button>`);
+      if (a.status === 'selesai'){
+        tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="ubahStatusAntrian('${a.id}','diambil')">📦 Sudah Diambil</button>`);
+        if ((currentTenant?.paket === 'plus' || currentTenant?.paket === 'pro') && a.whatsapp_pelanggan) tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:#25D366; border-color:#25D366;" onclick="kirimWANotifikasiSelesai('${a.whatsapp_pelanggan}','${(a.nama_pelanggan||'').replace(/'/g,"\\'")}','${a.plat_nomor}')">📲 Kabari Pelanggan (Selesai)</button>`);
+      }
+      if (a.status === 'selesai' || a.status === 'diambil'){
+        tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand); border-color:var(--brand);" onclick='lanjutKeKasirDariServis(${JSON.stringify({nama:a.nama_pelanggan, wa:a.whatsapp_pelanggan||'', items:a.estimasi_items||[]}).replace(/'/g,"&#39;")})'>💰 Lanjut ke Kasir</button>`);
+        tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick='cetakSPK(${JSON.stringify(a).replace(/'/g,"&#39;")})'>🖨️ Cetak SPK</button>`);
+      }
+      if (['booking_baru','menunggu','menunggu_persetujuan','dikerjakan'].includes(a.status)) tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--danger);" onclick="ubahStatusAntrian('${a.id}','batal')">Batalkan</button>`);
 
       const items = Array.isArray(a.estimasi_items) ? a.estimasi_items : [];
       const rincianHtml = items.length > 0 ? `
@@ -7658,11 +7727,20 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   async function renderStatusMekanik(){
     const holder = document.getElementById('status-mekanik-box');
     if (!holder) return;
-    const { data } = await sb.from('antrian_servis').select('nama_mekanik').eq('tenant_id', currentProfile.tenant_id).eq('status', 'dikerjakan').not('nama_mekanik', 'is', null);
-    const mekanikSibuk = [...new Set((data||[]).map(d => d.nama_mekanik))];
-    if (mekanikSibuk.length === 0){ holder.innerHTML = ''; holder.style.display = 'none'; return; }
+    const [{ data: sedangKerja }, { data: pengaturan }] = await Promise.all([
+      sb.from('antrian_servis').select('nama_mekanik').eq('tenant_id', currentProfile.tenant_id).eq('status', 'dikerjakan').not('nama_mekanik', 'is', null),
+      sb.from('pengaturan_mekanik').select('nama_mekanik').eq('tenant_id', currentProfile.tenant_id),
+    ]);
+    const mekanikSibuk = [...new Set((sedangKerja||[]).map(d => d.nama_mekanik))];
+    // "Available" = mekanik yang udah pernah diatur/kepake, tapi lagi nggak megang kerjaan apapun sekarang
+    const semuaMekanikDikenal = [...new Set((pengaturan||[]).map(p => p.nama_mekanik))];
+    const mekanikAvailable = semuaMekanikDikenal.filter(n => !mekanikSibuk.includes(n));
+
+    if (mekanikSibuk.length === 0 && mekanikAvailable.length === 0){ holder.innerHTML = ''; holder.style.display = 'none'; return; }
     holder.style.display = 'block';
-    holder.innerHTML = `<div style="font-size:11px; color:var(--ink-soft); margin-bottom:6px;">🔧 Sedang Kerja:</div><div style="display:flex; gap:6px; flex-wrap:wrap;">${mekanikSibuk.map(m => `<span class="pill" style="background:var(--amber-tint); color:var(--amber);">${m}</span>`).join('')}</div>`;
+    holder.innerHTML = `
+      ${mekanikSibuk.length > 0 ? `<div style="font-size:11px; color:var(--ink-soft); margin-bottom:6px;">🔧 Sedang Kerja:</div><div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:${mekanikAvailable.length>0?'10px':'0'};">${mekanikSibuk.map(m => `<span class="pill" style="background:var(--amber-tint); color:var(--amber);">${m}</span>`).join('')}</div>` : ''}
+      ${mekanikAvailable.length > 0 ? `<div style="font-size:11px; color:var(--ink-soft); margin-bottom:6px;">✅ Available:</div><div style="display:flex; gap:6px; flex-wrap:wrap;">${mekanikAvailable.map(m => `<span class="pill" style="background:var(--good-tint); color:var(--good);">${m}</span>`).join('')}</div>` : ''}`;
   }
 
   async function ubahStatusAntrian(id, statusBaru){
@@ -7678,12 +7756,18 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   // ---- Form Estimasi Sparepart & Jasa ----
   let antrianEstimasiAktifId = null;
   let itemEstimasiSementara = [];
+  let itemFotoServisSementara = [];
 
   let modeKonfirmasiSelesai = false;
   async function bukaFormEstimasi(antrian, isKonfirmasiSelesai){
     antrianEstimasiAktifId = antrian.id;
     modeKonfirmasiSelesai = !!isKonfirmasiSelesai;
     document.getElementById('est-mekanik').value = antrian.nama_mekanik || '';
+
+    const punyaAksesFoto = currentTenant?.paket === 'plus' || currentTenant?.paket === 'pro';
+    document.getElementById('est-foto-wrap').style.display = punyaAksesFoto ? 'block' : 'none';
+    itemFotoServisSementara = Array.isArray(antrian.foto_urls) ? [...antrian.foto_urls] : [];
+    renderFotoServisPreview();
 
     if (modeKonfirmasiSelesai){
       document.querySelector('#modal-estimasi-servis .modal-title').textContent = '✓ Konfirmasi Sparepart & Jasa yang Dipakai';
@@ -7847,7 +7931,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
 
     const payload = {
       nama_mekanik: namaMekanik, estimasi_items: itemsValid, total_estimasi: total, is_garansi: isGaransi,
-      estimasi_dibuat_pada: new Date().toISOString(),
+      estimasi_dibuat_pada: new Date().toISOString(), foto_urls: itemFotoServisSementara,
     };
     if (modeKonfirmasiSelesai){
       payload.status = 'selesai';
@@ -7861,6 +7945,40 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     showToast(modeKonfirmasiSelesai ? '✓ Pemakaian dikonfirmasi & servis ditandai selesai' : (isGaransi ? '✓ Estimasi tersimpan (garansi — jasa gratis)' : '✓ Estimasi tersimpan — tunjukkin ke pelanggan buat persetujuan'));
     closeModal('modal-estimasi-servis');
     await renderAntrianServis(filterAntrianServisAktif);
+  }
+
+  // ---- Foto Kondisi Kendaraan/Sparepart (Plus+) ----
+  async function handleFotoServisUpload(event){
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    for (const file of files){
+      if (!file.type.startsWith('image/')){ showToast('File harus berupa gambar.', true); continue; }
+      showToast('Mengunggah foto…');
+      let compressedBlob;
+      try{ compressedBlob = await compressProductImage(file); }
+      catch(err){ showToast('Gagal memproses gambar: ' + err.message, true); continue; }
+      const path = `${currentProfile.tenant_id}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.jpg`;
+      const { error: uploadErr } = await sb.storage.from('foto-servis').upload(path, compressedBlob, { contentType: 'image/jpeg' });
+      if (uploadErr){ showToast('Gagal unggah foto: ' + uploadErr.message, true); continue; }
+      const { data: publicUrlData } = sb.storage.from('foto-servis').getPublicUrl(path);
+      itemFotoServisSementara.push(publicUrlData.publicUrl);
+    }
+    event.target.value = '';
+    renderFotoServisPreview();
+    showToast('✓ Foto ditambahkan');
+  }
+  function renderFotoServisPreview(){
+    const box = document.getElementById('est-foto-preview-list');
+    if (!box) return;
+    box.innerHTML = itemFotoServisSementara.map((url, i) => `
+      <div style="position:relative; width:64px; height:64px;">
+        <img src="${url}" style="width:100%; height:100%; object-fit:cover; border-radius:8px; border:1px solid var(--line);">
+        <button type="button" onclick="hapusFotoServis(${i})" style="position:absolute; top:-6px; right:-6px; background:var(--danger); color:#fff; border:none; border-radius:50%; width:20px; height:20px; font-size:11px; line-height:1;">✕</button>
+      </div>`).join('');
+  }
+  function hapusFotoServis(i){
+    itemFotoServisSementara.splice(i,1);
+    renderFotoServisPreview();
   }
 
   // ---- Pengaturan Garansi Servis ----
@@ -7920,6 +8038,69 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       else if (jumlahOtomatisMasuk > 0) showToast(`✓ ${jumlahOtomatisMasuk} item otomatis masuk, ${jumlahPerluManual} item custom perlu ditambah manual (nggak ada di Stok)`);
       else showToast('✓ Data pelanggan udah keisi — tinggal tambahin produk/jasa yang dikerjakan manual');
     }, 150);
+  }
+
+  // ---- Portal Pelanggan: kirim link approve/rating via WA (Basic — semua paket) ----
+  function kirimLinkPortalWA(wa, token, nama){
+    const link = `${window.location.origin}${window.location.pathname}?servis=${token}`;
+    const pesan = `Halo ${nama || ''}, ini rincian estimasi servis motor Anda. Silakan cek & setujui di link berikut ya:\n${link}`;
+    window.open(`https://wa.me/${wa.replace(/^0/,'62').replace(/\D/g,'')}?text=${encodeURIComponent(pesan)}`, '_blank');
+  }
+
+  // ---- WA Notifikasi Motor Selesai (Plus+) ----
+  function kirimWANotifikasiSelesai(wa, nama, plat){
+    const pesan = `Halo ${nama || ''}, motor Anda (${plat}) udah selesai diservis dan siap diambil. Ditunggu kedatangannya ya. Terima kasih! 🙏`;
+    window.open(`https://wa.me/${wa.replace(/^0/,'62').replace(/\D/g,'')}?text=${encodeURIComponent(pesan)}`, '_blank');
+  }
+
+  // ---- SPK (Surat Perintah Kerja) — cetak/share (Basic — semua paket) ----
+  function cetakSPK(a){
+    const tenantName = document.getElementById('sidebar-tenant')?.textContent || currentTenant?.nama_usaha || 'Bengkel';
+    const win = window.open('', '_blank', 'width=380,height=650');
+    if (!win){ showToast('Popup diblokir browser — izinkan popup untuk cetak SPK.', true); return; }
+    const items = Array.isArray(a.estimasi_items) ? a.estimasi_items : [];
+    const rows = items.map(it => `<tr><td>${it.jenis === 'jasa' ? '👷' : '🔧'} ${it.nama}</td><td style="text-align:right;">Rp${Math.round(it.harga).toLocaleString('id-ID')}</td></tr>`).join('');
+    win.document.write(`
+      <html><head><title>SPK - ${a.plat_nomor}</title>
+      <style>
+        body{ font-family:sans-serif; font-size:12.5px; width:300px; margin:12px auto; color:#1B1810; }
+        h2{ text-align:center; margin:0 0 2px; font-size:16px; font-weight:800; }
+        .center{ text-align:center; }
+        table{ width:100%; border-collapse:collapse; margin-top:10px; }
+        td{ padding:4px 0; font-size:12px; }
+        hr{ border:none; border-top:2px dashed #999; margin:9px 0; }
+        .total-row td{ font-weight:800; font-size:13.5px; border-top:1px solid #333; padding-top:8px; }
+        .ttd{ margin-top:30px; display:flex; justify-content:space-between; text-align:center; font-size:11px; }
+        .ttd div{ width:45%; }
+        .garis-ttd{ border-top:1px solid #333; margin-top:40px; padding-top:4px; }
+        @media print{ .no-print{ display:none; } }
+      </style></head>
+      <body>
+        <h2>${tenantName}</h2>
+        <div class="center">SURAT PERINTAH KERJA (SPK)</div>
+        <div class="center" style="font-size:10.5px; color:#777;">${new Date(a.created_at).toLocaleDateString('id-ID',{dateStyle:'long'})}</div>
+        <hr>
+        <table>
+          <tr><td>Plat Nomor</td><td style="text-align:right; font-weight:700;">${a.plat_nomor}</td></tr>
+          <tr><td>Pelanggan</td><td style="text-align:right;">${a.nama_pelanggan}</td></tr>
+          <tr><td>Mekanik</td><td style="text-align:right;">${a.nama_mekanik || '-'}</td></tr>
+          <tr><td colspan="2" style="padding-top:8px;">Keluhan: ${a.keluhan}</td></tr>
+        </table>
+        <hr>
+        <table>
+          ${rows}
+          <tr class="total-row"><td>Total</td><td style="text-align:right;">Rp${Math.round(a.total_estimasi||0).toLocaleString('id-ID')}</td></tr>
+        </table>
+        ${a.is_garansi ? '<div class="center" style="margin-top:8px; font-weight:700; color:#2E7D32;">🛡️ SERVIS GARANSI — Jasa Gratis</div>' : ''}
+        ${a.disetujui_oleh_pelanggan ? '<div class="center" style="margin-top:8px; font-size:10.5px; color:#2E7D32;">✓ Disetujui pelanggan via portal digital</div>' : ''}
+        <div class="ttd">
+          <div><div class="garis-ttd">Mekanik</div></div>
+          <div><div class="garis-ttd">Pelanggan</div></div>
+        </div>
+      </body></html>
+    `);
+    win.document.close();
+    win.document.write(`<script>window.onload = () => setTimeout(() => window.print(), 300);<\/script>`);
   }
 
   // ---- Kasbon Mekanik ----
@@ -13593,9 +13774,150 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       await muatSoalTes(kodeTes);
       return;
     }
+    const tokenServis = new URLSearchParams(window.location.search).get('servis');
+    if (tokenServis){
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('portal-pelanggan-screen').style.display = 'block';
+      await muatPortalPelanggan(tokenServis);
+      return;
+    }
+    const tenantIdBooking = new URLSearchParams(window.location.search).get('booking');
+    if (tenantIdBooking){
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('booking-servis-screen').style.display = 'block';
+      await muatFormBooking(tenantIdBooking);
+      return;
+    }
     const { data: { session } } = await sb.auth.getSession();
     if (session){ await initApp(); }
   })();
+
+  // ================= BOOKING ONLINE SERVIS (publik) =================
+  async function muatFormBooking(tenantId){
+    const { data: tenant } = await sb.from('tenants').select('nama_usaha').eq('id', tenantId).maybeSingle();
+    document.getElementById('booking-loading').style.display = 'none';
+    if (!tenant){
+      document.getElementById('booking-error').textContent = 'Link booking nggak valid.';
+      document.getElementById('booking-error').style.display = 'block';
+      return;
+    }
+    document.getElementById('booking-nama-usaha').textContent = tenant.nama_usaha;
+    document.getElementById('booking-form-wrap').style.display = 'block';
+    window.__tenantIdBookingAktif = tenantId;
+    const skrg = new Date(Date.now() + 60*60*1000);
+    document.getElementById('bk-jadwal').value = skrg.toISOString().slice(0,16);
+  }
+
+  async function submitBookingServis(){
+    const nama = document.getElementById('bk-nama').value.trim();
+    const wa = document.getElementById('bk-wa').value.trim();
+    const plat = document.getElementById('bk-plat').value.trim();
+    const merek = document.getElementById('bk-merek').value.trim();
+    const jenis = document.getElementById('bk-jenis').value;
+    const keluhan = document.getElementById('bk-keluhan').value.trim();
+    const jadwal = document.getElementById('bk-jadwal').value;
+    if (!nama || !plat || !keluhan){ alert('Nama, plat nomor, dan keluhan wajib diisi.'); return; }
+
+    const { data, error } = await sb.rpc('fn_buat_booking_servis_publik', {
+      p_tenant_id: window.__tenantIdBookingAktif, p_nama: nama, p_wa: wa || null, p_plat: plat,
+      p_merek: merek || null, p_jenis_kendaraan: jenis, p_keluhan: keluhan,
+      p_jadwal: jadwal ? new Date(jadwal).toISOString() : null,
+    });
+    if (error || !data?.ok){ alert('Gagal: ' + (data?.error || error?.message || 'coba lagi.')); return; }
+    document.getElementById('booking-form-wrap').style.display = 'none';
+    document.getElementById('booking-sukses').style.display = 'block';
+  }
+
+  // ================= PORTAL PELANGGAN (publik) =================
+  async function muatPortalPelanggan(token){
+    const loading = document.getElementById('portal-loading');
+    const errorBox = document.getElementById('portal-error');
+    const content = document.getElementById('portal-content');
+    const { data: a, error } = await sb.from('antrian_servis').select('*, tenants(nama_usaha)').eq('token_publik', token).maybeSingle();
+    loading.style.display = 'none';
+    if (error || !a){
+      errorBox.textContent = 'Link nggak valid atau udah kadaluarsa.';
+      errorBox.style.display = 'block';
+      return;
+    }
+    content.style.display = 'block';
+    renderPortalPelanggan(a);
+  }
+
+  function renderPortalPelanggan(a){
+    const content = document.getElementById('portal-content');
+    const namaUsaha = a.tenants?.nama_usaha || 'Bengkel';
+    const items = Array.isArray(a.estimasi_items) ? a.estimasi_items : [];
+    const header = `
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-family:'Fraunces',serif; font-size:19px; font-weight:700;">${namaUsaha}</div>
+        <div style="font-size:12.5px; color:var(--ink-soft); margin-top:4px;">${a.plat_nomor} · ${a.nama_pelanggan}</div>
+      </div>`;
+
+    if (a.status === 'menunggu_persetujuan'){
+      const rincianHtml = items.map(it => `<div style="display:flex; justify-content:space-between; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--line);"><span>${it.jenis === 'jasa' ? '👷' : '🔧'} ${it.nama}</span><span>Rp${Math.round(it.harga).toLocaleString('id-ID')}</span></div>`).join('');
+      const fotoUrls = Array.isArray(a.foto_urls) ? a.foto_urls : [];
+      const fotoHtml = fotoUrls.length > 0 ? `
+        <div style="font-size:11.5px; font-weight:600; margin-top:14px; margin-bottom:6px;">📷 Foto Kondisi:</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">${fotoUrls.map(url => `<img src="${url}" style="width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid var(--line);">`).join('')}</div>` : '';
+      content.innerHTML = header + `
+        <div class="panel"><div class="panel-body" style="padding:16px;">
+          <div style="font-weight:700; font-size:14px; margin-bottom:4px;">Keluhan: ${a.keluhan}</div>
+          <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:14px;">Berikut rincian yang bakal dikerjakan bengkel — cek dulu sebelum setuju.</div>
+          ${rincianHtml}
+          ${fotoHtml}
+          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:15px; padding:12px 0 4px;"><span>Total</span><span>Rp${Math.round(a.total_estimasi||0).toLocaleString('id-ID')}</span></div>
+          <button class="btn-primary" style="width:100%; justify-content:center; margin-top:14px;" onclick="approveServisPublik('${a.token_publik}')">✓ Saya Setuju, Silakan Dikerjakan</button>
+          <div style="font-size:10.5px; color:var(--ink-soft); text-align:center; margin-top:8px;">Kalau ada pertanyaan, hubungi bengkel langsung sebelum menyetujui.</div>
+        </div></div>`;
+    } else if (a.status === 'dikerjakan'){
+      content.innerHTML = header + `
+        <div class="panel"><div class="panel-body" style="padding:24px; text-align:center;">
+          <div style="font-size:36px; margin-bottom:8px;">🔧</div>
+          <div style="font-weight:700; font-size:15px;">Motor kamu lagi dikerjakan${a.nama_mekanik ? ' oleh '+a.nama_mekanik : ''}</div>
+          <div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Kami bakal kabarin begitu selesai. Terima kasih udah sabar menunggu!</div>
+        </div></div>`;
+    } else if ((a.status === 'selesai' || a.status === 'diambil') && !a.rating_mekanik){
+      content.innerHTML = header + `
+        <div class="panel"><div class="panel-body" style="padding:20px; text-align:center;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:4px;">Servis udah kelar! 🎉</div>
+          <div style="font-size:12px; color:var(--ink-soft); margin-bottom:16px;">Gimana pelayanan ${a.nama_mekanik || 'mekanik'} tadi? Kasih rating yuk.</div>
+          <div id="portal-rating-bintang" style="font-size:32px; margin-bottom:14px; letter-spacing:4px;">
+            ${[1,2,3,4,5].map(n => `<span onclick="pilihRatingPortal(${n})" id="portal-bintang-${n}" style="cursor:pointer; color:var(--line);">★</span>`).join('')}
+          </div>
+          <textarea id="portal-catatan-rating" placeholder="Catatan tambahan (opsional)" rows="3" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:10px; font-size:12.5px; font-family:inherit; margin-bottom:12px; box-sizing:border-box;"></textarea>
+          <button class="btn-primary" style="width:100%; justify-content:center;" onclick="kirimRatingPortal('${a.token_publik}')">Kirim Rating</button>
+        </div></div>`;
+      window.__ratingTerpilihPortal = 0;
+    } else if (a.rating_mekanik){
+      content.innerHTML = header + `
+        <div class="panel"><div class="panel-body" style="padding:24px; text-align:center;">
+          <div style="font-size:36px; margin-bottom:8px;">🙏</div>
+          <div style="font-weight:700; font-size:15px;">Makasih udah kasih rating!</div>
+          <div style="font-size:20px; margin-top:8px; color:var(--gold);">${'★'.repeat(a.rating_mekanik)}${'☆'.repeat(5-a.rating_mekanik)}</div>
+        </div></div>`;
+    } else {
+      content.innerHTML = header + `<div class="panel"><div class="panel-body" style="padding:20px; text-align:center; font-size:12.5px; color:var(--ink-soft);">Antrian ini statusnya "${STATUS_ANTRIAN_LABEL[a.status] || a.status}".</div></div>`;
+    }
+  }
+
+  async function approveServisPublik(token){
+    const { data, error } = await sb.rpc('fn_approve_servis_publik', { p_token: token });
+    if (error || !data?.ok){ alert('Gagal: ' + (data?.error || error?.message || 'coba lagi.')); return; }
+    document.getElementById('portal-content').innerHTML = `<div class="panel"><div class="panel-body" style="padding:24px; text-align:center;"><div style="font-size:36px; margin-bottom:8px;">✓</div><div style="font-weight:700; font-size:15px;">Disetujui! Bengkel bakal mulai kerjakan motor kamu.</div></div></div>`;
+  }
+  function pilihRatingPortal(n){
+    window.__ratingTerpilihPortal = n;
+    for (let i=1;i<=5;i++) document.getElementById(`portal-bintang-${i}`).style.color = i <= n ? 'var(--gold)' : 'var(--line)';
+  }
+  async function kirimRatingPortal(token){
+    const rating = window.__ratingTerpilihPortal || 0;
+    if (rating === 0){ alert('Pilih bintang dulu ya.'); return; }
+    const catatan = document.getElementById('portal-catatan-rating').value.trim();
+    const { data, error } = await sb.rpc('fn_kirim_rating_servis_publik', { p_token: token, p_rating: rating, p_catatan: catatan || null });
+    if (error || !data?.ok){ alert('Gagal: ' + (data?.error || error?.message || 'coba lagi.')); return; }
+    document.getElementById('portal-content').innerHTML = `<div class="panel"><div class="panel-body" style="padding:24px; text-align:center;"><div style="font-size:36px; margin-bottom:8px;">🙏</div><div style="font-weight:700; font-size:15px;">Makasih udah kasih rating!</div></div></div>`;
+  }
 
   // ================= RIWAYAT PERINGATAN (SP) =================
   const JENIS_PERINGATAN_LABEL = { teguran_lisan:'Teguran Lisan', sp1:'SP 1', sp2:'SP 2', sp3:'SP 3' };
