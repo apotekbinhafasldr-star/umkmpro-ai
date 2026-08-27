@@ -7697,9 +7697,12 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       document.getElementById('est-submit-btn').textContent = 'Simpan Estimasi';
     }
 
-    // Isi datalist Jasa & Sparepart dari produk yang beneran ada di Stok (biar bisa dipilih, bukan ketik manual)
-    const daftarJasa = products.filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() === 'jasa');
-    const daftarSparepart = products.filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() !== 'jasa');
+    // Ambil data produk LANGSUNG dari database tiap kali form ini dibuka (bukan pakai cache lokal
+    // yang bisa basi/telat update) — biar produk baru selalu kedeteksi buat pilihan Jasa/Sparepart.
+    const { data: produkTerbaru } = await sb.from('products').select('id, nama, harga, satuan, varian_dari_product_id').eq('tenant_id', currentProfile.tenant_id);
+    window.__produkEstimasiCache = produkTerbaru || [];
+    const daftarJasa = window.__produkEstimasiCache.filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() === 'jasa');
+    const daftarSparepart = window.__produkEstimasiCache.filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() !== 'jasa');
     document.getElementById('daftar-produk-jasa-datalist').innerHTML = daftarJasa.map(p => `<option value="${p.nama.replace(/"/g,'&quot;')}">`).join('');
     document.getElementById('daftar-produk-sparepart-datalist').innerHTML = daftarSparepart.map(p => `<option value="${p.nama.replace(/"/g,'&quot;')}">`).join('');
 
@@ -7769,7 +7772,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   // dari harga jual produk itu — kalau nggak ketemu (item custom, misal jasa yang gak distok), biarin
   // harga tetap diisi manual.
   function prosesPilihProdukEstimasi(i, namaVal){
-    const produkKetemu = products.find(p => !p.varian_dari_product_id && p.nama.toLowerCase() === namaVal.trim().toLowerCase());
+    const daftarProduk = window.__produkEstimasiCache || products;
+    const produkKetemu = daftarProduk.find(p => !p.varian_dari_product_id && p.nama.toLowerCase() === namaVal.trim().toLowerCase());
     if (produkKetemu){
       itemEstimasiSementara[i].nama = produkKetemu.nama;
       itemEstimasiSementara[i].harga = parseFloat(produkKetemu.harga) || 0;
