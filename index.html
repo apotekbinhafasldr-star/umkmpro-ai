@@ -7697,7 +7697,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
 
     // Ambil data produk LANGSUNG dari database tiap kali form ini dibuka (bukan pakai cache lokal
     // yang bisa basi/telat update) — biar produk baru selalu kedeteksi buat pilihan Jasa/Sparepart.
-    const { data: produkTerbaru } = await sb.from('products').select('id, nama, harga, satuan, varian_dari_product_id').eq('tenant_id', currentProfile.tenant_id);
+    const { data: produkTerbaru, error: errorProduk } = await sb.from('products').select('id, nama, harga, satuan, varian_dari_product_id').eq('tenant_id', currentProfile.tenant_id);
+    if (errorProduk) showToast('Gagal memuat daftar produk dari Stok: ' + errorProduk.message, true);
     window.__produkEstimasiCache = produkTerbaru || [];
 
     // Tombol cepat nama mekanik yang paling sering kepake, biar nggak perlu ketik ulang tiap kali
@@ -7745,50 +7746,77 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   function renderBarisEstimasi(){
     const box = document.getElementById('est-items-list');
     const sedangGaransi = document.getElementById('est-garansi-checkbox')?.checked;
+    const daftarJasa = (window.__produkEstimasiCache || []).filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() === 'jasa');
+    window.__daftarJasaEstimasi = daftarJasa;
+
     box.innerHTML = itemEstimasiSementara.map((it, i) => {
       const digaransikan = sedangGaransi && it.jenis === 'jasa';
+
+      let kolomNama;
+      if (it.jenis === 'jasa' && !it.modeManual){
+        // JASA: dropdown pilih langsung, kayak pilih satuan — nggak perlu ngetik
+        const opsiJasa = daftarJasa.map((p, idx) => `<option value="${idx}" ${it.produk_id===p.id?'selected':''}>${p.nama} — Rp${Math.round(parseFloat(p.harga)).toLocaleString('id-ID')}</option>`).join('');
+        kolomNama = `
+          <select onchange="if(this.value==='__manual__'){itemEstimasiSementara[${i}].modeManual=true; renderBarisEstimasi();} else {pilihJasaDariDropdown(${i}, this.value);}" style="flex:1; min-width:0; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">
+            <option value="">— Pilih jasa —</option>
+            ${opsiJasa}
+            <option value="__manual__">✏️ Jasa lain (ketik manual)</option>
+          </select>`;
+      } else if (it.jenis === 'jasa' && it.modeManual){
+        // JASA custom manual
+        kolomNama = `<input type="text" value="${(it.nama||'').replace(/"/g,'&quot;')}" placeholder="Nama jasa custom" oninput="itemEstimasiSementara[${i}].nama=this.value" style="flex:1; min-width:0; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">`;
+      } else {
+        // SPAREPART: search bar, hasil baru muncul begitu ketik minimal 2 huruf
+        kolomNama = `<input type="text" value="${(it.nama||'').replace(/"/g,'&quot;')}" placeholder="🔍 Ketik nama sparepart…" autocomplete="off"
+            oninput="itemEstimasiSementara[${i}].nama=this.value; cariSparepartEstimasi(${i}, this.value);"
+            onblur="setTimeout(()=>{const el=document.getElementById('est-item-saran-${i}'); if(el) el.style.display='none';}, 250)"
+            style="flex:1; min-width:0; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">`;
+      }
+
       return `
-      <div style="display:flex; gap:6px; margin-bottom:6px; align-items:center; position:relative;">
-        <select onchange="itemEstimasiSementara[${i}].jenis=this.value; renderBarisEstimasi();" style="font-size:11px; padding:8px; border:1px solid var(--line); border-radius:8px; flex-shrink:0;">
-          <option value="jasa" ${it.jenis==='jasa'?'selected':''}>👷 Jasa</option>
-          <option value="sparepart" ${it.jenis==='sparepart'?'selected':''}>🔧 Sparepart</option>
-        </select>
-        <div style="flex:1; min-width:0; position:relative;">
-          <input type="text" value="${(it.nama||'').replace(/"/g,'&quot;')}" placeholder="Ketik/cari dari Stok" autocomplete="off"
-            oninput="itemEstimasiSementara[${i}].nama=this.value; cariProdukEstimasi(${i}, this.value);"
-            onfocus="cariProdukEstimasi(${i}, this.value)"
-            onblur="setTimeout(()=>{const el=document.getElementById('est-item-saran-${i}'); if(el) el.style.display='none';}, 200)"
-            style="width:100%; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">
-          <div id="est-item-saran-${i}" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; margin-top:2px; z-index:50; max-height:160px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
+      <div style="margin-bottom:8px; padding-bottom:6px; border-bottom:1px dashed var(--line);">
+        <div style="display:flex; gap:6px; align-items:center;">
+          <select onchange="itemEstimasiSementara[${i}].jenis=this.value; itemEstimasiSementara[${i}].modeManual=false; renderBarisEstimasi();" style="font-size:11px; padding:8px; border:1px solid var(--line); border-radius:8px; flex-shrink:0;">
+            <option value="jasa" ${it.jenis==='jasa'?'selected':''}>👷 Jasa</option>
+            <option value="sparepart" ${it.jenis==='sparepart'?'selected':''}>🔧 Sparepart</option>
+          </select>
+          ${kolomNama}
+          <input type="number" value="${it.harga||0}" placeholder="Harga" ${digaransikan ? 'readonly' : ''} oninput="itemEstimasiSementara[${i}].harga=parseFloat(this.value)||0; hitungTotalEstimasi();" style="width:75px; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px; flex-shrink:0; ${digaransikan ? 'background:var(--good-tint); color:var(--good); font-weight:700;' : ''}">
+          <button type="button" onclick="hapusBarisEstimasi(${i})" style="background:none; border:none; color:var(--danger); font-size:14px; padding:2px 4px; flex-shrink:0;">✕</button>
         </div>
-        <input type="number" value="${it.harga||0}" placeholder="Harga" ${digaransikan ? 'readonly' : ''} oninput="itemEstimasiSementara[${i}].harga=parseFloat(this.value)||0; hitungTotalEstimasi();" style="width:80px; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px; ${digaransikan ? 'background:var(--good-tint); color:var(--good); font-weight:700;' : ''}">
-        <button type="button" onclick="hapusBarisEstimasi(${i})" style="background:none; border:none; color:var(--danger); font-size:14px; padding:2px 4px; flex-shrink:0;">✕</button>
+        <div id="est-item-saran-${i}" style="display:none; background:var(--surface-2); border-radius:9px; margin-top:6px; max-height:170px; overflow-y:auto;"></div>
       </div>`;
     }).join('');
     hitungTotalEstimasi();
   }
 
-  // Pencarian produk custom (bukan datalist native — lebih reliable di browser HP) buat item Jasa/Sparepart.
-  // Nyari dari cache produk yang diambil fresh tiap form estimasi dibuka.
-  function cariProdukEstimasi(i, q){
+  // JASA: pilih langsung dari dropdown, harga otomatis
+  function pilihJasaDariDropdown(i, idx){
+    const p = window.__daftarJasaEstimasi[idx];
+    if (!p) return;
+    itemEstimasiSementara[i].nama = p.nama;
+    itemEstimasiSementara[i].harga = parseFloat(p.harga) || 0;
+    itemEstimasiSementara[i].produk_id = p.id;
+    hitungTotalEstimasi();
+  }
+
+  // SPAREPART: search bar, baru nyari begitu ketik minimal 2 huruf (biar nggak numpuk kayak dropdown penuh)
+  function cariSparepartEstimasi(i, q){
     const el = document.getElementById(`est-item-saran-${i}`);
     if (!el) return;
-    const jenisAktif = itemEstimasiSementara[i]?.jenis || 'sparepart';
+    if (!q || q.trim().length < 2){ el.style.display = 'none'; return; }
     const daftarProduk = window.__produkEstimasiCache || [];
-    const kandidat = daftarProduk.filter(p => !p.varian_dari_product_id &&
-      (jenisAktif === 'jasa' ? (p.satuan||'').toLowerCase() === 'jasa' : (p.satuan||'').toLowerCase() !== 'jasa'));
-    const hasil = q && q.trim()
-      ? kandidat.filter(p => p.nama.toLowerCase().includes(q.trim().toLowerCase()))
-      : kandidat; // kosongin kolom → tampilin semua pilihan yang ada di kategori itu
+    const kandidat = daftarProduk.filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() !== 'jasa');
+    const hasil = kandidat.filter(p => p.nama.toLowerCase().includes(q.trim().toLowerCase()));
     if (hasil.length === 0){
-      el.innerHTML = `<div style="font-size:11.5px; color:var(--ink-soft); padding:8px 10px;">Nggak ketemu di Stok — bisa tetap diketik manual &amp; isi harga sendiri.</div>`;
+      el.innerHTML = `<div style="font-size:11.5px; color:var(--ink-soft); padding:8px 10px;">Nggak ketemu — bisa tetap diketik manual &amp; isi harga sendiri.</div>`;
       el.style.display = 'block';
       return;
     }
-    el.innerHTML = hasil.slice(0, 8).map(p => `<div style="font-size:12px; padding:8px 10px; cursor:pointer; border-bottom:1px solid var(--line);" onmousedown='pilihProdukEstimasi(${i}, ${JSON.stringify({id:p.id,nama:p.nama,harga:p.harga}).replace(/'/g,"&#39;")})'>${p.nama} <span style="color:var(--ink-soft);">— Rp${Math.round(parseFloat(p.harga)).toLocaleString('id-ID')}</span></div>`).join('');
+    el.innerHTML = hasil.slice(0, 8).map(p => `<div style="font-size:12px; padding:8px 10px; cursor:pointer; border-bottom:1px solid var(--line);" onmousedown='pilihSparepartEstimasi(${i}, ${JSON.stringify({id:p.id,nama:p.nama,harga:p.harga}).replace(/'/g,"&#39;")})'>${p.nama} <span style="color:var(--ink-soft);">— Rp${Math.round(parseFloat(p.harga)).toLocaleString('id-ID')}</span></div>`).join('');
     el.style.display = 'block';
   }
-  function pilihProdukEstimasi(i, p){
+  function pilihSparepartEstimasi(i, p){
     itemEstimasiSementara[i].nama = p.nama;
     itemEstimasiSementara[i].harga = parseFloat(p.harga) || 0;
     itemEstimasiSementara[i].produk_id = p.id;
@@ -7813,7 +7841,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const namaMekanik = document.getElementById('est-mekanik').value.trim() || null;
     const isGaransi = document.getElementById('est-garansi-checkbox').checked;
     const itemsValid = itemEstimasiSementara.filter(it => it.nama && it.nama.trim())
-      .map(({hargaAsliSebelumGaransi, ...it}) => it); // buang field bantu, jangan ikut tersimpan
+      .map(({hargaAsliSebelumGaransi, modeManual, ...it}) => it); // buang field bantu, jangan ikut tersimpan
     if (itemsValid.length === 0){ showToast('Tambahin minimal 1 item (jasa atau sparepart).', true); return; }
     const total = itemsValid.reduce((s,it) => s + (parseFloat(it.harga)||0), 0);
 
