@@ -3467,8 +3467,12 @@ Baca & tanda tangan kontrak kerja</textarea>
   <div class="modal-card" style="max-width:420px;">
     <div class="modal-title">📝 Estimasi Sparepart &amp; Jasa</div>
     <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:10px;">Tunjukkin daftar ini ke pelanggan dulu sebelum mulai kerjakan — biar transparan soal sparepart apa aja yang bakal diganti.</div>
+    <div id="est-konfirmasi-note" style="display:none; background:var(--good-tint); border-radius:9px; padding:10px 12px; margin-bottom:12px; font-size:11.5px; color:var(--good);">✓ Cek ulang di sini — kalau ternyata sparepart yang dipakai beda dari estimasi awal (kurang/lebih/beda item), edit dulu biar catatan akhirnya akurat, baru konfirmasi.</div>
     <div class="field"><label>Nama Mekanik yang Cek</label><input type="text" id="est-mekanik" placeholder="Contoh: Andi" list="daftar-nama-mekanik-datalist"></div>
+    <div id="est-mekanik-quick-pick" style="display:flex; gap:5px; flex-wrap:wrap; margin:-6px 0 12px;"></div>
     <datalist id="daftar-nama-mekanik-datalist"></datalist>
+    <datalist id="daftar-produk-jasa-datalist"></datalist>
+    <datalist id="daftar-produk-sparepart-datalist"></datalist>
     <div id="est-garansi-warning" style="display:none; background:var(--amber-tint); border-radius:9px; padding:10px 12px; margin-bottom:12px; font-size:11.5px;">
       <div id="est-garansi-warning-teks"></div>
       <label style="display:flex; align-items:center; gap:6px; margin-top:8px; cursor:pointer;">
@@ -7623,11 +7627,11 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
         tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")})'>✏️ Edit Estimasi</button>`);
       }
       if (a.status === 'dikerjakan'){
-        tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good);" onclick="ubahStatusAntrian('${a.id}','selesai')">✓ Tandai Selesai</button>`);
+        tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--good); border-color:var(--good);" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")}, true)'>✓ Konfirmasi Pemakaian &amp; Selesai</button>`);
         tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick='bukaFormEstimasi(${JSON.stringify(a).replace(/'/g,"&#39;")})'>+ Tambah Item (Perlu Approval Lagi)</button>`);
       }
       if (a.status === 'selesai') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="ubahStatusAntrian('${a.id}','diambil')">📦 Sudah Diambil</button>`);
-      if (a.status === 'selesai' || a.status === 'diambil') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand); border-color:var(--brand);" onclick='lanjutKeKasirDariServis(${JSON.stringify({nama:a.nama_pelanggan,wa:a.whatsapp_pelanggan||''}).replace(/'/g,"&#39;")})'>💰 Lanjut ke Kasir</button>`);
+      if (a.status === 'selesai' || a.status === 'diambil') tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--brand); border-color:var(--brand);" onclick='lanjutKeKasirDariServis(${JSON.stringify({nama:a.nama_pelanggan, wa:a.whatsapp_pelanggan||'', items:a.estimasi_items||[]}).replace(/'/g,"&#39;")})'>💰 Lanjut ke Kasir</button>`);
       if (['menunggu','menunggu_persetujuan','dikerjakan'].includes(a.status)) tombolStatus.push(`<button class="btn-secondary" style="font-size:10.5px; padding:4px 9px; color:var(--danger);" onclick="ubahStatusAntrian('${a.id}','batal')">Batalkan</button>`);
 
       const items = Array.isArray(a.estimasi_items) ? a.estimasi_items : [];
@@ -7677,9 +7681,31 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   let antrianEstimasiAktifId = null;
   let itemEstimasiSementara = [];
 
-  async function bukaFormEstimasi(antrian){
+  let modeKonfirmasiSelesai = false;
+  async function bukaFormEstimasi(antrian, isKonfirmasiSelesai){
     antrianEstimasiAktifId = antrian.id;
+    modeKonfirmasiSelesai = !!isKonfirmasiSelesai;
     document.getElementById('est-mekanik').value = antrian.nama_mekanik || '';
+
+    if (modeKonfirmasiSelesai){
+      document.querySelector('#modal-estimasi-servis .modal-title').textContent = '✓ Konfirmasi Sparepart & Jasa yang Dipakai';
+      document.getElementById('est-konfirmasi-note').style.display = 'block';
+      document.getElementById('est-submit-btn').textContent = 'Konfirmasi & Tandai Selesai';
+    } else {
+      document.querySelector('#modal-estimasi-servis .modal-title').textContent = '📝 Estimasi Sparepart & Jasa';
+      document.getElementById('est-konfirmasi-note').style.display = 'none';
+      document.getElementById('est-submit-btn').textContent = 'Simpan Estimasi';
+    }
+
+    // Isi datalist Jasa & Sparepart dari produk yang beneran ada di Stok (biar bisa dipilih, bukan ketik manual)
+    const daftarJasa = products.filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() === 'jasa');
+    const daftarSparepart = products.filter(p => !p.varian_dari_product_id && (p.satuan||'').toLowerCase() !== 'jasa');
+    document.getElementById('daftar-produk-jasa-datalist').innerHTML = daftarJasa.map(p => `<option value="${p.nama.replace(/"/g,'&quot;')}">`).join('');
+    document.getElementById('daftar-produk-sparepart-datalist').innerHTML = daftarSparepart.map(p => `<option value="${p.nama.replace(/"/g,'&quot;')}">`).join('');
+
+    // Tombol cepat nama mekanik yang paling sering kepake, biar nggak perlu ketik ulang tiap kali
+    const namaSemuaMekanik = Array.from(document.getElementById('gm-mekanik-select')?.options || []).map(o => o.value).filter(Boolean).slice(0, 5);
+    document.getElementById('est-mekanik-quick-pick').innerHTML = namaSemuaMekanik.map(n => `<button type="button" class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="document.getElementById('est-mekanik').value='${n.replace(/'/g,"\\'")}'">${n}</button>`).join('');
 
     // Deteksi garansi: cek apakah plat nomor ini pernah servis & selesai dalam jangka waktu garansi tenant
     const warningBox = document.getElementById('est-garansi-warning');
@@ -7724,18 +7750,32 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const sedangGaransi = document.getElementById('est-garansi-checkbox')?.checked;
     box.innerHTML = itemEstimasiSementara.map((it, i) => {
       const digaransikan = sedangGaransi && it.jenis === 'jasa';
+      const idDatalist = it.jenis === 'jasa' ? 'daftar-produk-jasa-datalist' : 'daftar-produk-sparepart-datalist';
       return `
       <div style="display:flex; gap:6px; margin-bottom:6px; align-items:center;">
         <select onchange="itemEstimasiSementara[${i}].jenis=this.value; renderBarisEstimasi();" style="font-size:11px; padding:8px; border:1px solid var(--line); border-radius:8px; flex-shrink:0;">
           <option value="jasa" ${it.jenis==='jasa'?'selected':''}>👷 Jasa</option>
           <option value="sparepart" ${it.jenis==='sparepart'?'selected':''}>🔧 Sparepart</option>
         </select>
-        <input type="text" value="${(it.nama||'').replace(/"/g,'&quot;')}" placeholder="Nama item" oninput="itemEstimasiSementara[${i}].nama=this.value" style="flex:1; min-width:0; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">
+        <input type="text" value="${(it.nama||'').replace(/"/g,'&quot;')}" placeholder="Ketik/cari dari Stok" list="${idDatalist}" oninput="itemEstimasiSementara[${i}].nama=this.value" onchange="prosesPilihProdukEstimasi(${i}, this.value)" style="flex:1; min-width:0; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px;">
         <input type="number" value="${it.harga||0}" placeholder="Harga" ${digaransikan ? 'readonly' : ''} oninput="itemEstimasiSementara[${i}].harga=parseFloat(this.value)||0; hitungTotalEstimasi();" style="width:85px; font-size:11.5px; padding:8px; border:1px solid var(--line); border-radius:8px; ${digaransikan ? 'background:var(--good-tint); color:var(--good); font-weight:700;' : ''}">
         <button type="button" onclick="hapusBarisEstimasi(${i})" style="background:none; border:none; color:var(--danger); font-size:14px; padding:2px 4px; flex-shrink:0;">✕</button>
       </div>`;
     }).join('');
     hitungTotalEstimasi();
+  }
+
+  // Kalau nama item yang diketik/dipilih persis sama kayak nama produk di Stok, harga otomatis keisi
+  // dari harga jual produk itu — kalau nggak ketemu (item custom, misal jasa yang gak distok), biarin
+  // harga tetap diisi manual.
+  function prosesPilihProdukEstimasi(i, namaVal){
+    const produkKetemu = products.find(p => !p.varian_dari_product_id && p.nama.toLowerCase() === namaVal.trim().toLowerCase());
+    if (produkKetemu){
+      itemEstimasiSementara[i].nama = produkKetemu.nama;
+      itemEstimasiSementara[i].harga = parseFloat(produkKetemu.harga) || 0;
+      itemEstimasiSementara[i].produk_id = produkKetemu.id;
+      renderBarisEstimasi();
+    }
   }
   function tambahBarisEstimasi(){
     itemEstimasiSementara.push({ jenis:'sparepart', nama:'', harga:0 });
@@ -7758,12 +7798,20 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (itemsValid.length === 0){ showToast('Tambahin minimal 1 item (jasa atau sparepart).', true); return; }
     const total = itemsValid.reduce((s,it) => s + (parseFloat(it.harga)||0), 0);
 
-    const { error } = await sb.from('antrian_servis').update({
+    const payload = {
       nama_mekanik: namaMekanik, estimasi_items: itemsValid, total_estimasi: total, is_garansi: isGaransi,
-      estimasi_dibuat_pada: new Date().toISOString(), status: 'menunggu_persetujuan',
-    }).eq('id', antrianEstimasiAktifId);
-    if (error){ showToast('Gagal menyimpan estimasi: ' + error.message, true); return; }
-    showToast(isGaransi ? '✓ Estimasi tersimpan (garansi — jasa gratis)' : '✓ Estimasi tersimpan — tunjukkin ke pelanggan buat persetujuan');
+      estimasi_dibuat_pada: new Date().toISOString(),
+    };
+    if (modeKonfirmasiSelesai){
+      payload.status = 'selesai';
+      payload.selesai_pada = new Date().toISOString();
+    } else {
+      payload.status = 'menunggu_persetujuan';
+    }
+
+    const { error } = await sb.from('antrian_servis').update(payload).eq('id', antrianEstimasiAktifId);
+    if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
+    showToast(modeKonfirmasiSelesai ? '✓ Pemakaian dikonfirmasi & servis ditandai selesai' : (isGaransi ? '✓ Estimasi tersimpan (garansi — jasa gratis)' : '✓ Estimasi tersimpan — tunjukkin ke pelanggan buat persetujuan'));
     closeModal('modal-estimasi-servis');
     await renderAntrianServis(filterAntrianServisAktif);
   }
@@ -7798,9 +7846,32 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     setTimeout(() => {
       const inputNama = document.getElementById('cart-nama-pelanggan');
       const inputWa = document.getElementById('cart-wa-pelanggan');
-      if (inputNama){ inputNama.value = data.nama; const cart = getActiveCart(); if (cart) cart.namaPelanggan = data.nama; }
-      if (inputWa && data.wa){ inputWa.value = data.wa; const cart = getActiveCart(); if (cart) cart.waPelanggan = data.wa; }
-      showToast('✓ Data pelanggan udah keisi — tinggal tambahin produk/jasa yang dikerjakan');
+      const cart = getActiveCart();
+      if (inputNama){ inputNama.value = data.nama; if (cart) cart.namaPelanggan = data.nama; }
+      if (inputWa && data.wa){ inputWa.value = data.wa; if (cart) cart.waPelanggan = data.wa; }
+
+      let jumlahOtomatisMasuk = 0, jumlahPerluManual = 0;
+      if (cart && Array.isArray(data.items)){
+        data.items.forEach(it => {
+          if (it.produk_id){
+            const prod = products.find(p => p.id === it.produk_id);
+            if (prod){
+              cart.items.push({
+                id: prod.id, name: prod.nama, price: parseFloat(it.harga) || 0, tag: prod.kategori, qty: 1,
+                hargaEceran: parseFloat(it.harga) || 0, hargaGrosir: null, minGrosir: null, isRacikanItem: false,
+              });
+              jumlahOtomatisMasuk++;
+              return;
+            }
+          }
+          jumlahPerluManual++;
+        });
+        renderCart();
+      }
+
+      if (jumlahOtomatisMasuk > 0 && jumlahPerluManual === 0) showToast(`✓ ${jumlahOtomatisMasuk} item dari servis udah otomatis masuk keranjang — tinggal checkout`);
+      else if (jumlahOtomatisMasuk > 0) showToast(`✓ ${jumlahOtomatisMasuk} item otomatis masuk, ${jumlahPerluManual} item custom perlu ditambah manual (nggak ada di Stok)`);
+      else showToast('✓ Data pelanggan udah keisi — tinggal tambahin produk/jasa yang dikerjakan manual');
     }, 150);
   }
 
