@@ -7785,9 +7785,14 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (errorProduk) showToast('Gagal memuat daftar produk dari Stok: ' + errorProduk.message, true);
     window.__produkEstimasiCache = produkTerbaru || [];
 
-    // Tombol cepat nama mekanik yang paling sering kepake, biar nggak perlu ketik ulang tiap kali
-    const namaSemuaMekanik = Array.from(document.getElementById('gm-mekanik-select')?.options || []).map(o => o.value).filter(Boolean).slice(0, 5);
-    document.getElementById('est-mekanik-quick-pick').innerHTML = namaSemuaMekanik.map(n => `<button type="button" class="btn-secondary" style="font-size:10.5px; padding:4px 9px;" onclick="document.getElementById('est-mekanik').value='${n.replace(/'/g,"\\'")}'">${n}</button>`).join('');
+    // Tombol cepat nama mekanik yang paling sering kepake, sekalian nunjukkin status lagi sibuk/available
+    const namaSemuaMekanik = Array.from(document.getElementById('gm-mekanik-select')?.options || []).map(o => o.value).filter(Boolean).slice(0, 8);
+    const { data: yangSedangKerja } = await sb.from('antrian_servis').select('nama_mekanik').eq('tenant_id', currentProfile.tenant_id).eq('status', 'dikerjakan').not('nama_mekanik', 'is', null);
+    const setSibuk = new Set((yangSedangKerja||[]).map(d => d.nama_mekanik));
+    document.getElementById('est-mekanik-quick-pick').innerHTML = namaSemuaMekanik.map(n => {
+      const sibuk = setSibuk.has(n);
+      return `<button type="button" class="btn-secondary" style="font-size:10.5px; padding:4px 9px; ${sibuk ? 'border-color:var(--amber); color:var(--amber);' : 'border-color:var(--good); color:var(--good);'}" onclick="document.getElementById('est-mekanik').value='${n.replace(/'/g,"\\'")}'">${sibuk ? '🔧' : '✅'} ${n}</button>`;
+    }).join('');
 
     // Deteksi garansi: cek apakah plat nomor ini pernah servis & selesai dalam jangka waktu garansi tenant
     const warningBox = document.getElementById('est-garansi-warning');
