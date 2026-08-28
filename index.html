@@ -13833,13 +13833,14 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
     const loading = document.getElementById('portal-loading');
     const errorBox = document.getElementById('portal-error');
     const content = document.getElementById('portal-content');
-    const { data: a, error } = await sb.from('antrian_servis').select('*, tenants(nama_usaha)').eq('token_publik', token).maybeSingle();
+    const { data: a, error } = await sb.rpc('fn_get_antrian_servis_publik', { p_token: token });
     loading.style.display = 'none';
     if (error || !a){
       errorBox.textContent = 'Link nggak valid atau udah kadaluarsa.';
       errorBox.style.display = 'block';
       return;
     }
+    a.tenants = { nama_usaha: a.nama_usaha };
     content.style.display = 'block';
     renderPortalPelanggan(a);
   }
