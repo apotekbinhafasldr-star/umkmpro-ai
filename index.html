@@ -2565,6 +2565,13 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
       <div class="field">
         <label>Tanggal Kedaluwarsa</label>
         <input type="date" id="pf-expired">
+        <div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:6px;">
+          <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('pf-expired',3)">+3 hari</button>
+          <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('pf-expired',5)">+5 hari</button>
+          <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('pf-expired',7)">+7 hari</button>
+          <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('pf-expired',14)">+14 hari</button>
+          <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('pf-expired',30)">+1 bulan</button>
+        </div>
       </div>
     </div>
     <div class="field-row">
@@ -4023,7 +4030,17 @@ Baca & tanda tangan kontrak kerja</textarea>
       </div>
       <div class="field-row">
         <div class="field"><label>No. Batch</label><input type="text" id="batch-new-nobatch" placeholder="Opsional"></div>
-        <div class="field"><label>Tanggal Kedaluwarsa</label><input type="date" id="batch-new-ed"></div>
+        <div class="field">
+          <label>Tanggal Kedaluwarsa</label>
+          <input type="date" id="batch-new-ed">
+          <div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:6px;">
+            <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('batch-new-ed',3)">+3 hari</button>
+            <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('batch-new-ed',5)">+5 hari</button>
+            <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('batch-new-ed',7)">+7 hari</button>
+            <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('batch-new-ed',14)">+14 hari</button>
+            <button type="button" class="btn-secondary" style="font-size:10px; padding:3px 8px;" onclick="setTanggalKedaluwarsaCepat('batch-new-ed',30)">+1 bulan</button>
+          </div>
+        </div>
       </div>
       <div class="field-row">
         <div class="field"><label>Jumlah Stok (<span id="batch-new-satuan"></span>)</label><input type="number" id="batch-new-stok" placeholder="0"></div>
@@ -12248,6 +12265,11 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     cekKlaimBayarBadge();
   }
 
+  function setTanggalKedaluwarsaCepat(idInput, jumlahHari){
+    const tgl = new Date(Date.now() + jumlahHari*24*60*60*1000);
+    document.getElementById(idInput).value = tgl.toISOString().slice(0,10);
+  }
+
   async function openBatchModal(p){
     currentBatchProductId = p.id;
     currentBatchProductData = p;
@@ -12655,7 +12677,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     elektronik:           { kategori: [['gadget','Gadget'],['aksesoris_elektronik','Aksesoris Elektronik'],['rumah_tangga','Rumah Tangga'],['lainnya','Lainnya']], satuan: ['Pcs','Unit','Set','Box'] },
     sparepart:            { kategori: [['mesin','Mesin'],['kelistrikan','Kelistrikan'],['body_aksesoris','Body & Aksesoris'],['lainnya','Lainnya']], satuan: ['Pcs','Set','Unit'] },
     bengkel:              { kategori: [['sparepart','Sparepart'],['oli_cairan','Oli & Cairan'],['jasa_servis','Jasa Servis'],['lainnya','Lainnya']], satuan: ['Pcs','Liter','Botol','Set','Jasa'] },
-    fnb:                  { kategori: [['makanan','Makanan'],['minuman','Minuman'],['snack','Snack'],['bahan_baku','Bahan Baku'],['lainnya','Lainnya']], satuan: ['Porsi','Pcs','Kg','Gram','Liter','Ml','Pack'] },
+    fnb:                  { kategori: [['makanan','Makanan'],['minuman','Minuman'],['snack','Snack'],['bahan_baku','Bahan Baku'],['lainnya','Lainnya']], satuan: ['Porsi','Pcs','Kg','Gram','Liter','Ml','Pack','Siung','Biji','Ikat','Lembar','Buah'] },
     toko_bangunan:        { kategori: [['material','Material Bangunan'],['cat_finishing','Cat & Finishing'],['perkakas','Perkakas'],['listrik_pipa','Listrik & Pipa'],['lainnya','Lainnya']], satuan: ['Pcs','Sak','Batang','Meter','Kg','Liter','Set'] },
     pertanian:            { kategori: [['pupuk','Pupuk'],['pestisida','Pestisida'],['bibit','Bibit'],['alat_pertanian','Alat Pertanian'],['lainnya','Lainnya']], satuan: ['Kg','Liter','Sak','Pcs','Karung'] },
     amdk:                 { kategori: [['cup_gelas','Cup/Gelas'],['botol','Botol'],['galon','Galon'],['lainnya','Lainnya']], satuan: ['Pcs','Dus','Galon','Karton'] },
