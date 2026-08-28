@@ -440,6 +440,55 @@
   </div>
 </div>
 
+<!-- QR ORDER MANDIRI (publik, tanpa login, Pro) -->
+<div id="qr-order-screen" style="display:none; min-height:100vh; background:var(--bg); padding-bottom:90px;">
+  <div id="qro-loading" style="text-align:center; padding:60px 20px; color:var(--ink-soft);">Memuat menu…</div>
+  <div id="qro-error" style="display:none; background:var(--danger-tint); color:var(--danger); border-radius:12px; padding:20px; text-align:center; font-size:13px; font-weight:600; margin:20px 16px;"></div>
+  <div id="qro-content" style="display:none;">
+    <div style="padding:20px 16px 12px; text-align:center; background:var(--surface); border-bottom:1px solid var(--line);">
+      <div style="font-family:'Fraunces',serif; font-size:19px; font-weight:700;" id="qro-nama-usaha">—</div>
+      <div style="font-size:12px; color:var(--ink-soft); margin-top:4px;">Pesan langsung dari meja kamu</div>
+      <div class="field" style="margin-top:12px; margin-bottom:0; text-align:left;"><label>Nomor Meja</label><input type="text" id="qro-nomor-meja" placeholder="Contoh: 5"></div>
+      <button type="button" onclick="lihatTagihanSaya()" style="background:none; border:none; color:var(--brand); font-size:11.5px; font-weight:600; margin-top:10px; cursor:pointer;">🧾 Lihat Tagihan Saya (semua pesanan meja ini)</button>
+    </div>
+    <div style="padding:12px 16px;">
+      <input type="text" id="qro-cari-produk" placeholder="🔍 Cari menu…" oninput="renderQROMenu()" style="width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:12.5px; box-sizing:border-box;">
+    </div>
+    <div id="qro-menu-list" style="padding:0 16px;"></div>
+  </div>
+  <div id="qro-cart-bar" style="display:none; position:fixed; bottom:0; left:0; right:0; background:var(--brand-deep); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openQROCartModal()">
+    <span id="qro-cart-summary" style="font-size:12.5px; font-weight:600;">0 item</span>
+    <span style="font-weight:800;">Lihat Pesanan →</span>
+  </div>
+</div>
+
+<!-- Modal keranjang QR Order (dipakai di dalam qr-order-screen) -->
+<div class="modal-overlay" id="qro-cart-modal">
+  <div class="modal-card">
+    <div class="modal-title">🛒 Pesanan Kamu</div>
+    <div id="qro-cart-items" style="margin-bottom:12px;"></div>
+    <div class="field"><label>Nama Kamu</label><input type="text" id="qro-nama"></div>
+    <div class="field"><label>No. WhatsApp (opsional)</label><input type="text" id="qro-wa" placeholder="08xxxxxxxxxx"></div>
+    <div class="field"><label>Catatan (opsional)</label><input type="text" id="qro-catatan" placeholder="Contoh: pedes level 2"></div>
+    <div style="display:flex; justify-content:space-between; font-weight:800; font-size:15px; padding:8px 0;"><span>Total</span><span id="qro-cart-total">Rp0</span></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('qro-cart-modal')">Tambah Lagi</button>
+      <button class="btn-primary" onclick="kirimPesananQRO()">Kirim Pesanan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAGIHAN SAYA (transparansi harga sebelum bayar) -->
+<div class="modal-overlay" id="qro-tagihan-modal">
+  <div class="modal-card">
+    <div class="modal-title">🧾 Tagihan Meja <span id="qro-tagihan-nomor-meja"></span></div>
+    <div id="qro-tagihan-isi"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('qro-tagihan-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <div id="auth-screen">
   <div class="auth-card">
     <div style="position:absolute; top:10px; right:14px; font-size:10px; color:#999; font-family:monospace;">v100-1800</div>
@@ -574,6 +623,11 @@
           <button class="nav-item" data-page="servis" id="nav-servis-bengkel" style="display:none;" onclick="goPage('servis', this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
             🔧 Servis &amp; Kendaraan
+          </button>
+          <button class="nav-item" data-page="dapur" id="nav-dapur-fnb" style="display:none; position:relative;" onclick="goPage('dapur', this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16M4 15c0-4 3.5-7 8-7s8 3 8 7M9 8V5M15 8V5"/></svg>
+            🍳 Dapur
+            <span id="badge-nav-dapur" style="display:none; background:var(--danger); color:#fff; border-radius:50%; width:16px; height:16px; font-size:9px; align-items:center; justify-content:center; position:absolute; right:12px; top:10px;"></span>
           </button>
           <button class="nav-item" data-page="hr" onclick="goPage('hr', this)" style="position:relative;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
@@ -862,6 +916,19 @@
           </div>
           <div class="cart-tabs" id="cart-tabs"></div>
         </div>
+        <div id="fnb-meja-pesanan-bar" style="display:none; padding:8px 14px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; border-bottom:1px solid var(--line);">
+          <button class="btn-secondary" style="font-size:11px; padding:5px 10px;" onclick="aturMejaCartAktif()">🪑 <span id="fnb-meja-label">Atur Meja</span></button>
+          <select id="fnb-sumber-pesanan-select" onchange="getActiveCart().sumberPesanan = this.value;" style="font-size:11px; padding:5px 8px; border:1px solid var(--line); border-radius:8px;">
+            <option value="langsung">🏠 Dine-in/Langsung</option>
+            <option value="gofood">🛵 GoFood</option>
+            <option value="grabfood">🛵 GrabFood</option>
+            <option value="shopeefood">🛵 ShopeeFood</option>
+          </select>
+          <button class="btn-secondary" id="btn-pesanan-masuk" style="display:none; font-size:11px; padding:5px 10px; color:var(--brand); border-color:var(--brand); position:relative;" onclick="openPesananMasukModal()">📥 Pesanan Masuk <span id="badge-pesanan-masuk" style="display:none; background:var(--danger); color:#fff; border-radius:50%; width:16px; height:16px; font-size:9px; display:inline-flex; align-items:center; justify-content:center; margin-left:2px;">0</span></button>
+          <button class="btn-secondary" id="btn-qr-menu" style="display:none; font-size:11px; padding:5px 10px;" onclick="tampilkanQRMenuLink()">📱 Link Menu QR</button>
+          <button class="btn-secondary" id="btn-kirim-ke-dapur" style="display:none; font-size:11px; padding:5px 10px; color:#8B5CF6; border-color:#8B5CF6;" onclick="kirimKeranjangKeDapur()">🍳 Kirim ke Dapur</button>
+          <button class="btn-secondary" id="btn-klaim-bayar" style="display:none; font-size:11px; padding:5px 10px; color:#0EA5A5; border-color:#0EA5A5; position:relative;" onclick="openKlaimBayarModal()">💳 Klaim Bayar <span id="badge-klaim-bayar" style="display:none; background:var(--danger); color:#fff; border-radius:50%; width:16px; height:16px; font-size:9px; display:inline-flex; align-items:center; justify-content:center; margin-left:2px;">0</span></button>
+        </div>
         <div class="rx-card" id="rx-card">
           <div class="rx-head">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
@@ -910,6 +977,15 @@
           <div class="sum-row"><span>Subtotal</span><span class="num" id="sum-subtotal">Rp 0</span></div>
           <div class="sum-row"><span>Diskon</span><span class="num" id="sum-diskon">− Rp 0</span></div>
           <div class="sum-row total"><span>Total</span><span class="num" id="sum-total">Rp 0</span></div>
+
+          <div style="margin:6px 0 4px;">
+            <button type="button" onclick="toggleSplitBillCalc()" style="background:none; border:none; color:var(--brand); font-size:11px; font-weight:600; padding:0; cursor:pointer;">🧮 Bagi Tagihan per Orang</button>
+            <div id="split-bill-calc" style="display:none; margin-top:6px; display:flex; gap:6px; align-items:center;">
+              <input type="number" id="split-bill-jumlah-orang" placeholder="Jumlah orang" min="2" oninput="hitungSplitBill()" style="width:100px; font-size:11.5px; padding:6px 8px; border:1px solid var(--line); border-radius:8px;">
+              <span style="font-size:11.5px; color:var(--ink-soft);">orang →</span>
+              <span id="split-bill-hasil" style="font-size:12.5px; font-weight:700; color:var(--brand);">Rp 0/orang</span>
+            </div>
+          </div>
 
           <div id="split-payment-toggle" style="margin:10px 0 4px;">
             <label style="display:flex; align-items:center; gap:7px; cursor:pointer; font-size:11.5px; color:var(--ink-soft);">
@@ -2139,6 +2215,23 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
     </main>
   </div>
 
+  <!-- DAPUR (Kitchen Display, khusus FnB+Pro) -->
+  <div class="page" id="page-dapur">
+    <main>
+      <div class="topbar">
+        <div>
+          <div class="greeting-eyebrow">Dapur</div>
+          <h1 class="greeting">🍳 Antrian Masak</h1>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+        <div class="tab active" style="font-size:11.5px;" data-filter-dapur="antrian" onclick="setFilterDapur('antrian', this)">Antrian Aktif</div>
+        <div class="tab" style="font-size:11.5px;" data-filter-dapur="diantar" onclick="setFilterDapur('diantar', this)">Sudah Diantar</div>
+      </div>
+      <div id="antrian-dapur-list"><div class="loading-note">Memuat…</div></div>
+    </main>
+  </div>
+
   <!-- PAJAK -->
   <div class="page" id="page-pajak">
     <main>
@@ -2170,6 +2263,16 @@ Tidak menyerahkan obat keras tanpa resep/prosedur berlaku</textarea></div>
           <div class="field"><label>Email Usaha</label><input type="email" id="pu-email" placeholder="usaha@email.com"></div>
           <div class="field"><label>No. WhatsApp Usaha</label><input type="text" id="pu-wa" placeholder="08xxxxxxxxxx"></div>
           <div class="field"><label>Alamat Usaha</label><textarea id="pu-alamat" rows="2" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit;" placeholder="Alamat lengkap usaha"></textarea></div>
+          <div id="pu-bayar-mandiri-wrap" style="display:none; border-top:1px solid var(--line); padding-top:14px; margin-top:4px;">
+            <div style="font-size:12.5px; font-weight:700; margin-bottom:8px;">💳 Bayar Mandiri (QRIS/Transfer)</div>
+            <div style="font-size:11px; color:var(--ink-soft); margin-bottom:12px;">Diisi biar pelanggan bisa bayar sendiri dari HP-nya lewat Portal Tagihan, upload bukti, tanpa perlu ke kasir dulu.</div>
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+              <div id="pu-qris-preview" style="width:80px; height:80px; border-radius:10px; background:var(--surface-2) center/contain no-repeat; border:1.5px solid var(--line); flex-shrink:0;"></div>
+              <button class="btn-secondary" onclick="document.getElementById('pu-qris-input').click()">📷 Upload QRIS Statis</button>
+              <input type="file" id="pu-qris-input" accept="image/*" style="display:none;" onchange="handleQrisUpload(event)">
+            </div>
+            <div class="field"><label>Info Transfer Bank (opsional)</label><textarea id="pu-info-transfer" rows="2" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit;" placeholder="Contoh: BCA 1234567890 a.n. Warkop Budi"></textarea></div>
+          </div>
           <button class="btn-primary" style="width:100%; justify-content:center;" onclick="simpanProfilUsaha()" id="pu-submit-btn">Simpan Profil Usaha</button>
         </div>
       </div>
@@ -3153,7 +3256,95 @@ Baca & tanda tangan kontrak kerja</textarea>
   </div>
 </div>
 
-<!-- MODAL KELOLA VARIAN PRODUK -->
+<!-- MODAL PILIH MODIFIER (Kasir) -->
+<div class="modal-overlay" id="pilih-modifier-modal">
+  <div class="modal-card">
+    <div class="modal-title">🍔 <span id="pm-nama-produk"></span></div>
+    <input type="hidden" id="pm-product-id">
+    <div id="pm-grup-list" style="margin-bottom:14px;"></div>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-top:1.5px solid var(--line); margin-bottom:12px;">
+      <span style="font-weight:700; font-size:13px;">Harga</span>
+      <span style="font-weight:800; font-size:16px; color:var(--brand);" id="pm-harga-total">Rp0</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('pilih-modifier-modal')">Batal</button>
+      <button class="btn-primary" onclick="konfirmasiTambahDenganModifier()">Tambah ke Keranjang</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KELOLA MODIFIER PRODUK (Owner/Admin) -->
+<div class="modal-overlay" id="kelola-modifier-modal">
+  <div class="modal-card">
+    <div class="modal-title">🍔 Kelola Modifier — <span id="km-nama-produk"></span></div>
+    <input type="hidden" id="km-product-id">
+    <div id="km-grup-list" style="margin-bottom:14px;"></div>
+    <button type="button" class="btn-secondary" style="width:100%; justify-content:center;" onclick="tambahGrupModifierBaru()">+ Tambah Grup Modifier</button>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-secondary" onclick="closeModal('kelola-modifier-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KELOLA RESEP/BOM (Plus+) -->
+<div class="modal-overlay" id="kelola-resep-modal">
+  <div class="modal-card">
+    <div class="modal-title">🍳 Resep — <span id="kr-nama-produk"></span></div>
+    <input type="hidden" id="kr-product-id">
+    <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:12px;">Tentuin bahan baku apa aja &amp; berapa banyak dipakai buat bikin 1 porsi produk ini. Begitu diaktifkan, stok bahan bakunya otomatis kepotong tiap kali produk ini terjual — stok produk jadinya sendiri nggak perlu diisi manual lagi.</div>
+    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:14px; background:var(--brand-tint); border-radius:9px; padding:10px 12px;">
+      <input type="checkbox" id="kr-aktif-checkbox" onchange="toggleResepAktif()">
+      <span style="font-size:12.5px; font-weight:600;">Aktifkan resep buat produk ini</span>
+    </label>
+    <div id="kr-bahan-wrap" style="display:none;">
+      <div id="kr-bahan-list" style="margin-bottom:10px;"></div>
+      <div style="display:flex; gap:6px; align-items:center; position:relative;">
+        <div style="flex:1; min-width:0; position:relative;">
+          <input type="text" id="kr-cari-bahan" placeholder="🔍 Cari bahan baku…" autocomplete="off" oninput="cariBahanResep(this.value)" style="width:100%; font-size:12px; padding:8px; border:1px solid var(--line); border-radius:8px;">
+          <div id="kr-bahan-saran" style="display:none; background:var(--surface-2); border-radius:9px; margin-top:6px; max-height:150px; overflow-y:auto;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-secondary" onclick="closeModal('kelola-resep-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PESANAN MASUK (dari QR Order pelanggan) -->
+<div class="modal-overlay" id="pesanan-masuk-modal">
+  <div class="modal-card">
+    <div class="modal-title">📥 Pesanan Masuk</div>
+    <div id="pesanan-masuk-list"><div class="loading-note">Memuat…</div></div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-secondary" onclick="closeModal('pesanan-masuk-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KLAIM BAYAR MANDIRI -->
+<div class="modal-overlay" id="klaim-bayar-modal">
+  <div class="modal-card">
+    <div class="modal-title">💳 Klaim Bayar Mandiri</div>
+    <div id="klaim-bayar-list"><div class="loading-note">Memuat…</div></div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-secondary" onclick="closeModal('klaim-bayar-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LINK QR MENU -->
+<div class="modal-overlay" id="qr-menu-link-modal">
+  <div class="modal-card">
+    <div class="modal-title">📱 Link Menu QR Order</div>
+    <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:12px;">Bagi link ini ke pelanggan (print jadi QR &amp; tempel di meja, atau kirim langsung) biar mereka bisa order sendiri dari HP.</div>
+    <div id="qr-menu-link-teks" style="background:var(--surface-2); border-radius:9px; padding:10px 12px; font-size:11.5px; word-break:break-all; margin-bottom:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('qr-menu-link-modal')">Tutup</button>
+      <button class="btn-primary" id="btn-salin-link-qr-menu">Salin Link</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="varian-produk-modal">
   <div class="modal-card">
     <div class="modal-title">Kelola Varian — <span id="vp-nama-produk"></span></div>
@@ -4227,7 +4418,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   async function handleLogout(){
     await sb.auth.signOut();
     // Reset semua state sementara di browser supaya tidak nyangkut ke akun/usaha lain
-    carts = [{ id: 1, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '' }];
+    carts = [{ id: 1, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '', nomorMeja: '', sumberPesanan: 'langsung' }];
     activeCartId = 1;
     nextCartNum = 2;
     products = [];
@@ -4239,7 +4430,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   async function initApp(){
     try{
       // Selalu mulai bersih setiap kali sesi diinisialisasi (login baru atau sesi lama di-restore)
-      carts = [{ id: 1, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '' }];
+      carts = [{ id: 1, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '', nomorMeja: '', sumberPesanan: 'langsung' }];
       activeCartId = 1;
       nextCartNum = 2;
 
@@ -4546,27 +4737,66 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     }).join('');
   }
 
-  let carts = [{ id: 1, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '' }];
+  let carts = [{ id: 1, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '', nomorMeja: '', sumberPesanan: 'langsung' }];
   let activeCartId = 1;
   let nextCartNum = 2;
 
   function getActiveCart(){ return carts.find(c => c.id === activeCartId); }
 
+  function simpanCartsKeLocalStorage(){
+    try{
+      if (!currentProfile?.tenant_id) return;
+      localStorage.setItem(`umkmpro_carts_${currentProfile.tenant_id}`, JSON.stringify({ carts, activeCartId, nextCartNum }));
+    } catch(e){ /* localStorage penuh/diblokir, nggak fatal — abaikan */ }
+  }
+
+  function pulihkanCartsDariLocalStorage(){
+    try{
+      if (!currentProfile?.tenant_id) return false;
+      const raw = localStorage.getItem(`umkmpro_carts_${currentProfile.tenant_id}`);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      const adaIsinya = (data.carts || []).some(c => c.items && c.items.length > 0);
+      if (!adaIsinya) return false;
+      carts = data.carts; activeCartId = data.activeCartId; nextCartNum = data.nextCartNum;
+      showToast('✓ Transaksi yang belum checkout dipulihkan (tersimpan otomatis)');
+      return true;
+    } catch(e){ return false; }
+  }
+
   function renderCartTabs(){
     const wrap = document.getElementById('cart-tabs');
+    const IKON_SUMBER = { gofood:'🛵', grabfood:'🛵', shopeefood:'🛵' };
     wrap.innerHTML = carts.map((c, idx) => {
       const count = c.items.reduce((s,i)=>s+i.qty,0);
+      const ikonSumber = IKON_SUMBER[c.sumberPesanan] || '';
+      const label = c.nomorMeja ? `🪑 ${c.nomorMeja}` : `${ikonSumber} Transaksi ${idx+1}`;
       return `
         <div class="cart-tab-pill ${c.id === activeCartId ? 'active' : ''}" onclick="switchCart(${c.id})">
-          Transaksi ${idx+1}
+          ${label}
           ${count > 0 ? `<span class="badge">${count}</span>` : ''}
           ${carts.length > 1 ? `<span class="cart-tab-close" onclick="event.stopPropagation(); closeCartTab(${c.id})">✕</span>` : ''}
         </div>`;
-    }).join('') + (carts.length < 5 ? `<div class="cart-tab-add" onclick="addCartTab()" title="Tahan transaksi ini, mulai baru">+</div>` : '');
+    }).join('')
+      + (carts.length < 5 ? `<div class="cart-tab-add" onclick="addCartTab()" title="Tahan transaksi ini, mulai baru">+</div>` : '')
+      + (carts.length < 5 && currentTenant?.jenis_usaha === 'fnb' ? `<div class="cart-tab-add" onclick="tambahPesananOjolCepat()" title="Pesanan ojol baru" style="font-size:13px;">🛵</div>` : '');
   }
 
+  function tambahPesananOjolCepat(){
+    const platform = prompt('Pesanan dari platform apa?\n1 = GoFood\n2 = GrabFood\n3 = ShopeeFood', '1');
+    const map = { '1':'gofood', '2':'grabfood', '3':'shopeefood' };
+    const sumber = map[platform];
+    if (!sumber) return;
+    const newCart = { id: nextCartNum++, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '', nomorMeja: '', sumberPesanan: sumber };
+    carts.push(newCart);
+    activeCartId = newCart.id;
+    renderCart();
+    showToast(`✓ Pesanan ${sumber === 'gofood' ? 'GoFood' : sumber === 'grabfood' ? 'GrabFood' : 'ShopeeFood'} baru — tinggal tambahin produknya`);
+  }
+
+
   function addCartTab(){
-    const newCart = { id: nextCartNum++, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '' };
+    const newCart = { id: nextCartNum++, items: [], diskon: 0, metode: 'tunai', namaPelanggan: '', waPelanggan: '', nomorMeja: '', sumberPesanan: 'langsung' };
     carts.push(newCart);
     activeCartId = newCart.id;
     renderCart();
@@ -4584,6 +4814,14 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     carts = carts.filter(x => x.id !== id);
     if (activeCartId === id) activeCartId = carts[0].id;
     renderCart();
+  }
+
+  function aturMejaCartAktif(){
+    const cart = getActiveCart();
+    const nilai = prompt('Nomor/nama meja (kosongkan buat hapus):', cart.nomorMeja || '');
+    if (nilai === null) return;
+    cart.nomorMeja = nilai.trim();
+    renderCartTabs();
   }
 
   // ================= BATALKAN TRANSAKSI (VOID) =================
@@ -5579,6 +5817,10 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (!prod){ showToast('Produk tidak ditemukan.', true); return; }
     if (!prod.is_racikan && prod.satuan !== 'Jasa' && prod.stok <= 0){ showToast('Stok produk ini habis.', true); return; }
 
+    // Modifier Tambahan (mis. Level Gula, Topping) — dicek dulu sebelum masuk keranjang
+    const punyaModifier = await bukaPilihanModifierTransaksi(prod);
+    if (punyaModifier) return; // modal yang urus penambahan ke keranjang
+
     // Dynamic Unit Engine: kalau produk non-Apotek ini punya multi-satuan, tampilkan pilihan dulu
     if (currentTenant?.jenis_usaha && currentTenant.jenis_usaha !== 'apotek'){
       const adaMultiSatuan = await bukaPilihanSatuanTransaksi(prod);
@@ -5770,6 +6012,19 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   }
 
   // ================= SPLIT PAYMENT =================
+  function toggleSplitBillCalc(){
+    const box = document.getElementById('split-bill-calc');
+    box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+    if (box.style.display === 'flex') hitungSplitBill();
+  }
+  function hitungSplitBill(){
+    const jumlahOrang = parseInt(document.getElementById('split-bill-jumlah-orang').value) || 0;
+    const totalTeks = document.getElementById('sum-total').textContent.replace(/[^0-9]/g,'');
+    const total = parseFloat(totalTeks) || 0;
+    const hasil = jumlahOrang > 0 ? Math.ceil(total / jumlahOrang) : 0;
+    document.getElementById('split-bill-hasil').textContent = jumlahOrang > 0 ? `Rp${hasil.toLocaleString('id-ID')}/orang` : 'Rp 0/orang';
+  }
+
   function toggleSplitPayment(){
     const aktif = document.getElementById('cart-split-payment').checked;
     document.getElementById('split-payment-fields').style.display = aktif ? 'block' : 'none';
@@ -5839,10 +6094,13 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
 
   function renderCart(){
     renderCartTabs();
+    simpanCartsKeLocalStorage();
     const activeCart = getActiveCart();
     const cart = activeCart.items;
     document.getElementById('cart-nama-pelanggan').value = activeCart.namaPelanggan || '';
     document.getElementById('cart-wa-pelanggan').value = activeCart.waPelanggan || '';
+    const selectSumber = document.getElementById('fnb-sumber-pesanan-select');
+    if (selectSumber) selectSumber.value = activeCart.sumberPesanan || 'langsung';
     const resellerBadge = document.getElementById('reseller-badge');
     if (activeCart.isResellerCustomer){
       resellerBadge.style.display = 'block';
@@ -6188,14 +6446,15 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       detail_pembayaran: meta.detailPembayaran || null,
       poin_ditebus: meta.poinDitebus || 0, nilai_poin_ditebus: meta.nilaiPoin || 0,
       alasan_diskon_besar: meta.alasanDiskonBesar || null,
-      warehouse_id: meta.warehouseId || null
+      warehouse_id: meta.warehouseId || null,
+      nomor_meja: meta.nomorMeja || null, sumber_pesanan: meta.sumberPesanan || 'langsung'
     }).select().single();
     if (txErr) throw txErr;
 
     const items = cart.map(c => ({
       transaction_id: tx.id, product_id: c.isDynamicRacikan ? null : (c.produkId || c.id), nama_produk: c.name,
       harga_satuan: c.price, qty: c.qty, subtotal: (c.price * c.qty) - (c.diskonItem||0),
-      diskon_item: c.diskonItem || 0
+      diskon_item: c.diskonItem || 0, modifier_dipilih: c.modifierDipilih || []
     }));
     const { data: insertedItems, error: itemsErr } = await sb.from('transaction_items').insert(items).select();
     if (itemsErr) throw itemsErr;
@@ -6314,7 +6573,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       nomorTransaksi, namaPelanggan, waPelanggan, subtotal: subtotalKotor, diskon, total,
       metode: metodeFinal, shiftId: currentShift ? currentShift.id : null, waktuAsli: new Date().toISOString(),
       uangDiterima, kembalian, detailPembayaran, poinDitebus, nilaiPoin, alasanDiskonBesar,
-      warehouseId: getActiveCart().warehouseId || null
+      warehouseId: getActiveCart().warehouseId || null,
+      nomorMeja: getActiveCart().nomorMeja || null, sumberPesanan: getActiveCart().sumberPesanan || 'langsung'
     };
 
     const bersihkanKeranjang = () => {
@@ -9453,7 +9713,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   async function loadPajakPage(){
     const [{ data: profile }, { data: tenantData }] = await Promise.all([
       sb.from('tax_profiles').select('*').eq('tenant_id', currentProfile.tenant_id).maybeSingle(),
-      sb.from('tenants').select('bentuk_badan_usaha, nama_usaha, jenis_usaha, email, no_whatsapp, alamat, logo_url').eq('id', currentProfile.tenant_id).single(),
+      sb.from('tenants').select('bentuk_badan_usaha, nama_usaha, jenis_usaha, email, no_whatsapp, alamat, logo_url, qris_image_url, info_transfer_bank, paket').eq('id', currentProfile.tenant_id).single(),
     ]);
     if (profile){
       document.getElementById('tax-npwp').value = profile.npwp || '';
@@ -9472,6 +9732,12 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     const puPreview = document.getElementById('pu-logo-preview');
     if (puPreview) puPreview.style.backgroundImage = tenantData?.logo_url ? `url(${tenantData.logo_url})` : 'none';
 
+    const wrapBayarMandiri = document.getElementById('pu-bayar-mandiri-wrap');
+    if (wrapBayarMandiri) wrapBayarMandiri.style.display = (tenantData?.jenis_usaha === 'fnb' && tenantData?.paket === 'pro') ? 'block' : 'none';
+    document.getElementById('pu-info-transfer').value = tenantData?.info_transfer_bank || '';
+    const qrisPreview = document.getElementById('pu-qris-preview');
+    if (qrisPreview) qrisPreview.style.backgroundImage = tenantData?.qris_image_url ? `url(${tenantData.qris_image_url})` : 'none';
+
     await loadTaxDeadlines();
     if (currentProfile.role === 'owner') await loadPphFinalCalculator();
     if (currentProfile.role === 'owner') await loadPanduanPajak();
@@ -9487,6 +9753,7 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
       email: document.getElementById('pu-email').value.trim() || null,
       no_whatsapp: document.getElementById('pu-wa').value.trim() || null,
       alamat: document.getElementById('pu-alamat').value.trim() || null,
+      info_transfer_bank: document.getElementById('pu-info-transfer')?.value.trim() || null,
     }).eq('id', currentProfile.tenant_id);
     btn.disabled = false; btn.textContent = 'Simpan Profil Usaha';
     if (error){ showToast('Gagal menyimpan: ' + error.message, true); return; }
@@ -9706,6 +9973,27 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (puPreview) puPreview.style.backgroundImage = `url(${logoUrl})`;
     const ukuranKB = Math.round(compressedBlob.size / 1024);
     showToast(`✓ Logo diperbarui (${ukuranKB} KB, otomatis dikompres)`);
+  }
+
+  async function handleQrisUpload(event){
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')){ showToast('File harus berupa gambar.', true); return; }
+    showToast('Mengunggah QRIS…');
+    let compressedBlob;
+    try{ compressedBlob = await compressLogoImage(file); }
+    catch(err){ showToast('Gagal memproses gambar: ' + err.message, true); return; }
+
+    const path = `${currentProfile.tenant_id}/qris.jpg`;
+    const { error: uploadErr } = await sb.storage.from('logos').upload(path, compressedBlob, { upsert: true, contentType: 'image/jpeg' });
+    if (uploadErr){ showToast('Gagal unggah QRIS: ' + uploadErr.message, true); return; }
+    const { data: publicUrlData } = sb.storage.from('logos').getPublicUrl(path);
+    const qrisUrl = publicUrlData.publicUrl + '?t=' + Date.now();
+
+    const { error: updateErr } = await sb.from('tenants').update({ qris_image_url: qrisUrl }).eq('id', currentProfile.tenant_id);
+    if (updateErr){ showToast('Gagal menyimpan QRIS: ' + updateErr.message, true); return; }
+    document.getElementById('pu-qris-preview').style.backgroundImage = `url(${qrisUrl})`;
+    showToast('✓ QRIS berhasil diunggah — sekarang muncul di Portal Tagihan pelanggan');
   }
 
   // ================= UNDANGAN KARYAWAN =================
@@ -11411,6 +11699,555 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
   }
   // ================== akhir Dynamic Unit Engine ==================
 
+  // ================== MODIFIER TAMBAHAN (mis. Level Gula, Topping) ==================
+  let modifierPilihCache = null;
+
+  async function bukaPilihanModifierTransaksi(prod){
+    const { data: grup } = await sb.from('modifier_grup').select('*, modifier_opsi(*)').eq('product_id', prod.id).order('urutan');
+    if (!grup || grup.length === 0) return false; // produk ini nggak punya modifier, biarkan alur normal jalan
+
+    modifierPilihCache = { prod, grup, terpilih: {} };
+    document.getElementById('pm-product-id').value = prod.id;
+    document.getElementById('pm-nama-produk').textContent = prod.nama;
+    renderPilihanModifier();
+    document.getElementById('pilih-modifier-modal').classList.add('show');
+    return true;
+  }
+
+  function renderPilihanModifier(){
+    const { prod, grup, terpilih } = modifierPilihCache;
+    const el = document.getElementById('pm-grup-list');
+    el.innerHTML = grup.map(g => {
+      const opsi = (g.modifier_opsi || []).sort((a,b) => a.urutan - b.urutan);
+      const namaInput = `pm-grup-${g.id}`;
+      const opsiHtml = opsi.map(o => {
+        if (g.tipe === 'single'){
+          return `<label style="display:flex; align-items:center; gap:8px; font-size:12.5px; padding:6px 0;">
+            <input type="radio" name="${namaInput}" value="${o.id}" onchange="pilihModifierSingle('${g.id}','${o.id}')" ${terpilih[g.id]?.[0]===o.id ? 'checked':''}>
+            ${o.nama} ${o.harga_tambahan > 0 ? `<span style="color:var(--ink-soft);">(+Rp${Math.round(o.harga_tambahan).toLocaleString('id-ID')})</span>` : ''}
+          </label>`;
+        }
+        const sudahDipilih = (terpilih[g.id]||[]).includes(o.id);
+        return `<label style="display:flex; align-items:center; gap:8px; font-size:12.5px; padding:6px 0;">
+          <input type="checkbox" onchange="toggleModifierMulti('${g.id}','${o.id}')" ${sudahDipilih ? 'checked':''}>
+          ${o.nama} ${o.harga_tambahan > 0 ? `<span style="color:var(--ink-soft);">(+Rp${Math.round(o.harga_tambahan).toLocaleString('id-ID')})</span>` : ''}
+        </label>`;
+      }).join('');
+      return `<div style="margin-bottom:12px;">
+        <div style="font-weight:700; font-size:12.5px; margin-bottom:4px;">${g.nama_grup}${g.wajib_pilih ? ' <span style="color:var(--danger); font-size:10.5px;">*wajib</span>' : ''}</div>
+        ${opsiHtml}
+      </div>`;
+    }).join('');
+    hitungHargaModifierTerpilih();
+  }
+
+  function pilihModifierSingle(grupId, opsiId){
+    modifierPilihCache.terpilih[grupId] = [opsiId];
+    hitungHargaModifierTerpilih();
+  }
+  function toggleModifierMulti(grupId, opsiId){
+    const list = modifierPilihCache.terpilih[grupId] || [];
+    const idx = list.indexOf(opsiId);
+    if (idx > -1) list.splice(idx, 1); else list.push(opsiId);
+    modifierPilihCache.terpilih[grupId] = list;
+    hitungHargaModifierTerpilih();
+  }
+  function hitungHargaModifierTerpilih(){
+    const { prod, grup, terpilih } = modifierPilihCache;
+    let total = parseFloat(prod.harga);
+    grup.forEach(g => {
+      (terpilih[g.id]||[]).forEach(opsiId => {
+        const o = (g.modifier_opsi||[]).find(x => x.id === opsiId);
+        if (o) total += parseFloat(o.harga_tambahan)||0;
+      });
+    });
+    document.getElementById('pm-harga-total').textContent = 'Rp' + Math.round(total).toLocaleString('id-ID');
+  }
+
+  function konfirmasiTambahDenganModifier(){
+    const { prod, grup, terpilih } = modifierPilihCache;
+    // Validasi grup wajib
+    for (const g of grup){
+      if (g.wajib_pilih && (!terpilih[g.id] || terpilih[g.id].length === 0)){
+        showToast(`Pilih dulu "${g.nama_grup}" ya.`, true);
+        return;
+      }
+    }
+    const modifierDipilih = [];
+    let hargaTambahan = 0;
+    grup.forEach(g => {
+      (terpilih[g.id]||[]).forEach(opsiId => {
+        const o = (g.modifier_opsi||[]).find(x => x.id === opsiId);
+        if (o){ modifierDipilih.push({ grup: g.nama_grup, nama: o.nama, harga: parseFloat(o.harga_tambahan)||0 }); hargaTambahan += parseFloat(o.harga_tambahan)||0; }
+      });
+    });
+    const hargaFinal = parseFloat(prod.harga) + hargaTambahan;
+    const labelModifier = modifierDipilih.map(m => m.nama).join(', ');
+    const cartLineId = prod.id + '_mod_' + Date.now();
+    const cart = getActiveCart().items;
+    cart.push({
+      id: cartLineId, produkId: prod.id,
+      name: prod.nama + (labelModifier ? ` (${labelModifier})` : ''),
+      price: hargaFinal, tag: prod.kategori, qty: 1,
+      hargaEceran: hargaFinal, hargaGrosir: null, minGrosir: null, isRacikanItem: false,
+      modifierDipilih,
+    });
+    renderCart();
+    closeModal('pilih-modifier-modal');
+    modifierPilihCache = null;
+  }
+
+  // ---- Kelola Modifier per Produk (Owner/Admin) ----
+  let kelolaModifierCache = null;
+  async function openKelolaModifierModal(prod){
+    document.getElementById('km-product-id').value = prod.id;
+    document.getElementById('km-nama-produk').textContent = prod.nama;
+    const { data: grup } = await sb.from('modifier_grup').select('*, modifier_opsi(*)').eq('product_id', prod.id).order('urutan');
+    kelolaModifierCache = { productId: prod.id, grup: grup || [] };
+    renderKelolaModifierList();
+    document.getElementById('kelola-modifier-modal').classList.add('show');
+  }
+  function renderKelolaModifierList(){
+    const el = document.getElementById('km-grup-list');
+    const { grup } = kelolaModifierCache;
+    if (grup.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada grup modifier. Tambah dulu di bawah.</div>'; return; }
+    el.innerHTML = grup.map(g => `
+      <div style="background:var(--surface-2); border-radius:10px; padding:10px 12px; margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <div>
+            <b style="font-size:12.5px;">${g.nama_grup}</b>
+            <span style="font-size:10px; color:var(--ink-soft);"> (${g.tipe === 'single' ? 'Pilih 1' : 'Boleh lebih dari 1'}${g.wajib_pilih ? ', wajib' : ''})</span>
+          </div>
+          <button type="button" onclick="hapusGrupModifier('${g.id}')" style="background:none; border:none; color:var(--danger); font-size:13px;">✕</button>
+        </div>
+        ${(g.modifier_opsi||[]).map(o => `<div style="display:flex; justify-content:space-between; font-size:11.5px; padding:3px 0;"><span>${o.nama}</span><span>+Rp${Math.round(o.harga_tambahan).toLocaleString('id-ID')} <button type="button" onclick="hapusOpsiModifier('${o.id}','${g.id}')" style="background:none; border:none; color:var(--danger); font-size:11px;">✕</button></span></div>`).join('')}
+        <div style="display:flex; gap:5px; margin-top:6px;">
+          <input type="text" id="km-opsi-nama-${g.id}" placeholder="Nama opsi" style="flex:1; font-size:11px; padding:6px 8px; border:1px solid var(--line); border-radius:7px;">
+          <input type="number" id="km-opsi-harga-${g.id}" placeholder="+Rp" style="width:70px; font-size:11px; padding:6px 8px; border:1px solid var(--line); border-radius:7px;">
+          <button type="button" class="btn-secondary" style="font-size:10.5px; padding:5px 8px;" onclick="tambahOpsiModifier('${g.id}')">+ Opsi</button>
+        </div>
+      </div>`).join('');
+  }
+  async function tambahGrupModifierBaru(){
+    const nama = prompt('Nama grup modifier (contoh: Level Gula, Topping):');
+    if (!nama || !nama.trim()) return;
+    const tipe = confirm('Boleh pilih lebih dari 1 opsi? (OK = ya/multi, Batal = cuma 1/single)') ? 'multi' : 'single';
+    const wajib = confirm('Wajib dipilih pelanggan sebelum bisa checkout?');
+    const { data, error } = await sb.from('modifier_grup').insert({
+      tenant_id: currentProfile.tenant_id, product_id: kelolaModifierCache.productId, nama_grup: nama.trim(), tipe, wajib_pilih: wajib,
+    }).select('*, modifier_opsi(*)').single();
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    kelolaModifierCache.grup.push(data);
+    renderKelolaModifierList();
+  }
+  async function tambahOpsiModifier(grupId){
+    const namaInput = document.getElementById(`km-opsi-nama-${grupId}`);
+    const hargaInput = document.getElementById(`km-opsi-harga-${grupId}`);
+    const nama = namaInput.value.trim();
+    const harga = parseFloat(hargaInput.value) || 0;
+    if (!nama){ showToast('Isi nama opsi dulu.', true); return; }
+    const { data, error } = await sb.from('modifier_opsi').insert({ modifier_grup_id: grupId, nama, harga_tambahan: harga }).select().single();
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    const g = kelolaModifierCache.grup.find(x => x.id === grupId);
+    g.modifier_opsi = g.modifier_opsi || [];
+    g.modifier_opsi.push(data);
+    namaInput.value = ''; hargaInput.value = '';
+    renderKelolaModifierList();
+  }
+  async function hapusOpsiModifier(opsiId, grupId){
+    const { error } = await sb.from('modifier_opsi').delete().eq('id', opsiId);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    const g = kelolaModifierCache.grup.find(x => x.id === grupId);
+    g.modifier_opsi = (g.modifier_opsi||[]).filter(o => o.id !== opsiId);
+    renderKelolaModifierList();
+  }
+  async function hapusGrupModifier(grupId){
+    if (!confirm('Hapus grup modifier ini beserta semua opsinya?')) return;
+    const { error } = await sb.from('modifier_grup').delete().eq('id', grupId);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    kelolaModifierCache.grup = kelolaModifierCache.grup.filter(g => g.id !== grupId);
+    renderKelolaModifierList();
+  }
+
+  // ================== RESEP / BOM (Plus+) ==================
+  let kelolaResepCache = null;
+  async function openKelolaResepModal(p){
+    document.getElementById('kr-product-id').value = p.id;
+    document.getElementById('kr-nama-produk').textContent = p.nama;
+    document.getElementById('kr-aktif-checkbox').checked = !!p.punya_resep;
+    document.getElementById('kr-bahan-wrap').style.display = p.punya_resep ? 'block' : 'none';
+    const { data: bahanList } = await sb.from('resep_bahan').select('*, bahan:bahan_product_id(id, nama, satuan)').eq('product_id', p.id);
+    kelolaResepCache = { productId: p.id, bahan: bahanList || [] };
+    renderKelolaResepList();
+    document.getElementById('kelola-resep-modal').classList.add('show');
+  }
+
+  async function toggleResepAktif(){
+    const aktif = document.getElementById('kr-aktif-checkbox').checked;
+    document.getElementById('kr-bahan-wrap').style.display = aktif ? 'block' : 'none';
+    const { error } = await sb.from('products').update({ punya_resep: aktif }).eq('id', kelolaResepCache.productId);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    const idx = products.findIndex(x => x.id === kelolaResepCache.productId);
+    if (idx > -1) products[idx].punya_resep = aktif;
+    showToast(aktif ? '✓ Resep diaktifkan — stok produk ini sekarang ngikut bahan bakunya' : '✓ Resep dinonaktifkan');
+  }
+
+  function renderKelolaResepList(){
+    const el = document.getElementById('kr-bahan-list');
+    const { bahan } = kelolaResepCache;
+    if (bahan.length === 0){ el.innerHTML = '<div class="loading-note">Belum ada bahan baku — cari &amp; tambah di bawah.</div>'; return; }
+    el.innerHTML = bahan.map(b => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px dashed var(--line); font-size:12px;">
+        <span>${b.bahan?.nama || '(produk terhapus)'}</span>
+        <span style="display:flex; align-items:center; gap:6px;">
+          <input type="number" value="${b.jumlah_dipakai}" step="0.01" onchange="updateJumlahBahanResep('${b.id}', this.value)" style="width:60px; font-size:11px; padding:4px 6px; border:1px solid var(--line); border-radius:6px;">
+          <span style="color:var(--ink-soft); font-size:10.5px;">${b.bahan?.satuan || ''}</span>
+          <button type="button" onclick="hapusBahanResep('${b.id}')" style="background:none; border:none; color:var(--danger); font-size:13px;">✕</button>
+        </span>
+      </div>`).join('');
+  }
+
+  function cariBahanResep(q){
+    const el = document.getElementById('kr-bahan-saran');
+    if (!q || q.trim().length < 2){ el.style.display = 'none'; return; }
+    const idSudahDipakai = new Set(kelolaResepCache.bahan.map(b => b.bahan_product_id));
+    const hasil = products.filter(p => !p.varian_dari_product_id && p.id !== kelolaResepCache.productId && !idSudahDipakai.has(p.id) && p.nama.toLowerCase().includes(q.trim().toLowerCase()));
+    if (hasil.length === 0){ el.innerHTML = '<div style="font-size:11.5px; color:var(--ink-soft); padding:8px 10px;">Nggak ketemu.</div>'; el.style.display = 'block'; return; }
+    el.innerHTML = hasil.slice(0,8).map(p => `<div style="font-size:12px; padding:8px 10px; cursor:pointer; border-bottom:1px solid var(--line);" onmousedown='tambahBahanResep(${JSON.stringify({id:p.id,nama:p.nama,satuan:p.satuan}).replace(/'/g,"&#39;")})'>${p.nama} <span style="color:var(--ink-soft);">(${p.satuan||'Pcs'})</span></div>`).join('');
+    el.style.display = 'block';
+  }
+
+  async function tambahBahanResep(bahan){
+    const jumlah = parseFloat(prompt(`Berapa ${bahan.satuan||'unit'} "${bahan.nama}" dipakai per porsi?`, '1'));
+    if (!jumlah || jumlah <= 0){ showToast('Jumlah tidak valid.', true); return; }
+    const { data, error } = await sb.from('resep_bahan').insert({
+      tenant_id: currentProfile.tenant_id, product_id: kelolaResepCache.productId, bahan_product_id: bahan.id, jumlah_dipakai: jumlah,
+    }).select('*, bahan:bahan_product_id(id, nama, satuan)').single();
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    kelolaResepCache.bahan.push(data);
+    document.getElementById('kr-cari-bahan').value = '';
+    document.getElementById('kr-bahan-saran').style.display = 'none';
+    renderKelolaResepList();
+  }
+
+  async function updateJumlahBahanResep(id, nilai){
+    const jumlah = parseFloat(nilai);
+    if (!jumlah || jumlah <= 0){ showToast('Jumlah tidak valid.', true); return; }
+    const { error } = await sb.from('resep_bahan').update({ jumlah_dipakai: jumlah }).eq('id', id);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    const b = kelolaResepCache.bahan.find(x => x.id === id);
+    if (b) b.jumlah_dipakai = jumlah;
+  }
+
+  async function hapusBahanResep(id){
+    const { error } = await sb.from('resep_bahan').delete().eq('id', id);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    kelolaResepCache.bahan = kelolaResepCache.bahan.filter(b => b.id !== id);
+    renderKelolaResepList();
+  }
+
+  // ================== QR ORDER MANDIRI — sisi Kasir (Pro) ==================
+  function tampilkanQRMenuLink(){
+    const link = `${window.location.origin}${window.location.pathname}?menu=${currentProfile.tenant_id}`;
+    document.getElementById('qr-menu-link-teks').textContent = link;
+    document.getElementById('btn-salin-link-qr-menu').onclick = () => { navigator.clipboard.writeText(link); showToast('✓ Link disalin'); };
+    document.getElementById('qr-menu-link-modal').classList.add('show');
+  }
+
+  function bunyikanNotifikasiPesananBaru(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [880, 1046].forEach((freq, i) => {
+        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = freq; osc.type = 'sine';
+        const mulai = ctx.currentTime + i*0.18;
+        gain.gain.setValueAtTime(0.25, mulai);
+        gain.gain.exponentialRampToValueAtTime(0.001, mulai + 0.35);
+        osc.start(mulai); osc.stop(mulai + 0.35);
+      });
+    } catch(e){ /* browser nggak dukung Web Audio — abaikan, badge visual tetap jalan */ }
+  }
+
+  window.__jumlahPesananMasukSebelumnya = 0;
+  async function cekPesananMasukBadge(){
+    const { count } = await sb.from('pesanan_meja').select('id', { count: 'exact', head: true }).eq('tenant_id', currentProfile.tenant_id).eq('status', 'menunggu_konfirmasi');
+    const badge = document.getElementById('badge-pesanan-masuk');
+    if (count > window.__jumlahPesananMasukSebelumnya){
+      bunyikanNotifikasiPesananBaru();
+      showToast('🔔 Ada pesanan baru masuk!');
+    }
+    window.__jumlahPesananMasukSebelumnya = count || 0;
+    if (!badge) return;
+    if (count > 0){ badge.textContent = count; badge.style.display = 'inline-flex'; }
+    else badge.style.display = 'none';
+  }
+
+  async function openPesananMasukModal(){
+    const box = document.getElementById('pesanan-masuk-list');
+    box.innerHTML = '<div class="loading-note">Memuat…</div>';
+    document.getElementById('pesanan-masuk-modal').classList.add('show');
+    const { data, error } = await sb.from('pesanan_meja').select('*').eq('tenant_id', currentProfile.tenant_id).eq('status', 'menunggu_konfirmasi').order('created_at', { ascending: true });
+    if (error){ box.innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+    if (!data || data.length === 0){ box.innerHTML = '<div class="loading-note">Nggak ada pesanan masuk baru.</div>'; return; }
+
+    // Cek ulang stok real-time (bisa aja udah beda sejak pelanggan pesan tadi)
+    const semuaProdukId = [...new Set(data.flatMap(p => (p.items||[]).map(it => it.produk_id)))];
+    const { data: produkTerbaru } = await sb.from('products').select('id, nama, stok, punya_resep').in('id', semuaProdukId);
+    const produkTerkiniDenganResep = await hitungStokTersediaSemuaProduk(currentProfile.tenant_id, produkTerbaru || []);
+    const stokMap = Object.fromEntries(produkTerkiniDenganResep.map(p => [p.id, p.stokTersedia]));
+
+    box.innerHTML = data.map(p => {
+      const items = Array.isArray(p.items) ? p.items : [];
+      const total = items.reduce((s,it) => s + it.harga*it.qty, 0);
+      const itemKurang = items.filter(it => it.produk_id && (stokMap[it.produk_id] ?? 0) < it.qty);
+      return `
+      <div style="background:var(--surface-2); border-radius:10px; padding:12px; margin-bottom:10px; ${itemKurang.length>0 ? 'border:1.5px solid var(--danger);' : ''}">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <b style="font-size:13px;">🪑 Meja ${p.nomor_meja || '-'}</b>
+          <span style="font-size:10.5px; color:var(--ink-soft);">${new Date(p.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
+        </div>
+        ${p.nama_pelanggan ? `<div style="font-size:11px; color:var(--ink-soft); margin-bottom:4px;">${p.nama_pelanggan}</div>` : ''}
+        ${items.map(it => {
+          const kurang = it.produk_id && (stokMap[it.produk_id] ?? 0) < it.qty;
+          return `<div style="display:flex; justify-content:space-between; font-size:11.5px; padding:2px 0; ${kurang?'color:var(--danger); font-weight:700;':''}"><span>${it.qty}x ${it.nama}${kurang ? ` ⚠️ (sisa ${stokMap[it.produk_id]??0})` : ''}</span><span>Rp${Math.round(it.harga*it.qty).toLocaleString('id-ID')}</span></div>`;
+        }).join('')}
+        ${p.catatan ? `<div style="font-size:11px; color:var(--amber); margin-top:4px;">📝 ${p.catatan}</div>` : ''}
+        ${itemKurang.length > 0 ? `<div style="font-size:11px; color:var(--danger); font-weight:700; margin-top:6px;">⚠️ Stok nggak cukup — cek dulu sebelum diterima!</div>` : ''}
+        <div style="display:flex; justify-content:space-between; font-weight:700; font-size:12.5px; padding-top:6px; margin-top:6px; border-top:1px dashed var(--line);"><span>Total</span><span>Rp${Math.round(total).toLocaleString('id-ID')}</span></div>
+        <div style="display:flex; gap:6px; margin-top:8px;">
+          <button class="btn-primary" style="flex:1; justify-content:center; font-size:11px;" onclick='terimaPesananMasuk(${JSON.stringify(p).replace(/'/g,"&#39;")})'>✓ Terima</button>
+          <button class="btn-secondary" style="font-size:11px; color:var(--danger);" onclick='tolakPesananMasuk(${JSON.stringify(p).replace(/'/g,"&#39;")})'>✕ Tolak</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function terimaPesananMasuk(p){
+    const { error } = await sb.from('pesanan_meja').update({ status: 'diterima', sudah_ditarik_ke_kasir: true }).eq('id', p.id);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+
+    const items = Array.isArray(p.items) ? p.items : [];
+    const newCart = { id: nextCartNum++, items: [], diskon: 0, metode: 'tunai', namaPelanggan: p.nama_pelanggan||'', waPelanggan: p.whatsapp_pelanggan||'', nomorMeja: p.nomor_meja||'', sumberPesanan: 'langsung' };
+    items.forEach(it => {
+      const prod = products.find(pr => pr.id === it.produk_id);
+      newCart.items.push({
+        id: it.produk_id, name: it.nama, price: parseFloat(it.harga), tag: prod?.kategori, qty: it.qty,
+        hargaEceran: parseFloat(it.harga), hargaGrosir: null, minGrosir: null, isRacikanItem: false,
+      });
+    });
+    carts.push(newCart);
+    activeCartId = newCart.id;
+    renderCart();
+    closeModal('pesanan-masuk-modal');
+    cetakTiketDapur(p);
+    showToast(`✓ Pesanan Meja ${p.nomor_meja} diterima — tiket dapur dicetak, masuk ke keranjang`);
+    cekPesananMasukBadge();
+    cekAntrianDapurBadge();
+  }
+
+  // Buat pesanan yang UDAH otomatis diterima (stok cukup, langsung ke dapur tanpa nunggu kasir) —
+  // kasir tinggal tarik ke keranjang kapan aja pas mau proses pembayarannya (biasanya pas makanan diantar).
+  async function tarikPesananKeKasir(p){
+    const { error } = await sb.from('pesanan_meja').update({ sudah_ditarik_ke_kasir: true }).eq('id', p.id);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+
+    const items = Array.isArray(p.items) ? p.items : [];
+    const newCart = { id: nextCartNum++, items: [], diskon: 0, metode: 'tunai', namaPelanggan: p.nama_pelanggan||'', waPelanggan: p.whatsapp_pelanggan||'', nomorMeja: p.nomor_meja||'', sumberPesanan: 'langsung' };
+    items.forEach(it => {
+      const prod = products.find(pr => pr.id === it.produk_id);
+      newCart.items.push({
+        id: it.produk_id, name: it.nama, price: parseFloat(it.harga), tag: prod?.kategori, qty: it.qty,
+        hargaEceran: parseFloat(it.harga), hargaGrosir: null, minGrosir: null, isRacikanItem: false,
+      });
+    });
+    carts.push(newCart);
+    activeCartId = newCart.id;
+    renderCart();
+    goPage('pos', document.querySelector('.nav-item[data-page=pos]'));
+    showToast(`✓ Pesanan Meja ${p.nomor_meja} masuk ke keranjang Kasir — siap checkout`);
+    await renderAntrianDapur();
+  }
+
+  async function tolakPesananMasuk(p){
+    const alasan = prompt('Kenapa pesanan ini ditolak? (misal: stok habis, meja salah)\nDiisi biar bisa dikasih tau ke pelanggan.', '');
+    if (alasan === null) return; // batal
+    const { error } = await sb.from('pesanan_meja').update({ status: 'ditolak', alasan_ditolak: alasan || null }).eq('id', p.id);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    showToast('Pesanan ditolak');
+    if (p.whatsapp_pelanggan){
+      const pesan = `Halo${p.nama_pelanggan ? ' '+p.nama_pelanggan : ''}, mohon maaf pesanan Meja ${p.nomor_meja} belum bisa kami proses${alasan ? ' — ' + alasan : ''}. Silakan pilih menu lain ya, terima kasih pengertiannya 🙏`;
+      window.open(`https://wa.me/${p.whatsapp_pelanggan.replace(/^0/,'62').replace(/\D/g,'')}?text=${encodeURIComponent(pesan)}`, '_blank');
+    }
+    openPesananMasukModal();
+    cekPesananMasukBadge();
+  }
+
+  // ================== KITCHEN DISPLAY SYSTEM (Dapur) — Pro ==================
+  function cetakTiketDapur(p){
+    const tenantName = document.getElementById('sidebar-tenant')?.textContent || currentTenant?.nama_usaha || 'Resto';
+    const win = window.open('', '_blank', 'width=320,height=500');
+    if (!win){ showToast('Popup diblokir browser — izinkan popup buat cetak tiket dapur.', true); return; }
+    const items = Array.isArray(p.items) ? p.items : [];
+    const rows = items.map(it => `<tr><td style="font-size:16px; font-weight:800; padding:6px 0;">${it.qty}x ${it.nama}</td></tr>`).join('');
+    win.document.write(`
+      <html><head><title>Tiket Dapur - Meja ${p.nomor_meja}</title>
+      <style>
+        body{ font-family:sans-serif; width:280px; margin:10px auto; color:#000; }
+        h2{ text-align:center; margin:0 0 4px; font-size:22px; font-weight:900; }
+        .center{ text-align:center; }
+        table{ width:100%; border-collapse:collapse; margin-top:10px; }
+        hr{ border:none; border-top:2px dashed #333; margin:8px 0; }
+      </style></head>
+      <body>
+        <div class="center" style="font-size:12px; color:#666;">${tenantName}</div>
+        <h2>🪑 MEJA ${p.nomor_meja || '-'}</h2>
+        <div class="center" style="font-size:11px;">${new Date(p.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}</div>
+        <hr>
+        <table>${rows}</table>
+        ${p.catatan ? `<hr><div style="font-size:13px; font-weight:700;">📝 Catatan: ${p.catatan}</div>` : ''}
+      </body></html>
+    `);
+    win.document.close();
+    win.document.write(`<script>window.onload = () => setTimeout(() => window.print(), 300);<\/script>`);
+  }
+
+  let filterDapurAktif = 'antrian';
+  function setFilterDapur(f, el){
+    filterDapurAktif = f;
+    el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderAntrianDapur();
+  }
+
+  window.__jumlahAntrianDapurSebelumnya = 0;
+  async function cekAntrianDapurBadge(){
+    const { count } = await sb.from('pesanan_meja').select('id', { count: 'exact', head: true }).eq('tenant_id', currentProfile.tenant_id).eq('status','diterima').neq('status_dapur','diantar');
+    if ((count||0) > window.__jumlahAntrianDapurSebelumnya) bunyikanNotifikasiPesananBaru();
+    window.__jumlahAntrianDapurSebelumnya = count || 0;
+    const badge = document.getElementById('badge-nav-dapur');
+    if (!badge) return;
+    if (count > 0){ badge.textContent = count; badge.style.display = 'flex'; }
+    else badge.style.display = 'none';
+  }
+
+  async function loadDapurPage(){
+    await renderAntrianDapur();
+  }
+
+  const STATUS_DAPUR_LABEL = { menunggu_dimasak:'Menunggu', dimasak:'Dimasak', siap_diantar:'Siap Diantar', diantar:'Diantar' };
+  const STATUS_DAPUR_WARNA = { menunggu_dimasak:'var(--amber)', dimasak:'var(--brand)', siap_diantar:'var(--good)', diantar:'var(--ink-soft)' };
+
+  async function renderAntrianDapur(){
+    const box = document.getElementById('antrian-dapur-list');
+    box.innerHTML = '<div class="loading-note">Memuat…</div>';
+    let q = sb.from('pesanan_meja').select('*').eq('tenant_id', currentProfile.tenant_id).eq('status', 'diterima').order('created_at', { ascending: true });
+    q = filterDapurAktif === 'antrian' ? q.neq('status_dapur', 'diantar') : q.eq('status_dapur', 'diantar');
+    const { data, error } = await q;
+    if (error){ box.innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+    if (!data || data.length === 0){ box.innerHTML = '<div class="loading-note">Nggak ada pesanan di kategori ini.</div>'; return; }
+
+    box.innerHTML = data.map(p => {
+      const items = Array.isArray(p.items) ? p.items : [];
+      const menitLalu = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 60000);
+      const tombol = [];
+      if (p.status_dapur === 'menunggu_dimasak') tombol.push(`<button class="btn-secondary" style="font-size:11px; color:var(--brand); border-color:var(--brand);" onclick="ubahStatusDapur('${p.id}','dimasak')">▶ Mulai Masak</button>`);
+      if (p.status_dapur === 'dimasak') tombol.push(`<button class="btn-secondary" style="font-size:11px; color:var(--good); border-color:var(--good);" onclick="ubahStatusDapur('${p.id}','siap_diantar')">✓ Siap Diantar</button>`);
+      if (p.status_dapur === 'siap_diantar') tombol.push(`<button class="btn-secondary" style="font-size:11px;" onclick="ubahStatusDapur('${p.id}','diantar')">📦 Sudah Diantar</button>`);
+      tombol.push(`<button class="btn-secondary" style="font-size:11px;" onclick='cetakTiketDapur(${JSON.stringify(p).replace(/'/g,"&#39;")})'>🖨️ ${p.status_dapur==='menunggu_dimasak' && !p.sudah_ditarik_ke_kasir ? 'Cetak Tiket' : 'Cetak Ulang'}</button>`);
+      if (!p.sudah_ditarik_ke_kasir) tombol.push(`<button class="btn-secondary" style="font-size:11px; color:#8B5CF6; border-color:#8B5CF6;" onclick='tarikPesananKeKasir(${JSON.stringify(p).replace(/'/g,"&#39;")})'>💰 Ke Kasir</button>`);
+      return `
+      <div class="row-item" style="align-items:flex-start; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; width:100%;">
+          <div class="row-name">🪑 Meja ${p.nomor_meja || '-'} <span style="font-weight:400; color:var(--ink-soft); font-size:11px;">· ${menitLalu} menit lalu</span></div>
+          <span class="pill" style="background:${STATUS_DAPUR_WARNA[p.status_dapur]}22; color:${STATUS_DAPUR_WARNA[p.status_dapur]};">${STATUS_DAPUR_LABEL[p.status_dapur]}</span>
+        </div>
+        <div style="font-size:12.5px;">${items.map(it => `${it.qty}x ${it.nama}`).join(', ')}</div>
+        ${p.catatan ? `<div style="font-size:11px; color:var(--amber);">📝 ${p.catatan}</div>` : ''}
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">${tombol.join('')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  async function ubahStatusDapur(id, statusBaru){
+    const payload = { status_dapur: statusBaru };
+    if (statusBaru === 'dimasak') payload.mulai_dimasak_pada = new Date().toISOString();
+    if (statusBaru === 'siap_diantar') payload.siap_pada = new Date().toISOString();
+    if (statusBaru === 'diantar') payload.diantar_pada = new Date().toISOString();
+    const { error } = await sb.from('pesanan_meja').update(payload).eq('id', id);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    showToast('✓ Status dapur diperbarui');
+    await renderAntrianDapur();
+    cekAntrianDapurBadge();
+  }
+
+  async function kirimKeranjangKeDapur(){
+    const cart = getActiveCart();
+    if (cart.items.length === 0){ showToast('Keranjang masih kosong.', true); return; }
+    if (!cart.nomorMeja){ showToast('Atur nomor meja dulu ya.', true); return; }
+
+    const items = cart.items.map(it => ({ produk_id: it.produkId || it.id, nama: it.name, harga: it.price, qty: it.qty }));
+    const { data, error } = await sb.from('pesanan_meja').insert({
+      tenant_id: currentProfile.tenant_id, nomor_meja: cart.nomorMeja, nama_pelanggan: cart.namaPelanggan || null,
+      whatsapp_pelanggan: cart.waPelanggan || null, items, status: 'diterima', sumber: 'kasir_manual',
+    }).select().single();
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    cetakTiketDapur(data);
+    showToast('✓ Dikirim ke dapur — tiket dicetak');
+    cekAntrianDapurBadge();
+  }
+
+  // ================== KLAIM BAYAR MANDIRI (QRIS/Transfer) — Pro ==================
+  window.__jumlahKlaimBayarSebelumnya = 0;
+  async function cekKlaimBayarBadge(){
+    const { count } = await sb.from('klaim_bayar_meja').select('id', { count: 'exact', head: true }).eq('tenant_id', currentProfile.tenant_id).eq('status', 'menunggu_verifikasi');
+    if ((count||0) > window.__jumlahKlaimBayarSebelumnya) bunyikanNotifikasiPesananBaru();
+    window.__jumlahKlaimBayarSebelumnya = count || 0;
+    const badge = document.getElementById('badge-klaim-bayar');
+    if (!badge) return;
+    if (count > 0){ badge.textContent = count; badge.style.display = 'inline-flex'; }
+    else badge.style.display = 'none';
+  }
+
+  async function openKlaimBayarModal(){
+    const box = document.getElementById('klaim-bayar-list');
+    box.innerHTML = '<div class="loading-note">Memuat…</div>';
+    document.getElementById('klaim-bayar-modal').classList.add('show');
+    const { data, error } = await sb.from('klaim_bayar_meja').select('*').eq('tenant_id', currentProfile.tenant_id).eq('status', 'menunggu_verifikasi').order('created_at', { ascending: true });
+    if (error){ box.innerHTML = '<div class="loading-note">Gagal memuat: '+error.message+'</div>'; return; }
+    if (!data || data.length === 0){ box.innerHTML = '<div class="loading-note">Nggak ada klaim bayar baru.</div>'; return; }
+    box.innerHTML = data.map(k => `
+      <div style="background:var(--surface-2); border-radius:10px; padding:12px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <b style="font-size:13px;">🪑 Meja ${k.nomor_meja}</b>
+          <span style="font-size:10.5px; color:var(--ink-soft);">${new Date(k.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
+        </div>
+        ${k.url_bukti ? `<img src="${k.url_bukti}" style="width:100%; max-width:220px; border-radius:8px; display:block; margin:0 auto 8px; cursor:pointer;" onclick="window.open('${k.url_bukti}','_blank')">` : ''}
+        <div style="text-align:center; font-weight:800; font-size:16px; color:var(--brand); margin-bottom:10px;">Rp${Math.round(k.total_klaim).toLocaleString('id-ID')}</div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-primary" style="flex:1; justify-content:center; font-size:11px;" onclick="verifikasiKlaimBayar('${k.id}')">✓ Verifikasi Lunas</button>
+          <button class="btn-secondary" style="font-size:11px; color:var(--danger);" onclick="tolakKlaimBayar('${k.id}')">✕ Tolak</button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function verifikasiKlaimBayar(id){
+    const { error } = await sb.from('klaim_bayar_meja').update({ status: 'terverifikasi', diverifikasi_pada: new Date().toISOString() }).eq('id', id);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    showToast('✓ Pembayaran diverifikasi lunas');
+    openKlaimBayarModal();
+    cekKlaimBayarBadge();
+  }
+
+  async function tolakKlaimBayar(id){
+    if (!confirm('Tolak klaim ini? (misal buktinya nggak jelas/nggak cocok)')) return;
+    const { error } = await sb.from('klaim_bayar_meja').update({ status: 'ditolak' }).eq('id', id);
+    if (error){ showToast('Gagal: ' + error.message, true); return; }
+    showToast('Klaim ditolak');
+    openKlaimBayarModal();
+    cekKlaimBayarBadge();
+  }
+
   async function openBatchModal(p){
     currentBatchProductId = p.id;
     currentBatchProductData = p;
@@ -11745,6 +12582,28 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     try{
       const jenisUsaha = currentTenant?.jenis_usaha || 'apotek';
       const isApotek = jenisUsaha === 'apotek';
+
+      const barMejaPesanan = document.getElementById('fnb-meja-pesanan-bar');
+      if (barMejaPesanan) barMejaPesanan.style.display = jenisUsaha === 'fnb' ? 'flex' : 'none';
+
+      const punyaAksesQRO = jenisUsaha === 'fnb' && currentTenant?.paket === 'pro';
+      const btnPesananMasuk = document.getElementById('btn-pesanan-masuk');
+      const btnQrMenu = document.getElementById('btn-qr-menu');
+      const navDapur = document.getElementById('nav-dapur-fnb');
+      if (btnPesananMasuk) btnPesananMasuk.style.display = punyaAksesQRO ? '' : 'none';
+      if (btnQrMenu) btnQrMenu.style.display = punyaAksesQRO ? '' : 'none';
+      if (navDapur) navDapur.style.display = punyaAksesQRO ? '' : 'none';
+      const btnKirimDapur = document.getElementById('btn-kirim-ke-dapur');
+      if (btnKirimDapur) btnKirimDapur.style.display = punyaAksesQRO ? '' : 'none';
+      const btnKlaimBayar = document.getElementById('btn-klaim-bayar');
+      if (btnKlaimBayar) btnKlaimBayar.style.display = punyaAksesQRO ? '' : 'none';
+      if (punyaAksesQRO && !window.__qroPollingAktif){
+        window.__qroPollingAktif = true;
+        cekPesananMasukBadge();
+        cekAntrianDapurBadge();
+        cekKlaimBayarBadge();
+        setInterval(() => { cekPesananMasukBadge(); cekAntrianDapurBadge(); cekKlaimBayarBadge(); }, 20000);
+      }
 
       const posSearch = document.getElementById('pos-search');
       if (posSearch) posSearch.placeholder = isApotek ? 'Cari nama obat…' : 'Cari nama produk…';
@@ -12153,10 +13012,11 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
     if (name === 'langganan') loadLanggananPage();
     if (name === 'admin') loadAdminPage();
     if (name === 'servis') loadServisPage();
+    if (name === 'dapur') loadDapurPage();
     if (name === 'keuangan') loadOwnerTx();
     if (name === 'keuangan') loadCatatanBadanUsahaRingkas();
     if (name === 'keuangan') loadNeraca();
-    if (name === 'pos'){ loadProducts(); loadShiftStatus(); }
+    if (name === 'pos'){ loadProducts(); loadShiftStatus(); if (!window.__cartsSudahDipulihkan){ window.__cartsSudahDipulihkan = true; if (pulihkanCartsDariLocalStorage()) renderCart(); } }
   }
 
   const LABEL_STATUS_LANGGANAN = {
@@ -12375,6 +13235,8 @@ Kategori dan satuan harus benar-benar relevan dengan jenis usaha "${namaUsaha}",
                        <button class="btn-secondary" onclick='openSupplierPriceModal(${JSON.stringify({id:p.id,nama:p.nama}).replace(/'/g,"&#39;")})'>Harga Supplier</button>`}
                   ${(currentTenant?.jenis_usaha && currentTenant.jenis_usaha !== 'apotek') ? `<button class="btn-secondary" onclick='openMultiSatuanModal(${JSON.stringify({id:p.id,nama:p.nama,satuan:p.satuan}).replace(/'/g,"&#39;")})'>Multi-Satuan</button>` : ''}
                   ${p.is_induk_varian ? `<button class="btn-secondary" onclick='openVarianProdukModal(${JSON.stringify({id:p.id,nama:p.nama}).replace(/'/g,"&#39;")})'>Kelola Varian</button>` : ''}
+                  ${(currentTenant?.jenis_usaha === 'fnb' && p.satuan !== 'Jasa' && !p.is_racikan) ? `<button class="btn-secondary" onclick='openKelolaModifierModal(${JSON.stringify({id:p.id,nama:p.nama}).replace(/'/g,"&#39;")})'>🍔 Modifier</button>` : ''}
+                  ${((currentTenant?.paket === 'plus' || currentTenant?.paket === 'pro') && p.satuan !== 'Jasa' && !p.is_racikan) ? `<button class="btn-secondary" onclick='openKelolaResepModal(${JSON.stringify({id:p.id,nama:p.nama,punya_resep:p.punya_resep}).replace(/'/g,"&#39;")})'>🍳 Resep</button>` : ''}
                   <button class="btn-secondary" onclick="openEditProductModal(window.__stokData[${idx}])">Edit</button>
                   <button class="btn-secondary" style="color:var(--danger);" onclick="deleteProduct('${p.id}', '${p.nama.replace(/'/g,"")}')">Hapus</button>
                 </td>
@@ -13793,9 +14655,210 @@ Kalau user tanya sesuatu yang sangat spesifik ke datanya sendiri (misal "kenapa 
       await muatFormBooking(tenantIdBooking);
       return;
     }
+    const tenantIdMenu = new URLSearchParams(window.location.search).get('menu');
+    if (tenantIdMenu){
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('qr-order-screen').style.display = 'block';
+      const mejaDariQR = new URLSearchParams(window.location.search).get('meja');
+      await muatQROMenu(tenantIdMenu, mejaDariQR);
+      return;
+    }
     const { data: { session } } = await sb.auth.getSession();
     if (session){ await initApp(); }
   })();
+
+  // ================= QR ORDER MANDIRI (publik) =================
+  let qroCache = { tenantId:null, produk:[], cart:[] };
+  async function muatQROMenu(tenantId, mejaDariQR){
+    const [{ data: tenant }, { data: produk }] = await Promise.all([
+      sb.from('tenants').select('nama_usaha').eq('id', tenantId).maybeSingle(),
+      sb.from('products').select('id, nama, harga, satuan, stok, kategori, punya_resep').eq('tenant_id', tenantId).neq('satuan','Jasa').is('varian_dari_product_id', null),
+    ]);
+    document.getElementById('qro-loading').style.display = 'none';
+    if (!tenant){
+      document.getElementById('qro-error').textContent = 'Link menu nggak valid.';
+      document.getElementById('qro-error').style.display = 'block';
+      return;
+    }
+    document.getElementById('qro-nama-usaha').textContent = tenant.nama_usaha;
+    if (mejaDariQR) document.getElementById('qro-nomor-meja').value = mejaDariQR;
+
+    const produkFinal = await hitungStokTersediaSemuaProduk(tenantId, produk || []);
+    qroCache = { tenantId, produk: produkFinal.filter(p => p.stokTersedia > 0), cart: [] };
+    document.getElementById('qro-content').style.display = 'block';
+    renderQROMenu();
+  }
+
+  // Produk biasa: stok = kolom stok langsung. Produk Resep/BOM (punya_resep=true): stok kolomnya
+  // sendiri nggak reliable (nggak dipotong langsung), jadi dihitung dinamis dari bahan baku yang
+  // paling sedikit tersisa — sama persis logika FEFO/BOM yang dipakai trigger di database.
+  async function hitungStokTersediaSemuaProduk(tenantId, daftarProduk){
+    const produkResep = daftarProduk.filter(p => p.punya_resep);
+    if (produkResep.length === 0) return daftarProduk.map(p => ({ ...p, stokTersedia: p.stok }));
+
+    const { data: semuaResep } = await sb.from('resep_bahan').select('product_id, jumlah_dipakai, bahan:bahan_product_id(id, stok)').in('product_id', produkResep.map(p => p.id));
+    return daftarProduk.map(p => {
+      if (!p.punya_resep) return { ...p, stokTersedia: p.stok };
+      const resepProdukIni = (semuaResep || []).filter(r => r.product_id === p.id);
+      if (resepProdukIni.length === 0) return { ...p, stokTersedia: 0 }; // resep aktif tapi belum diisi bahan = jangan dijual dulu
+      const porsiMaks = Math.min(...resepProdukIni.map(r => Math.floor((r.bahan?.stok || 0) / r.jumlah_dipakai)));
+      return { ...p, stokTersedia: porsiMaks };
+    });
+  }
+
+  function renderQROMenu(){
+    const kata = (document.getElementById('qro-cari-produk')?.value || '').toLowerCase();
+    const list = qroCache.produk.filter(p => p.nama.toLowerCase().includes(kata));
+    const box = document.getElementById('qro-menu-list');
+    if (list.length === 0){ box.innerHTML = '<div class="loading-note">Menu nggak ketemu.</div>'; return; }
+    box.innerHTML = list.map(p => {
+      const diCart = qroCache.cart.find(c => c.id === p.id);
+      return `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line);">
+        <div>
+          <div style="font-weight:600; font-size:13px;">${p.nama}</div>
+          <div style="font-size:12px; color:var(--brand); font-weight:700;">Rp${Math.round(p.harga).toLocaleString('id-ID')}</div>
+          ${p.stokTersedia <= 5 ? `<div style="font-size:10px; color:var(--amber);">Sisa ${p.stokTersedia}</div>` : ''}
+        </div>
+        ${diCart
+          ? `<div style="display:flex; align-items:center; gap:8px;">
+              <button onclick="ubahQtyQRO('${p.id}',-1)" style="width:26px; height:26px; border-radius:50%; border:1px solid var(--line); background:var(--surface);">−</button>
+              <span style="font-weight:700; font-size:13px;">${diCart.qty}</span>
+              <button onclick="ubahQtyQRO('${p.id}',1)" style="width:26px; height:26px; border-radius:50%; border:1px solid var(--line); background:var(--surface);">+</button>
+            </div>`
+          : `<button class="btn-secondary" style="font-size:11px;" onclick="ubahQtyQRO('${p.id}',1)">+ Tambah</button>`}
+      </div>`;
+    }).join('');
+  }
+
+  function ubahQtyQRO(produkId, delta){
+    const prod = qroCache.produk.find(p => p.id === produkId);
+    let item = qroCache.cart.find(c => c.id === produkId);
+    if (!item){ item = { id: produkId, nama: prod.nama, harga: parseFloat(prod.harga), qty: 0 }; qroCache.cart.push(item); }
+    if (delta > 0 && item.qty >= prod.stokTersedia){ showToast(`Maaf, "${prod.nama}" cuma tersisa ${prod.stokTersedia} porsi.`, true); return; }
+    item.qty += delta;
+    if (item.qty <= 0) qroCache.cart = qroCache.cart.filter(c => c.id !== produkId);
+    renderQROMenu();
+    updateQROCartBar();
+  }
+
+  function updateQROCartBar(){
+    const bar = document.getElementById('qro-cart-bar');
+    const totalItem = qroCache.cart.reduce((s,c) => s+c.qty, 0);
+    if (totalItem === 0){ bar.style.display = 'none'; return; }
+    const total = qroCache.cart.reduce((s,c) => s + c.harga*c.qty, 0);
+    bar.style.display = 'flex';
+    document.getElementById('qro-cart-summary').textContent = `${totalItem} item · Rp${Math.round(total).toLocaleString('id-ID')}`;
+  }
+
+  function openQROCartModal(){
+    const box = document.getElementById('qro-cart-items');
+    box.innerHTML = qroCache.cart.map(c => `<div style="display:flex; justify-content:space-between; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--line);"><span>${c.qty}x ${c.nama}</span><span>Rp${Math.round(c.harga*c.qty).toLocaleString('id-ID')}</span></div>`).join('');
+    const total = qroCache.cart.reduce((s,c) => s + c.harga*c.qty, 0);
+    document.getElementById('qro-cart-total').textContent = 'Rp' + Math.round(total).toLocaleString('id-ID');
+    document.getElementById('qro-cart-modal').classList.add('show');
+  }
+
+  async function kirimPesananQRO(){
+    const nomorMeja = document.getElementById('qro-nomor-meja').value.trim();
+    const nama = document.getElementById('qro-nama').value.trim();
+    const wa = document.getElementById('qro-wa').value.trim();
+    const catatan = document.getElementById('qro-catatan').value.trim();
+    if (!nomorMeja){ alert('Isi nomor meja dulu ya.'); return; }
+    if (qroCache.cart.length === 0){ alert('Keranjang masih kosong.'); return; }
+
+    const tombolKirim = document.querySelector('#qro-cart-modal .btn-primary');
+    if (tombolKirim.disabled) return; // sudah diklik, tunggu proses selesai — cegah tap dobel
+    tombolKirim.disabled = true;
+    tombolKirim.textContent = 'Mengirim…';
+
+    const items = qroCache.cart.map(c => ({ produk_id: c.id, nama: c.nama, harga: c.harga, qty: c.qty }));
+    const { data, error } = await sb.rpc('fn_kirim_pesanan_meja_publik', {
+      p_tenant_id: qroCache.tenantId, p_nomor_meja: nomorMeja, p_nama: nama || null, p_wa: wa || null,
+      p_items: items, p_catatan: catatan || null,
+    });
+    if (error || !data?.ok){
+      alert('Gagal: ' + (data?.error || error?.message || 'coba lagi.'));
+      tombolKirim.disabled = false; tombolKirim.textContent = 'Kirim Pesanan';
+      return;
+    }
+    const pesanSukses = data.auto_diterima
+      ? `Pesanan langsung diteruskan ke dapur, lagi disiapkan buat Meja ${nomorMeja}. Ditunggu ya!`
+      : `Bahan lagi terbatas, staff bakal cek dulu &amp; konfirmasi ke Meja ${nomorMeja}. Ditunggu ya!`;
+    document.getElementById('qro-content').innerHTML = `<div style="text-align:center; padding:60px 20px;"><div style="font-size:40px; margin-bottom:10px;">✅</div><div style="font-family:'Fraunces',serif; font-size:19px; font-weight:700;">Pesanan Terkirim!</div><div style="font-size:12.5px; color:var(--ink-soft); margin-top:8px;">${pesanSukses}</div></div>`;
+    document.getElementById('qro-cart-bar').style.display = 'none';
+    closeModal('qro-cart-modal');
+    tombolKirim.disabled = false; tombolKirim.textContent = 'Kirim Pesanan';
+  }
+
+  async function lihatTagihanSaya(){
+    const nomorMeja = document.getElementById('qro-nomor-meja').value.trim();
+    if (!nomorMeja){ alert('Isi nomor meja dulu ya.'); return; }
+    document.getElementById('qro-tagihan-nomor-meja').textContent = nomorMeja;
+    document.getElementById('qro-tagihan-isi').innerHTML = '<div class="loading-note">Memuat…</div>';
+    document.getElementById('qro-tagihan-modal').classList.add('show');
+
+    const { data, error } = await sb.rpc('fn_lihat_tagihan_meja_publik', { p_tenant_id: qroCache.tenantId, p_nomor_meja: nomorMeja });
+    if (error){ document.getElementById('qro-tagihan-isi').innerHTML = '<div class="loading-note">Gagal memuat.</div>'; return; }
+    if (!data || data.length === 0){ document.getElementById('qro-tagihan-isi').innerHTML = '<div class="loading-note">Belum ada pesanan buat meja ini.</div>'; return; }
+
+    const STATUS_LABEL_TAGIHAN = { menunggu_konfirmasi:'⏳ Nunggu konfirmasi', diterima:'✓ Diproses' };
+    let totalKeseluruhan = 0;
+    const html = data.map(p => {
+      const items = Array.isArray(p.items) ? p.items : [];
+      const subtotal = items.reduce((s,it) => s + it.harga*it.qty, 0);
+      totalKeseluruhan += subtotal;
+      return `
+      <div style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed var(--line);">
+        <div style="font-size:10.5px; color:var(--ink-soft); margin-bottom:3px;">${new Date(p.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})} · ${STATUS_LABEL_TAGIHAN[p.status]||p.status}</div>
+        ${items.map(it => `<div style="display:flex; justify-content:space-between; font-size:12px;"><span>${it.qty}x ${it.nama}</span><span>Rp${Math.round(it.harga*it.qty).toLocaleString('id-ID')}</span></div>`).join('')}
+      </div>`;
+    }).join('');
+    window.__totalTagihanQRO = totalKeseluruhan;
+    window.__nomorMejaTagihanQRO = nomorMeja;
+
+    const { data: tenantInfo } = await sb.from('tenants').select('qris_image_url, info_transfer_bank').eq('id', qroCache.tenantId).maybeSingle();
+    let sectionBayar = '';
+    if (tenantInfo?.qris_image_url || tenantInfo?.info_transfer_bank){
+      sectionBayar = `
+        <div style="border-top:1.5px solid var(--line); margin-top:12px; padding-top:12px;">
+          <div style="font-weight:700; font-size:12.5px; margin-bottom:8px;">💳 Bayar Sekarang (opsional)</div>
+          ${tenantInfo.qris_image_url ? `<img src="${tenantInfo.qris_image_url}" style="width:160px; height:160px; object-fit:contain; display:block; margin:0 auto 10px;">` : ''}
+          ${tenantInfo.info_transfer_bank ? `<div style="font-size:12px; background:var(--surface-2); border-radius:8px; padding:8px 10px; margin-bottom:10px; white-space:pre-line;">${tenantInfo.info_transfer_bank}</div>` : ''}
+          <div style="font-size:11px; color:var(--ink-soft); margin-bottom:8px;">Setelah bayar, upload screenshot bukti transfer/QRIS di bawah, terus tap "Saya Sudah Bayar" — nggak perlu nunggu di kasir, staff bakal verifikasi.</div>
+          <input type="file" id="qro-bukti-bayar-input" accept="image/*" style="display:none;" onchange="handleBuktiBayarQRO(event)">
+          <button class="btn-secondary" style="width:100%; justify-content:center; margin-bottom:8px;" onclick="document.getElementById('qro-bukti-bayar-input').click()">📷 Upload Bukti Bayar</button>
+          <div id="qro-bukti-preview" style="display:none; text-align:center; margin-bottom:8px;"></div>
+          <button class="btn-primary" style="width:100%; justify-content:center;" id="qro-btn-sudah-bayar" onclick="klaimSudahBayarQRO()" disabled>Saya Sudah Bayar</button>
+        </div>`;
+    }
+    document.getElementById('qro-tagihan-isi').innerHTML = html + `<div style="display:flex; justify-content:space-between; font-weight:800; font-size:15px; padding-top:6px;"><span>Total Semua</span><span>Rp${Math.round(totalKeseluruhan).toLocaleString('id-ID')}</span></div>` + sectionBayar;
+  }
+
+  window.__urlBuktiBayarQRO = null;
+  async function handleBuktiBayarQRO(event){
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')){ alert('File harus berupa gambar.'); return; }
+    const path = `${qroCache.tenantId}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.jpg`;
+    const { error } = await sb.storage.from('bukti-bayar-meja').upload(path, file, { contentType: file.type });
+    if (error){ alert('Gagal unggah: ' + error.message); return; }
+    const { data: urlData } = sb.storage.from('bukti-bayar-meja').getPublicUrl(path);
+    window.__urlBuktiBayarQRO = urlData.publicUrl;
+    document.getElementById('qro-bukti-preview').style.display = 'block';
+    document.getElementById('qro-bukti-preview').innerHTML = `<img src="${urlData.publicUrl}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;">`;
+    document.getElementById('qro-btn-sudah-bayar').disabled = false;
+  }
+
+  async function klaimSudahBayarQRO(){
+    if (!window.__urlBuktiBayarQRO){ alert('Upload bukti bayar dulu ya.'); return; }
+    const { data, error } = await sb.rpc('fn_klaim_bayar_meja_publik', {
+      p_tenant_id: qroCache.tenantId, p_nomor_meja: window.__nomorMejaTagihanQRO, p_total: window.__totalTagihanQRO,
+      p_url_bukti: window.__urlBuktiBayarQRO, p_metode: 'qris',
+    });
+    if (error || !data?.ok){ alert('Gagal: ' + (data?.error || error?.message || 'coba lagi.')); return; }
+    document.getElementById('qro-tagihan-isi').innerHTML = `<div style="text-align:center; padding:20px;"><div style="font-size:36px; margin-bottom:8px;">✅</div><div style="font-weight:700; font-size:14px;">Bukti bayar terkirim!</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Staff bakal verifikasi sebentar lagi. Makasih ya, sampai jumpa lagi! 🙏</div></div>`;
+  }
 
   // ================= BOOKING ONLINE SERVIS (publik) =================
   async function muatFormBooking(tenantId){
